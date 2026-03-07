@@ -44,4 +44,4 @@ coverage
 .eslintcache
 
 # Local scaffold residue
-app/
+/app/
