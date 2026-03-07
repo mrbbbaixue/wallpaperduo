@@ -1,0 +1,93 @@
+{
+  "appName": "WallpaperDuo",
+  "tagline": "Turn one wallpaper into light/dark and day-part variants, then export WinDynamicDesktop themes.",
+  "nav": {
+    "workspace": "Workspace",
+    "prompts": "Prompts",
+    "results": "Results + Align",
+    "export": "Export",
+    "settings": "Settings"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "generate": "Generate",
+    "loading": "Loading",
+    "none": "None",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "retry": "Retry",
+    "download": "Download",
+    "preview": "Preview"
+  },
+  "workspace": {
+    "uploadTitle": "Upload and Canvas Prep",
+    "uploadHint": "Upload PNG/JPEG/WebP, then produce a normalized baseline image.",
+    "ratio": "Target Ratio",
+    "customRatio": "Custom Ratio",
+    "mode": "Mismatch Handling",
+    "modeCrop": "Crop",
+    "modePad": "Pad",
+    "prepare": "Prepare Baseline",
+    "prepared": "Baseline prepared",
+    "singleDark": "Generate Dark Once",
+    "singleLight": "Generate Light Once",
+    "needPrepared": "Upload and prepare an image first"
+  },
+  "prompts": {
+    "title": "Prompt Editor",
+    "analyze": "Analyze Scene",
+    "plan": "Build Prompt Plan",
+    "basePrompt": "Global Prompt",
+    "localChanges": "Local Time-based Changes",
+    "userOverlay": "User Style Overlay",
+    "variants": "Time and Theme Variants",
+    "analysisReady": "SceneAnalysis updated"
+  },
+  "results": {
+    "title": "Batch Generation and Alignment",
+    "batchGenerate": "Generate Batch (Dawn/Day/Dusk/Night + Light/Dark)",
+    "queue": "Task Queue",
+    "align": "Run Alignment",
+    "alignDesc": "Use ORB + RANSAC + Warp on generated outputs",
+    "aligned": "Aligned",
+    "manualNudge": "Manual nudge (basic)",
+    "baseSelect": "Reference Image"
+  },
+  "export": {
+    "title": "Export Wizard",
+    "ddw": "Export DDW",
+    "heic": "Export HEIC (Experimental)",
+    "heicFallback": "If HEIC fails, PNG/JPEG fallback will be used automatically",
+    "mapping": "Time Group Mapping",
+    "compat": "WinDynamicDesktop compatibility checks passed"
+  },
+  "settings": {
+    "title": "Provider and Security Settings",
+    "provider": "Provider",
+    "baseUrl": "Base URL",
+    "apiKey": "API Key",
+    "model": "Model",
+    "timeout": "Timeout (ms)",
+    "concurrency": "Concurrency",
+    "extraHeaders": "Extra Headers JSON",
+    "test": "Test Connectivity",
+    "workflow": "ComfyUI Workflow Template",
+    "nodeMap": "Node Mapping",
+    "encryption": "Optional Local Key Encryption",
+    "encrypt": "Encrypt Keys",
+    "decrypt": "Decrypt Keys",
+    "passphrase": "Passphrase",
+    "securityTip": "BYOK only: keys stay in local browser storage. No platform-managed private keys."
+  },
+  "errors": {
+    "NETWORK_OR_CORS": "Network error or CORS restriction. Check URL and reverse proxy setup.",
+    "AUTH_ERROR": "Authentication failed. Verify API key and permissions.",
+    "PERMISSION_DENIED": "Permission denied (403). Check model access and account scope.",
+    "REGION_RESTRICTED": "This model is unavailable in your region. Switch model or route through an available region.",
+    "QUOTA_LIMIT": "Quota or rate limit reached. Retry later.",
+    "TIMEOUT": "Request timeout. Increase timeout or lower concurrency.",
+    "PASSCODE_INVALID": "Invalid passphrase. Failed to decrypt keys.",
+    "UNKNOWN_ERROR": "Unknown error"
+  }
+}
