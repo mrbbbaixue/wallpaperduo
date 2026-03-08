@@ -4,7 +4,7 @@ import type { PrepareMode } from "@/types/domain";
 import { canvasToBlob, loadImageFromBlob } from "@/utils/image";
 
 const pica = new Pica();
-const MAX_EDGE = 4096;
+const MAX_EDGE = 2480;
 
 export interface PrepareCanvasInput {
   source: Blob;
