@@ -62,7 +62,7 @@ const createDefaultProviders = (): ProviderConfigRecord => ({
     baseUrl: getDefaultArkBaseUrl(),
     apiKey: "",
     model: "doubao-seedream-5-0-260128",
-    visionModel: "doubao-1-5-thinking-vision-latest",
+    visionModel: "doubao-seed-2-0-mini-260215",
     timeoutMs: 60000,
     concurrency: 2,
     extraHeaders: "{}",
@@ -161,7 +161,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "wallpaperduo.settings.v1",
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== "object") {
           return persistedState;
