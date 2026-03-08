@@ -122,7 +122,7 @@ export const CanvasWorkspace = () => {
             width: "100%",
             aspectRatio: "3 / 1",
             minHeight: { xs: 230, md: 350 },
-            borderRadius: 2.25,
+            borderRadius: 1.25,
             border: isDragging ? "2px dashed" : "1px solid",
             borderColor: isDragging ? "primary.main" : "divider",
             background: checkerboardBg,

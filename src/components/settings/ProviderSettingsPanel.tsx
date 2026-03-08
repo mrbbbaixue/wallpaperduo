@@ -1,11 +1,8 @@
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import WifiFindRoundedIcon from "@mui/icons-material/WifiFindRounded";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   FormControl,
   Grid,
   InputLabel,
@@ -304,7 +301,8 @@ export const ProviderSettingsPanel = () => {
             </Box>
           ) : null}
 
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Button
               variant="contained"
               startIcon={<WifiFindRoundedIcon />}
@@ -313,12 +311,25 @@ export const ProviderSettingsPanel = () => {
             >
               {connectivityMutation.isPending ? t("common.loading") : t("settings.test")}
             </Button>
+            </Stack>
             {latestConnectivity ? (
-              <Chip
-                icon={latestConnectivity.ok ? <CheckCircleRoundedIcon /> : <ErrorRoundedIcon />}
-                label={`${latestConnectivity.message} (${latestConnectivity.latencyMs}ms)`}
-                color={latestConnectivity.ok ? "success" : "error"}
-              />
+              <Alert severity={latestConnectivity.ok ? "success" : "error"} sx={{ py: 0.5 }}>
+                <Stack spacing={0.4}>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <Typography variant="body2" fontWeight={600}>
+                    {latestConnectivity.message}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" className="mono">
+                    {latestConnectivity.latencyMs}ms
+                  </Typography>
+                  </Stack>
+                  {latestConnectivity.details ? (
+                    <Typography variant="caption" color="text.secondary">
+                      {latestConnectivity.details}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              </Alert>
             ) : null}
           </Stack>
         </Stack>

@@ -31,7 +31,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       ...palette,
     },
     shape: {
-      borderRadius: 18,
+      borderRadius: 8,
     },
     shadows: [
       "none",
@@ -149,7 +149,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 18,
+            borderRadius: 10,
             border: `1px solid ${palette.divider}`,
             backgroundColor: palette.background.paper,
             backdropFilter: "blur(16px)",
@@ -162,11 +162,12 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 8,
+            borderRadius: 6,
             minHeight: 38,
             paddingInline: 16,
           },
           contained: {
+            color: "#f7f7f7",
             boxShadow: isLight
               ? "0 10px 24px rgba(42, 92, 104, 0.26)"
               : "0 12px 26px rgba(157, 205, 214, 0.15)",
@@ -176,7 +177,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiIconButton: {
         styleOverrides: {
           root: {
-            borderRadius: 8,
+            borderRadius: 6,
             border: `1px solid ${alpha(palette.text.primary, isLight ? 0.12 : 0.2)}`,
             backgroundColor: alpha(palette.background.paper, isLight ? 0.7 : 0.5),
           },
@@ -185,9 +186,13 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 10,
+            borderRadius: 6,
             border: `1px solid ${palette.divider}`,
             backgroundColor: alpha(palette.background.paper, 0.8),
+          },
+          filledPrimary: {
+            backgroundColor: palette.primary.main,
+            color: "#f7f7f7",
           },
           label: {
             fontWeight: 500,
@@ -207,7 +212,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiDialog: {
         styleOverrides: {
           paper: {
-            borderRadius: 20,
+            borderRadius: 12,
             border: `1px solid ${palette.divider}`,
             backgroundColor: alpha(palette.background.default, isLight ? 0.82 : 0.9),
             backdropFilter: "blur(18px)",
@@ -217,7 +222,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
+            borderRadius: 8,
             backgroundColor: alpha(palette.background.paper, 0.85),
             "& .MuiOutlinedInput-notchedOutline": {
               borderColor: alpha(palette.text.primary, isLight ? 0.18 : 0.24),
@@ -247,7 +252,58 @@ export const buildTheme = (mode: "light" | "dark") => {
         styleOverrides: {
           root: {
             fontWeight: 600,
-            minHeight: 38,
+            minHeight: 36,
+            borderRadius: 6,
+            color: palette.text.secondary,
+            "&.Mui-selected": {
+              color: palette.text.primary,
+              fontWeight: 700,
+              backgroundColor: alpha(palette.primary.main, isLight ? 0.18 : 0.25),
+            },
+          },
+        },
+      },
+      MuiTabs: {
+        styleOverrides: {
+          indicator: {
+            height: 3,
+            borderRadius: 999,
+            backgroundColor: palette.primary.main,
+          },
+        },
+      },
+      MuiToggleButtonGroup: {
+        styleOverrides: {
+          grouped: {
+            borderRadius: 6,
+          },
+        },
+      },
+      MuiToggleButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 6,
+            borderColor: alpha(palette.text.primary, isLight ? 0.2 : 0.28),
+            color: palette.text.secondary,
+            "&.Mui-selected": {
+              color: "#f7f7f7",
+              backgroundColor: alpha(palette.primary.main, 0.9),
+              borderColor: palette.primary.main,
+            },
+            "&.Mui-selected:hover": {
+              backgroundColor: palette.primary.main,
+            },
+          },
+        },
+      },
+      MuiMenuItem: {
+        styleOverrides: {
+          root: {
+            "&.Mui-selected": {
+              backgroundColor: alpha(palette.primary.main, isLight ? 0.15 : 0.22),
+              color: palette.text.primary,
+              fontWeight: 600,
+            },
           },
         },
       },

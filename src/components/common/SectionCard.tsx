@@ -10,7 +10,7 @@ interface SectionCardProps extends PropsWithChildren {
 export const SectionCard = ({ title, subtitle, actions, children }: SectionCardProps) => (
   <Card
     sx={{
-      borderRadius: 2.25,
+      borderRadius: 1.25,
       position: "relative",
       overflow: "hidden",
       "&::before": {

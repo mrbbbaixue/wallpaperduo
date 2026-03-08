@@ -106,6 +106,7 @@
     "PERMISSION_DENIED": "Permission denied (403). Check model access and account scope.",
     "REGION_RESTRICTED": "This model is unavailable in your region. Switch model or route through an available region.",
     "QUOTA_LIMIT": "Quota or rate limit reached. Retry later.",
+    "IMAGE_SIZE_INVALID": "Image size is invalid for the selected model. The app now auto-upscales; retry generation.",
     "TIMEOUT": "Request timeout. Increase timeout or lower concurrency.",
     "PASSCODE_INVALID": "Invalid key format. Please re-enter API key.",
     "UNKNOWN_ERROR": "Unknown error"

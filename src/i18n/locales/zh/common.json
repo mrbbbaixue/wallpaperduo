@@ -106,6 +106,7 @@
     "PERMISSION_DENIED": "权限不足或访问被拒绝（403），请检查模型可用性与账号权限。",
     "REGION_RESTRICTED": "当前模型在你所在地区不可用，请切换模型或更换可用区域线路。",
     "QUOTA_LIMIT": "配额或限流触发，请稍后重试。",
+    "IMAGE_SIZE_INVALID": "图像尺寸不符合模型要求，已自动放大处理；请重试生成。",
     "TIMEOUT": "请求超时，请提高超时时间或降低并发。",
     "PASSCODE_INVALID": "密钥格式无效，请重新填写 API Key。",
     "UNKNOWN_ERROR": "未知错误"

@@ -13,10 +13,10 @@ import { useTranslation } from "react-i18next";
 import type { TimeVariant } from "@/types/domain";
 
 const timeSlots: { key: TimeVariant; labelZh: string; labelEn: string; color: string }[] = [
-  { key: "dawn", labelZh: "晨", labelEn: "Dawn", color: "#ff9800" },
-  { key: "day", labelZh: "昼", labelEn: "Day", color: "#2196f3" },
-  { key: "dusk", labelZh: "昏", labelEn: "Dusk", color: "#e91e63" },
-  { key: "night", labelZh: "夜", labelEn: "Night", color: "#3f51b5" },
+  { key: "dawn", labelZh: "晨", labelEn: "Dawn", color: "#9d5f16" },
+  { key: "day", labelZh: "昼", labelEn: "Day", color: "#245b97" },
+  { key: "dusk", labelZh: "昏", labelEn: "Dusk", color: "#7f2f52" },
+  { key: "night", labelZh: "夜", labelEn: "Night", color: "#2e3f86" },
 ];
 
 interface TimeSlotSelectorProps {
@@ -66,16 +66,18 @@ export const TimeSlotSelector = ({
                 sx={{
                   flex: 1,
                   py: 0.8,
+                  border: "1px solid",
+                  borderColor: isActive ? slot.color : "divider",
                   textAlign: "center",
                   cursor: "pointer",
-                  bgcolor: isActive ? slot.color : "action.hover",
-                  color: isActive ? "white" : "text.secondary",
-                  "&:first-of-type": { borderRadius: "8px 0 0 8px" },
-                  "&:last-of-type": { borderRadius: "0 8px 8px 0" },
+                  bgcolor: isActive ? slot.color : "action.selected",
+                  color: isActive ? "#ffffff" : "text.primary",
+                  "&:first-of-type": { borderRadius: "6px 0 0 6px" },
+                  "&:last-of-type": { borderRadius: "0 6px 6px 0" },
                   transition: "all 0.2s",
                   fontWeight: isActive ? 700 : 400,
                   fontSize: "0.8rem",
-                  "&:hover": { opacity: 0.85 },
+                  "&:hover": { opacity: 0.9 },
                 }}
               >
                 {getLabel(slot)}
@@ -117,10 +119,12 @@ export const TimeSlotSelector = ({
                 label={`${getLabel(slot)}${isCurrent ? (isZh ? " (当前)" : " (current)") : ""}`}
                 onClick={() => toggleSlot(slot.key)}
                 variant={isSelected ? "filled" : "outlined"}
-                color={isSelected ? "primary" : "default"}
+                color="primary"
                 sx={{
-                  borderColor: isSelected ? undefined : slot.color,
-                  fontWeight: isSelected ? 600 : 400,
+                  borderColor: isSelected ? slot.color : "divider",
+                  bgcolor: isSelected ? slot.color : "transparent",
+                  color: isSelected ? "#fff" : "text.primary",
+                  fontWeight: isSelected ? 700 : 500,
                 }}
               />
             );

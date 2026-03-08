@@ -29,6 +29,11 @@ export const toUserError = (error: unknown): string => {
     logWarn("Mapped provider error", { raw: compactError(error), mapped });
     return mapped;
   }
+  if (/image size must be at least|parameter `size` specified .* not valid|size must be one of/i.test(message)) {
+    mapped = "IMAGE_SIZE_INVALID";
+    logWarn("Mapped provider error", { raw: compactError(error), mapped });
+    return mapped;
+  }
   if (/timeout/i.test(message)) {
     mapped = "TIMEOUT";
     logWarn("Mapped provider error", { raw: compactError(error), mapped });

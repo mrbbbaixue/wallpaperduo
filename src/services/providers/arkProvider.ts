@@ -20,7 +20,9 @@ import {
   logWarn,
   maskSecret,
   redactHeaders,
+  shortText,
 } from "@/utils/debugLog";
+import { withTimeout } from "@/utils/error";
 
 interface ArkProviderOptions {
   baseUrl: string;
@@ -45,10 +47,43 @@ interface ArkImageResponse {
 
 const isSeedreamModel = (model: string): boolean => /doubao-seedream-5-0/i.test(model);
 
-const toArkSizeString = (width: number, height: number): string => {
-  const safeWidth = Math.max(64, Math.round(width));
-  const safeHeight = Math.max(64, Math.round(height));
-  return `${safeWidth}x${safeHeight}`;
+const ARK_MIN_PIXELS = 3_686_400;
+const ARK_SIZE_STEP = 8;
+
+const alignUp = (value: number, step: number): number => Math.ceil(value / step) * step;
+
+const normalizeArkSize = (
+  width: number,
+  height: number,
+): { width: number; height: number; upscaled: boolean } => {
+  let safeWidth = Math.max(64, Math.round(width));
+  let safeHeight = Math.max(64, Math.round(height));
+  const sourceWidth = safeWidth;
+  const sourceHeight = safeHeight;
+
+  const area = safeWidth * safeHeight;
+  if (area < ARK_MIN_PIXELS) {
+    const scale = Math.sqrt(ARK_MIN_PIXELS / area);
+    safeWidth = Math.ceil(safeWidth * scale);
+    safeHeight = Math.ceil(safeHeight * scale);
+  }
+
+  safeWidth = alignUp(safeWidth, ARK_SIZE_STEP);
+  safeHeight = alignUp(safeHeight, ARK_SIZE_STEP);
+
+  while (safeWidth * safeHeight < ARK_MIN_PIXELS) {
+    if (safeWidth >= safeHeight) {
+      safeHeight += ARK_SIZE_STEP;
+    } else {
+      safeWidth += ARK_SIZE_STEP;
+    }
+  }
+
+  return {
+    width: safeWidth,
+    height: safeHeight,
+    upscaled: safeWidth !== sourceWidth || safeHeight !== sourceHeight,
+  };
 };
 
 const parseSceneJson = (text: string): SceneAnalysis => {
@@ -86,27 +121,80 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
     name: "ark",
     async testConnection() {
       const startedAt = performance.now();
-      await fetchJson<Record<string, unknown>>(
-        `${options.baseUrl}/models`,
-        {
-          method: "GET",
-          headers,
-        },
-        options.timeoutMs,
-        {
-          label: "ark:testConnection",
-        },
-      );
-      logInfo("Ark connectivity test passed", {
-        elapsedMs: Math.round(performance.now() - startedAt),
-      });
+      try {
+        await fetchJson<Record<string, unknown>>(
+          `${options.baseUrl}/models`,
+          {
+            method: "GET",
+            headers,
+          },
+          options.timeoutMs,
+          {
+            label: "ark:testConnection",
+          },
+        );
+        logInfo("Ark connectivity test passed", {
+          elapsedMs: Math.round(performance.now() - startedAt),
+          probe: "/models",
+        });
 
-      return {
-        ok: true,
-        provider: "ark",
-        latencyMs: Math.round(performance.now() - startedAt),
-        message: "Connected to Ark Runtime (/models)",
-      };
+        return {
+          ok: true,
+          provider: "ark",
+          latencyMs: Math.round(performance.now() - startedAt),
+          message: "Connected to Ark Runtime (/models)",
+        };
+      } catch (firstError) {
+        const firstMessage = compactError(firstError);
+        const looksLikeCors = /failed to fetch|networkerror|cors/i.test(firstMessage);
+        if (!looksLikeCors) {
+          throw firstError;
+        }
+
+        logWarn("Ark /models connectivity probe failed, falling back to /chat/completions", {
+          error: firstMessage,
+        });
+
+        const fallbackStartedAt = performance.now();
+        const fallbackResponse = await withTimeout(
+          fetch(`${options.baseUrl}/chat/completions`, {
+            method: "POST",
+            headers,
+            body: "{}",
+          }),
+          options.timeoutMs,
+        );
+        const fallbackElapsed = Math.round(performance.now() - fallbackStartedAt);
+        const fallbackBody = shortText(await fallbackResponse.text(), 220);
+
+        if (fallbackResponse.status === 401) {
+          throw new Error(`401 ${fallbackBody || "Unauthorized"}`);
+        }
+        if (fallbackResponse.status === 403) {
+          throw new Error(`403 ${fallbackBody || "Forbidden"}`);
+        }
+        if (!fallbackResponse.ok && fallbackResponse.status >= 500) {
+          throw new Error(`${fallbackResponse.status} ${fallbackBody}`);
+        }
+
+        logInfo("Ark connectivity fallback probe finished", {
+          status: fallbackResponse.status,
+          elapsedMs: fallbackElapsed,
+        });
+        return {
+          ok: true,
+          provider: "ark",
+          latencyMs: fallbackElapsed,
+          message:
+            fallbackResponse.ok
+              ? "Connected to Ark Runtime (fallback probe)"
+              : `Ark reachable (fallback probe ${fallbackResponse.status})`,
+          details:
+            fallbackResponse.ok
+              ? "GET /models may be blocked by provider CORS on current origin."
+              : fallbackBody,
+        };
+      }
     },
     async analyzeImage(input: AnalyzeInput) {
       const visionModel = options.visionModel?.trim() || options.model.trim();
@@ -173,7 +261,8 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
       });
       const imageDataUrl = await toDataUrl(input.prepared.blob);
       const prompt = `${input.variant.prompt}\nNegative prompt: ${input.variant.negativePrompt}\nSeed: ${input.variant.seed}`;
-      const size = toArkSizeString(input.prepared.width, input.prepared.height);
+      const normalizedSize = normalizeArkSize(input.prepared.width, input.prepared.height);
+      const size = `${normalizedSize.width}x${normalizedSize.height}`;
       const payload = isSeedreamModel(options.model)
         ? {
             model: options.model,
@@ -195,6 +284,8 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
       logInfo("Ark generation payload mode", {
         variantId: input.variant.id,
         seedreamMode: isSeedreamModel(options.model),
+        size,
+        upscaledToMeetMinimum: normalizedSize.upscaled,
         payloadPreview: {
           ...payload,
           image:

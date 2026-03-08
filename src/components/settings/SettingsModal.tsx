@@ -27,7 +27,7 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
         sx: {
           maxHeight: "92vh",
           backdropFilter: "blur(20px)",
-          borderRadius: 2.5,
+          borderRadius: 1.5,
         },
       }}
     >
