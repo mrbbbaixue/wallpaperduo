@@ -103,6 +103,45 @@ const parseSceneJson = (text: string): SceneAnalysis => {
   };
 };
 
+interface ArkErrorBody {
+  error?: {
+    code?: string;
+    message?: string;
+    param?: string;
+    type?: string;
+  };
+}
+
+const parseArkErrorBody = (raw: string): ArkErrorBody | null => {
+  if (!raw.trim()) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as ArkErrorBody;
+  } catch {
+    return null;
+  }
+};
+
+const isMissingModelError = (raw: string): boolean => {
+  const parsed = parseArkErrorBody(raw);
+  if (parsed?.error?.code !== "MissingParameter") {
+    return /MissingParameter/i.test(raw) && /model/i.test(raw);
+  }
+  const codeParam = parsed.error.param ?? "";
+  const codeMessage = parsed.error.message ?? "";
+  return /model/i.test(codeParam) || /model/i.test(codeMessage);
+};
+
+const toReadableProbeDetails = (raw: string): string => {
+  const parsed = parseArkErrorBody(raw);
+  const providerMessage = parsed?.error?.message?.trim();
+  if (providerMessage) {
+    return shortText(providerMessage, 220);
+  }
+  return shortText(raw, 220);
+};
+
 export const createArkProvider = (options: ArkProviderOptions): ImageProvider => {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -148,6 +187,15 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
         const firstMessage = compactError(firstError);
         const looksLikeCors = /failed to fetch|networkerror|cors/i.test(firstMessage);
         if (!looksLikeCors) {
+          if (isMissingModelError(firstMessage)) {
+            return {
+              ok: true,
+              provider: "ark",
+              latencyMs: Math.round(performance.now() - startedAt),
+              message: "Ark reachable (model probe required)",
+              details: "Connectivity is available. Configure a generation/vision model to complete probe.",
+            };
+          }
           throw firstError;
         }
 
@@ -155,17 +203,27 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
           error: firstMessage,
         });
 
+        const probeModel = options.visionModel?.trim() || options.model.trim();
+        const probeBody = probeModel
+          ? JSON.stringify({
+              model: probeModel,
+              messages: [{ role: "user", content: "ping" }],
+              max_tokens: 1,
+            })
+          : "{}";
         const fallbackStartedAt = performance.now();
         const fallbackResponse = await withTimeout(
           fetch(`${options.baseUrl}/chat/completions`, {
             method: "POST",
             headers,
-            body: "{}",
+            body: probeBody,
           }),
           options.timeoutMs,
         );
         const fallbackElapsed = Math.round(performance.now() - fallbackStartedAt);
         const fallbackBody = shortText(await fallbackResponse.text(), 220);
+        const fallbackDetails = toReadableProbeDetails(fallbackBody);
+        const fallbackMissingModel = isMissingModelError(fallbackBody);
 
         if (fallbackResponse.status === 401) {
           throw new Error(`401 ${fallbackBody || "Unauthorized"}`);
@@ -182,17 +240,20 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
           elapsedMs: fallbackElapsed,
         });
         return {
-          ok: true,
+          ok: fallbackResponse.ok || fallbackMissingModel,
           provider: "ark",
           latencyMs: fallbackElapsed,
           message:
             fallbackResponse.ok
               ? "Connected to Ark Runtime (fallback probe)"
-              : `Ark reachable (fallback probe ${fallbackResponse.status})`,
-          details:
-            fallbackResponse.ok
-              ? "GET /models may be blocked by provider CORS on current origin."
-              : fallbackBody,
+              : fallbackMissingModel
+                ? "Ark reachable (model probe required)"
+                : `Ark probe returned ${fallbackResponse.status}`,
+          details: fallbackResponse.ok
+            ? "GET /models may be blocked by provider CORS on current origin."
+            : fallbackMissingModel
+              ? "Connectivity is available. Configure a generation/vision model to complete probe."
+              : fallbackDetails,
         };
       }
     },
