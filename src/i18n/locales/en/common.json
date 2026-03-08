@@ -55,7 +55,16 @@
     "alignDesc": "Use ORB + RANSAC + Warp on generated outputs",
     "aligned": "Aligned",
     "manualNudge": "Manual nudge (basic)",
-    "baseSelect": "Reference Image"
+    "baseSelect": "Reference Image",
+    "singleMode": "Single View",
+    "compareMode": "Before/After",
+    "status": {
+      "idle": "Idle",
+      "queued": "Queued",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "failed": "Failed"
+    }
   },
   "export": {
     "title": "Export Wizard",

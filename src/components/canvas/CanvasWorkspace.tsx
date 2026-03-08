@@ -1,13 +1,22 @@
+import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
+import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
-import { Alert, Box, Button, Stack, Typography } from "@mui/material";
-import { useCallback, useRef, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SectionCard } from "@/components/common/SectionCard";
 import { CanvasControls } from "@/components/canvas/CanvasControls";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
-import type { TimeVariant } from "@/types/domain";
 
 const checkerboardBg = `
   repeating-conic-gradient(
@@ -20,15 +29,41 @@ export const CanvasWorkspace = () => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
   const inputRef = useRef<HTMLInputElement>(null);
+
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const tasks = useWorkflowStore((s) => s.tasks);
+  const activeResultId = useWorkflowStore((s) => s.activeResultId);
+  const setActiveResultId = useWorkflowStore((s) => s.setActiveResultId);
+  const previewMode = useWorkflowStore((s) => s.previewMode);
+  const setPreviewMode = useWorkflowStore((s) => s.setPreviewMode);
+
   const [error, setError] = useState("");
-  const [previewSlot, setPreviewSlot] = useState<TimeVariant | "source">("source");
   const [isDragging, setIsDragging] = useState(false);
 
-  const succeededTasks = tasks.filter((t) => t.status === "succeeded" && t.result);
+  const succeededTasks = tasks.filter((task) => task.status === "succeeded" && task.result);
+  const activeTask = activeResultId
+    ? succeededTasks.find((task) => task.id === activeResultId)
+    : undefined;
+
+  useEffect(() => {
+    if (succeededTasks.length === 0) {
+      if (activeResultId) setActiveResultId(undefined);
+      if (previewMode !== "single") setPreviewMode("single");
+      return;
+    }
+
+    if (!activeResultId || !succeededTasks.some((task) => task.id === activeResultId)) {
+      setActiveResultId(succeededTasks[0].id);
+    }
+  }, [
+    activeResultId,
+    previewMode,
+    setActiveResultId,
+    setPreviewMode,
+    succeededTasks,
+  ]);
 
   const onFile = useCallback(
     async (file?: File) => {
@@ -46,7 +81,6 @@ export const CanvasWorkspace = () => {
         });
         setError("");
         setSourceImage(loaded);
-        setPreviewSlot("source");
       } catch {
         setError("INVALID_IMAGE");
       }
@@ -55,10 +89,10 @@ export const CanvasWorkspace = () => {
   );
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
+    (event: React.DragEvent) => {
+      event.preventDefault();
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
+      const file = event.dataTransfer.files[0];
       if (file && file.type.startsWith("image/")) {
         void onFile(file);
       }
@@ -66,8 +100,8 @@ export const CanvasWorkspace = () => {
     [onFile],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
     setIsDragging(true);
   }, []);
 
@@ -75,44 +109,85 @@ export const CanvasWorkspace = () => {
     setIsDragging(false);
   }, []);
 
-  // Determine what image to show
-  const previewUrl = (() => {
-    if (previewSlot !== "source" && succeededTasks.length > 0) {
-      const match = succeededTasks.find((task) => task.timeOfDay === previewSlot);
-      if (match?.result?.objectUrl) return match.result.objectUrl;
-    }
-    if (preparedImage) return preparedImage.objectUrl;
-    if (sourceImage) return sourceImage.objectUrl;
-    return null;
-  })();
+  const basePreviewUrl = preparedImage?.objectUrl ?? sourceImage?.objectUrl ?? null;
+  const resultPreviewUrl = activeTask?.result?.objectUrl ?? null;
+  const previewUrl = resultPreviewUrl ?? basePreviewUrl;
+  const compareReady = previewMode === "compare" && !!basePreviewUrl && !!resultPreviewUrl;
 
   return (
-    <SectionCard
-      title={t("workspace.uploadTitle")}
-      subtitle={isZh ? "主画布采用 3:1 展板比例，优先保证构图完整。" : "Primary board uses a 3:1 ratio to preserve composition."}
-      actions={
-        <>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: "none" }}
-            onChange={(e) => void onFile(e.currentTarget.files?.[0])}
-          />
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<UploadRoundedIcon />}
-            onClick={() => inputRef.current?.click()}
-            sx={{ minWidth: 116 }}
-          >
-            {t("common.upload")}
-          </Button>
-        </>
-      }
+    <Box
+      sx={{
+        "& > .MuiCard-root": {
+          border: 0,
+          borderRadius: 0,
+          boxShadow: "none",
+          background: "transparent",
+          backdropFilter: "none",
+        },
+        "& > .MuiCard-root::before": { display: "none" },
+      }}
     >
-      <Stack spacing={2}>
-        {/* Canvas Area */}
+      <SectionCard
+        title={t("workspace.uploadTitle")}
+        subtitle={
+          isZh
+            ? "主画布采用 3:1 展板比例，优先保证构图完整。"
+            : "Primary board uses a 3:1 ratio to preserve composition."
+        }
+        actions={
+          <>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: "none" }}
+              onChange={(event) => void onFile(event.currentTarget.files?.[0])}
+            />
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<UploadRoundedIcon />}
+              onClick={() => inputRef.current?.click()}
+              sx={{ minWidth: 116 }}
+            >
+              {t("common.upload")}
+            </Button>
+          </>
+        }
+      >
+      <Stack spacing={1.5}>
+        {activeTask ? (
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Button
+              size="small"
+              variant={activeResultId ? "outlined" : "contained"}
+              onClick={() => setActiveResultId(undefined)}
+            >
+              {t("results.baseSelect")}
+            </Button>
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              value={previewMode}
+              onChange={(_, next: "single" | "compare" | null) => {
+                if (next) setPreviewMode(next);
+              }}
+            >
+              <ToggleButton value="single">
+                <ImageRoundedIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                {t("results.singleMode")}
+              </ToggleButton>
+              <ToggleButton value="compare">
+                <CompareArrowsRoundedIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                {t("results.compareMode")}
+              </ToggleButton>
+            </ToggleButtonGroup>
+            <Typography variant="caption" color="text.secondary">
+              {isZh ? `当前结果：${activeTask.label}` : `Current result: ${activeTask.label}`}
+            </Typography>
+          </Stack>
+        ) : null}
+
         <Box
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -121,8 +196,12 @@ export const CanvasWorkspace = () => {
             position: "relative",
             width: "100%",
             aspectRatio: "3 / 1",
-            minHeight: { xs: 230, md: 350 },
-            borderRadius: 1.25,
+            minHeight: {
+              xs: 230,
+              // Keep the canvas stage near full viewport height on desktop by default.
+              md: "clamp(520px, calc(100vh - 190px), 920px)",
+            },
+            borderRadius: 2,
             border: isDragging ? "2px dashed" : "1px solid",
             borderColor: isDragging ? "primary.main" : "divider",
             background: checkerboardBg,
@@ -131,34 +210,45 @@ export const CanvasWorkspace = () => {
             justifyContent: "center",
             overflow: "hidden",
             isolation: "isolate",
-            backdropFilter: "blur(10px)",
-            transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
+            transition: "border-color 0.2s, box-shadow 0.2s",
             boxShadow: isDragging
-              ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 24px 60px rgba(88, 189, 208, 0.22)"
-              : "0 20px 56px rgba(16, 24, 29, 0.22)",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              inset: "10% 8% auto 8%",
-              height: "52%",
-              background:
-                "radial-gradient(circle at 24% 36%, rgba(64, 131, 152, 0.28), transparent 54%), radial-gradient(circle at 72% 28%, rgba(178, 126, 74, 0.24), transparent 50%)",
-              filter: "blur(30px)",
-              pointerEvents: "none",
-            },
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              borderRadius: "inherit",
-              border: "1px solid rgba(255,255,255,0.16)",
-              mixBlendMode: "overlay",
-              pointerEvents: "none",
-              zIndex: 1,
-            },
+              ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 20px 48px rgba(88, 189, 208, 0.22)"
+              : "0 14px 36px rgba(16, 24, 29, 0.15)",
           }}
         >
-          {previewUrl ? (
+          {compareReady ? (
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+              }}
+            >
+              <Stack spacing={0.5} sx={{ p: 1, borderRight: "1px solid", borderColor: "divider" }}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                  {isZh ? "基准图" : "Baseline"}
+                </Typography>
+                <Box
+                  component="img"
+                  src={basePreviewUrl ?? ""}
+                  alt="base preview"
+                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              </Stack>
+              <Stack spacing={0.5} sx={{ p: 1 }}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                  {isZh ? "当前结果" : "Current result"}
+                </Typography>
+                <Box
+                  component="img"
+                  src={resultPreviewUrl ?? ""}
+                  alt={activeTask?.label ?? "result preview"}
+                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              </Stack>
+            </Box>
+          ) : previewUrl ? (
             <Box
               component="img"
               src={previewUrl}
@@ -167,16 +257,10 @@ export const CanvasWorkspace = () => {
                 maxWidth: "100%",
                 maxHeight: "100%",
                 objectFit: "contain",
-                position: "relative",
-                zIndex: 2,
               }}
             />
           ) : (
-            <Stack
-              alignItems="center"
-              spacing={1}
-              sx={{ py: 6, position: "relative", zIndex: 2 }}
-            >
+            <Stack alignItems="center" spacing={1} sx={{ py: 6 }}>
               <UploadRoundedIcon sx={{ fontSize: 48, color: "text.disabled" }} />
               <Typography variant="body2" color="text.secondary">
                 {t("workspace.uploadHint")}
@@ -185,41 +269,17 @@ export const CanvasWorkspace = () => {
           )}
         </Box>
 
-        {/* Source image info */}
-        {sourceImage && (
+        {sourceImage ? (
           <Typography variant="caption" color="text.secondary">
             {sourceImage.name} · {sourceImage.width}x{sourceImage.height}
           </Typography>
-        )}
+        ) : null}
 
-        {/* Time slot preview tabs (only when there are generated results) */}
-        {succeededTasks.length > 0 && (
-          <Stack direction="row" spacing={0.75} flexWrap="wrap">
-            <Button
-              size="small"
-              variant={previewSlot === "source" ? "contained" : "outlined"}
-              onClick={() => setPreviewSlot("source")}
-            >
-              {t("results.baseSelect")}
-            </Button>
-            {succeededTasks.map((task) => (
-              <Button
-                key={task.id}
-                size="small"
-                variant={previewSlot === task.timeOfDay ? "contained" : "outlined"}
-                onClick={() => setPreviewSlot(task.timeOfDay)}
-              >
-                {task.label}
-              </Button>
-            ))}
-          </Stack>
-        )}
+        {error ? <Alert severity="error">{t(`errors.${error}`, error)}</Alert> : null}
 
-        {error && <Alert severity="error">{t(`errors.${error}`, error)}</Alert>}
-
-        {/* Canvas Controls */}
-        {sourceImage && <CanvasControls />}
+        {sourceImage ? <CanvasControls /> : null}
       </Stack>
-    </SectionCard>
+      </SectionCard>
+    </Box>
   );
 };

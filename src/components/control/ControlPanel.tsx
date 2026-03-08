@@ -130,15 +130,40 @@ export const ControlPanel = () => {
   };
 
   return (
-    <SectionCard
-      title={isZh ? "控制面板" : "Control Panel"}
-      subtitle={
-        isZh
-          ? `视觉分析: ${analysisProvider} · 图像生成: ${generationProvider}`
-          : `Analysis: ${analysisProvider} · Generation: ${generationProvider}`
-      }
+    <Box
+      sx={{
+        "& > .MuiCard-root": {
+          border: 0,
+          borderRadius: 0,
+          boxShadow: "none",
+          background: "transparent",
+          backdropFilter: "none",
+          minHeight: {
+            md: "clamp(520px, calc(100vh - 190px), 920px)",
+          },
+        },
+        "& > .MuiCard-root::before": { display: "none" },
+        "& > .MuiCard-root > .MuiCardContent-root": {
+          height: { md: "100%" },
+        },
+      }}
     >
-      <Stack spacing={2}>
+      <SectionCard
+        title={isZh ? "控制面板" : "Control Panel"}
+        subtitle={
+          isZh
+            ? `视觉分析: ${analysisProvider} · 图像生成: ${generationProvider}`
+            : `Analysis: ${analysisProvider} · Generation: ${generationProvider}`
+        }
+      >
+        <Stack
+          spacing={2}
+          sx={{
+            height: { md: "100%" },
+            overflowY: { md: "auto" },
+            pr: { md: 0.5 },
+          }}
+        >
         <Box
           sx={{
             p: 1.5,
@@ -259,7 +284,8 @@ export const ControlPanel = () => {
             <TaskQueue />
           </Stack>
         </Box>
-      </Stack>
-    </SectionCard>
+        </Stack>
+      </SectionCard>
+    </Box>
   );
 };
