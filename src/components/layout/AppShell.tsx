@@ -1,38 +1,29 @@
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
   AppBar,
   Box,
-  Button,
   Chip,
-  Container,
   IconButton,
-  Stack,
   Toolbar,
   Typography,
 } from "@mui/material";
-import type { PropsWithChildren } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { useState, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
+import { SettingsModal } from "@/components/settings/SettingsModal";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
-const navPathMap = [
-  { key: "workspace", path: "/" },
-  { key: "prompts", path: "/prompts" },
-  { key: "results", path: "/results" },
-  { key: "export", path: "/export" },
-  { key: "settings", path: "/settings" },
-];
-
 export const AppShell = ({ children }: PropsWithChildren) => {
-  const location = useLocation();
   const { t, i18n } = useTranslation();
   const language = useSettingsStore((state) => state.language);
   const setLanguage = useSettingsStore((state) => state.setLanguage);
   const themeMode = useSettingsStore((state) => state.themeMode);
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const toggleLanguage = () => {
     const next = language === "zh" ? "en" : "zh";
@@ -41,12 +32,29 @@ export const AppShell = ({ children }: PropsWithChildren) => {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", pb: 8 }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          inset: "-18% -12% auto -12%",
+          height: "68vh",
+          background:
+            "radial-gradient(circle at 22% 30%, rgba(66, 165, 193, 0.34), transparent 46%), radial-gradient(circle at 78% 20%, rgba(255, 167, 106, 0.32), transparent 42%)",
+          filter: "blur(80px)",
+          pointerEvents: "none",
+          zIndex: 0,
+        },
+      }}
+    >
       <AppBar
         position="sticky"
         color="transparent"
         elevation={0}
-        sx={{ backdropFilter: "blur(14px)" }}
+        sx={{ backdropFilter: "blur(18px)", zIndex: 2 }}
       >
         <Toolbar sx={{ gap: 2, flexWrap: "wrap" }}>
           <Typography variant="h5" sx={{ flexGrow: 1 }}>
@@ -69,29 +77,17 @@ export const AppShell = ({ children }: PropsWithChildren) => {
           >
             {themeMode === "light" ? <DarkModeRoundedIcon /> : <LightModeRoundedIcon />}
           </IconButton>
+          <IconButton onClick={() => setSettingsOpen(true)} aria-label="settings">
+            <SettingsRoundedIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ mt: 4 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1} sx={{ mb: 2 }}>
-          {navPathMap.map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <Button
-                key={item.path}
-                component={NavLink}
-                to={item.path}
-                variant={active ? "contained" : "outlined"}
-                size="small"
-              >
-                {t(`nav.${item.key}`)}
-              </Button>
-            );
-          })}
-        </Stack>
-
+      <Box sx={{ mt: 0, px: 0, position: "relative", zIndex: 1 }}>
         {children}
-      </Container>
+      </Box>
+
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Box>
   );
 };

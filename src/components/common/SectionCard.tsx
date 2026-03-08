@@ -8,9 +8,9 @@ interface SectionCardProps extends PropsWithChildren {
 }
 
 export const SectionCard = ({ title, subtitle, actions, children }: SectionCardProps) => (
-  <Card>
-    <CardContent>
-      <Stack spacing={2}>
+  <Card sx={{ borderRadius: 1.5 }}>
+    <CardContent sx={{ p: { xs: 1, md: 1.25 }, "&:last-child": { pb: { xs: 1, md: 1.25 } } }}>
+      <Stack spacing={1.25}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
           <Stack spacing={0.5}>
             <Typography variant="h6">{title}</Typography>

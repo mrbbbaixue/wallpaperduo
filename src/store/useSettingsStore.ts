@@ -9,42 +9,42 @@ import type {
   ProviderConfigRecord,
 } from "@/types/provider";
 import type { ProviderKind } from "@/types/domain";
-import { decryptSecret, encryptSecret, isEncryptedSecret } from "@/utils/crypto";
 
 type UiLanguage = "en" | "zh";
 type UiThemeMode = "light" | "dark";
+
+interface PromptSettings {
+  analysisUserPrompt: string;
+  generationPrefix: string;
+  defaultNegativePrompt: string;
+}
 
 interface SettingsState {
   language: UiLanguage;
   themeMode: UiThemeMode;
   selectedProvider: ProviderKind;
+  analysisProvider: ProviderKind;
+  generationProvider: ProviderKind;
   providers: ProviderConfigRecord;
+  promptSettings: PromptSettings;
   heicExperimentalEnabled: boolean;
   localFallbackEnabled: boolean;
-  keysEncrypted: boolean;
   lastConnectivity: Partial<Record<ProviderKind, ConnectivityResult>>;
   setLanguage: (language: UiLanguage) => void;
   setThemeMode: (themeMode: UiThemeMode) => void;
   setSelectedProvider: (provider: ProviderKind) => void;
+  setAnalysisProvider: (provider: ProviderKind) => void;
+  setGenerationProvider: (provider: ProviderKind) => void;
   setProviderConfig: (provider: ProviderKind, patch: Partial<ProviderConfig>) => void;
   setComfyNodeMapping: (patch: Partial<ComfyProviderConfig["nodeMapping"]>) => void;
   setComfyWorkflowTemplate: (template: string) => void;
+  setPromptSettings: (patch: Partial<PromptSettings>) => void;
   setConnectivityResult: (provider: ProviderKind, result: ConnectivityResult) => void;
   setHeicExperimentalEnabled: (enabled: boolean) => void;
   setLocalFallbackEnabled: (enabled: boolean) => void;
-  encryptAllKeys: (passphrase: string) => void;
-  decryptAllKeys: (passphrase: string) => void;
-  resolveApiKey: (provider: ProviderKind, passphrase?: string) => string;
 }
 
 const getDefaultArkBaseUrl = (): string => {
-  if (typeof window === "undefined") {
-    return "https://ark.cn-beijing.volces.com/api/v3";
-  }
-  const host = window.location.hostname;
-  if (host === "localhost" || host === "127.0.0.1") {
-    return "/api/ark";
-  }
   return "https://ark.cn-beijing.volces.com/api/v3";
 };
 
@@ -53,6 +53,7 @@ const createDefaultProviders = (): ProviderConfigRecord => ({
     baseUrl: "https://openrouter.ai/api/v1",
     apiKey: "",
     model: "google/gemini-2.5-flash-image-preview",
+    visionModel: "google/gemini-2.5-flash",
     timeoutMs: 60000,
     concurrency: 2,
     extraHeaders: '{"HTTP-Referer":"https://example.com","X-Title":"WallpaperDuo"}',
@@ -61,6 +62,7 @@ const createDefaultProviders = (): ProviderConfigRecord => ({
     baseUrl: getDefaultArkBaseUrl(),
     apiKey: "",
     model: "doubao-seedream-5-0-260128",
+    visionModel: "doubao-1-5-thinking-vision-latest",
     timeoutMs: 60000,
     concurrency: 2,
     extraHeaders: "{}",
@@ -85,20 +87,37 @@ const createDefaultProviders = (): ProviderConfigRecord => ({
   },
 });
 
+const defaultPromptSettings: PromptSettings = {
+  analysisUserPrompt: "关注场景结构、关键主体、光照与时段线索，输出简洁稳定的结构化描述。",
+  generationPrefix: "高质量壁纸，保留原始构图和主体位置。",
+  defaultNegativePrompt: "blur, artifact, text, geometry shift, low quality",
+};
+
+const sanitizeLegacyApiKey = (value: unknown): string => {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.startsWith("enc::") ? "" : value;
+};
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       language: "zh",
       themeMode: "light",
       selectedProvider: "openrouter",
+      analysisProvider: "openrouter",
+      generationProvider: "openrouter",
       providers: createDefaultProviders(),
+      promptSettings: defaultPromptSettings,
       heicExperimentalEnabled: false,
       localFallbackEnabled: true,
-      keysEncrypted: false,
       lastConnectivity: {},
       setLanguage: (language) => set({ language }),
       setThemeMode: (themeMode) => set({ themeMode }),
       setSelectedProvider: (selectedProvider) => set({ selectedProvider }),
+      setAnalysisProvider: (analysisProvider) => set({ analysisProvider }),
+      setGenerationProvider: (generationProvider) => set({ generationProvider }),
       setProviderConfig: (provider, patch) =>
         set((state) => ({
           providers: {
@@ -123,6 +142,13 @@ export const useSettingsStore = create<SettingsState>()(
             comfyui: { ...state.providers.comfyui, workflowTemplate },
           },
         })),
+      setPromptSettings: (patch) =>
+        set((state) => ({
+          promptSettings: {
+            ...state.promptSettings,
+            ...patch,
+          },
+        })),
       setConnectivityResult: (provider, result) =>
         set((state) => ({
           lastConnectivity: {
@@ -132,108 +158,103 @@ export const useSettingsStore = create<SettingsState>()(
         })),
       setHeicExperimentalEnabled: (heicExperimentalEnabled) => set({ heicExperimentalEnabled }),
       setLocalFallbackEnabled: (localFallbackEnabled) => set({ localFallbackEnabled }),
-      encryptAllKeys: (passphrase) => {
-        if (!passphrase.trim()) {
-          throw new Error("PASSCODE_INVALID");
-        }
-        set((state) => ({
-          keysEncrypted: true,
-          providers: {
-            openrouter: {
-              ...state.providers.openrouter,
-              apiKey: encryptSecret(state.providers.openrouter.apiKey, passphrase),
-            },
-            ark: {
-              ...state.providers.ark,
-              apiKey: encryptSecret(state.providers.ark.apiKey, passphrase),
-            },
-            comfyui: {
-              ...state.providers.comfyui,
-              apiKey: encryptSecret(state.providers.comfyui.apiKey, passphrase),
-            },
-          },
-        }));
-      },
-      decryptAllKeys: (passphrase) => {
-        if (!passphrase.trim()) {
-          throw new Error("PASSCODE_INVALID");
-        }
-        set((state) => ({
-          keysEncrypted: false,
-          providers: {
-            openrouter: {
-              ...state.providers.openrouter,
-              apiKey: decryptSecret(state.providers.openrouter.apiKey, passphrase),
-            },
-            ark: {
-              ...state.providers.ark,
-              apiKey: decryptSecret(state.providers.ark.apiKey, passphrase),
-            },
-            comfyui: {
-              ...state.providers.comfyui,
-              apiKey: decryptSecret(state.providers.comfyui.apiKey, passphrase),
-            },
-          },
-        }));
-      },
-      resolveApiKey: (provider, passphrase) => {
-        const secret = get().providers[provider].apiKey;
-        if (!secret) {
-          return "";
-        }
-        if (!isEncryptedSecret(secret)) {
-          return secret;
-        }
-        if (!passphrase) {
-          throw new Error("PASSCODE_INVALID");
-        }
-        return decryptSecret(secret, passphrase);
-      },
     }),
     {
       name: "wallpaperduo.settings.v1",
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== "object") {
           return persistedState;
         }
-        if (version >= 2) {
-          return persistedState;
-        }
 
         const state = persistedState as {
+          selectedProvider?: ProviderKind;
+          analysisProvider?: ProviderKind;
+          generationProvider?: ProviderKind;
           providers?: {
             ark?: {
               baseUrl?: string;
             };
           };
+          promptSettings?: Partial<PromptSettings>;
         };
 
-        const currentArkBaseUrl = state.providers?.ark?.baseUrl;
-        if (currentArkBaseUrl === "https://ark.cn-beijing.volces.com/api/v3") {
-          const nextArkBaseUrl = getDefaultArkBaseUrl();
-          return {
-            ...state,
-            providers: {
-              ...state.providers,
-              ark: {
-                ...state.providers?.ark,
-                baseUrl: nextArkBaseUrl,
+        let nextState: typeof state = { ...state };
+
+        if (version < 2) {
+          const currentArkBaseUrl = state.providers?.ark?.baseUrl;
+          if (currentArkBaseUrl === "https://ark.cn-beijing.volces.com/api/v3") {
+            const nextArkBaseUrl = getDefaultArkBaseUrl();
+            nextState = {
+              ...nextState,
+              providers: {
+                ...nextState.providers,
+                ark: {
+                  ...nextState.providers?.ark,
+                  baseUrl: nextArkBaseUrl,
+                },
               },
+            };
+          }
+        }
+
+        if (version < 3) {
+          const legacyProvider = state.selectedProvider ?? "openrouter";
+          const legacyProviders = (nextState as { providers?: Record<string, unknown> }).providers;
+          const patchedProviders = legacyProviders
+            ? {
+                ...legacyProviders,
+                openrouter: legacyProviders.openrouter
+                  ? {
+                      ...(legacyProviders.openrouter as Record<string, unknown>),
+                      apiKey: sanitizeLegacyApiKey(
+                        (legacyProviders.openrouter as Record<string, unknown>).apiKey,
+                      ),
+                    }
+                  : legacyProviders.openrouter,
+                ark: legacyProviders.ark
+                  ? {
+                      ...(legacyProviders.ark as Record<string, unknown>),
+                      apiKey: sanitizeLegacyApiKey(
+                        (legacyProviders.ark as Record<string, unknown>).apiKey,
+                      ),
+                    }
+                  : legacyProviders.ark,
+                comfyui: legacyProviders.comfyui
+                  ? {
+                      ...(legacyProviders.comfyui as Record<string, unknown>),
+                      apiKey: sanitizeLegacyApiKey(
+                        (legacyProviders.comfyui as Record<string, unknown>).apiKey,
+                      ),
+                    }
+                  : legacyProviders.comfyui,
+              }
+            : undefined;
+
+          nextState = {
+            ...nextState,
+            providers: patchedProviders as typeof state.providers,
+            analysisProvider: state.analysisProvider ?? legacyProvider,
+            generationProvider: state.generationProvider ?? legacyProvider,
+            promptSettings: {
+              ...defaultPromptSettings,
+              ...(state.promptSettings ?? {}),
             },
           };
         }
 
-        return persistedState;
+        return nextState;
       },
       partialize: (state) => ({
         language: state.language,
         themeMode: state.themeMode,
         selectedProvider: state.selectedProvider,
+        analysisProvider: state.analysisProvider,
+        generationProvider: state.generationProvider,
         providers: state.providers,
+        promptSettings: state.promptSettings,
         heicExperimentalEnabled: state.heicExperimentalEnabled,
         localFallbackEnabled: state.localFallbackEnabled,
-        keysEncrypted: state.keysEncrypted,
       }),
     },
   ),

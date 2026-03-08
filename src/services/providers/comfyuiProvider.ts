@@ -209,8 +209,6 @@ export const createComfyUiProvider = (config: ComfyProviderConfig): ImageProvide
         timeoutMs: config.timeoutMs,
         label: "comfyui:view-image",
         headers,
-        preferLocalProxy: false,
-        allowLocalProxyFallback: true,
       }).catch((error) => {
         logError("ComfyUI image download failed", {
           error: compactError(error),

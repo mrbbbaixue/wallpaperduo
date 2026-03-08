@@ -26,6 +26,7 @@ interface ArkProviderOptions {
   baseUrl: string;
   apiKey: string;
   model: string;
+  visionModel?: string;
   timeoutMs: number;
   extraHeaders: string;
 }
@@ -44,9 +45,10 @@ interface ArkImageResponse {
 
 const isSeedreamModel = (model: string): boolean => /doubao-seedream-5-0/i.test(model);
 
-const estimateArkSizePreset = (width: number, height: number): "1K" | "2K" => {
-  const longer = Math.max(width, height);
-  return longer >= 1800 ? "2K" : "1K";
+const toArkSizeString = (width: number, height: number): string => {
+  const safeWidth = Math.max(64, Math.round(width));
+  const safeHeight = Math.max(64, Math.round(height));
+  return `${safeWidth}x${safeHeight}`;
 };
 
 const parseSceneJson = (text: string): SceneAnalysis => {
@@ -107,7 +109,8 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
       };
     },
     async analyzeImage(input: AnalyzeInput) {
-      if (!options.model.trim()) {
+      const visionModel = options.visionModel?.trim() || options.model.trim();
+      if (!visionModel) {
         throw new Error("ARK_MODEL_REQUIRED");
       }
       const imageDataUrl = await toDataUrl(input.prepared.blob);
@@ -117,7 +120,7 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
           method: "POST",
           headers,
           body: JSON.stringify({
-            model: options.model,
+            model: visionModel,
             messages: [
               {
                 role: "user",
@@ -170,6 +173,7 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
       });
       const imageDataUrl = await toDataUrl(input.prepared.blob);
       const prompt = `${input.variant.prompt}\nNegative prompt: ${input.variant.negativePrompt}\nSeed: ${input.variant.seed}`;
+      const size = toArkSizeString(input.prepared.width, input.prepared.height);
       const payload = isSeedreamModel(options.model)
         ? {
             model: options.model,
@@ -177,7 +181,7 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
             image: imageDataUrl,
             sequential_image_generation: "disabled",
             response_format: "b64_json",
-            size: estimateArkSizePreset(input.prepared.width, input.prepared.height),
+            size,
             stream: false,
             watermark: true,
           }
@@ -185,7 +189,7 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
             model: options.model,
             prompt,
             response_format: "b64_json",
-            size: `${input.prepared.width}x${input.prepared.height}`,
+            size,
           };
 
       logInfo("Ark generation payload mode", {
@@ -228,26 +232,14 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
           variantId: input.variant.id,
           imageUrl: image.url,
         });
-        // Warn about potential CORS issues in production
-        const isProduction =
-          typeof window !== "undefined" &&
-          window.location.hostname !== "localhost" &&
-          window.location.hostname !== "127.0.0.1";
-        if (isProduction) {
-          logWarn(
-            "Downloading image via proxy in production may fail due to missing /api/image-proxy endpoint",
-            {
-              variantId: input.variant.id,
-            },
-          );
-        }
+        logWarn("Ark URL image fallback: using direct browser download", {
+          variantId: input.variant.id,
+        });
         return {
           blob: await downloadProviderImage({
             url: image.url,
             timeoutMs: options.timeoutMs,
             label: "ark:image-download",
-            preferLocalProxy: true,
-            allowLocalProxyFallback: true,
           }),
           provider: "ark",
           source: "provider",

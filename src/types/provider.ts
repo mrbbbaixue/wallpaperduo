@@ -23,6 +23,7 @@ export interface ProviderConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  visionModel?: string;
   timeoutMs: number;
   concurrency: number;
   extraHeaders: string;

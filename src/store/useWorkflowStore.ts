@@ -49,8 +49,8 @@ interface WorkflowState {
 }
 
 export const useWorkflowStore = create<WorkflowState>((set) => ({
-  ratioId: "16:9",
-  customRatio: { width: 16, height: 9 },
+  ratioId: "3:1",
+  customRatio: { width: 3, height: 1 },
   prepareMode: "crop",
   tasks: [],
   alignmentResults: {},

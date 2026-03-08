@@ -26,6 +26,7 @@ interface OpenRouterProviderOptions {
   baseUrl: string;
   apiKey: string;
   model: string;
+  visionModel?: string;
   timeoutMs: number;
   extraHeaders: string;
 }
@@ -98,25 +99,13 @@ const tryExtractImage = async (data: OpenRouterChatResponse, timeoutMs: number):
     return decodeBase64Image(b64);
   }
   if (url) {
-    // Warn about potential CORS issues in production when using URL
-    const isProduction =
-      typeof window !== "undefined" &&
-      window.location.hostname !== "localhost" &&
-      window.location.hostname !== "127.0.0.1";
-    if (isProduction) {
-      logWarn(
-        "OpenRouter returned image URL instead of base64; downloading via proxy may fail in production",
-        {
-          url,
-        },
-      );
-    }
+    logWarn("OpenRouter returned image URL instead of base64; using direct browser download", {
+      url,
+    });
     return downloadProviderImage({
       url,
       timeoutMs,
       label: "openrouter:image-download",
-      preferLocalProxy: true,
-      allowLocalProxyFallback: true,
     });
   }
   throw new Error("OPENROUTER_IMAGE_NOT_FOUND");
@@ -154,9 +143,10 @@ export const createOpenRouterProvider = (options: OpenRouterProviderOptions): Im
       };
     },
     async analyzeImage(input: AnalyzeInput) {
+      const visionModel = options.visionModel?.trim() || options.model;
       const imageDataUrl = await toDataUrl(input.prepared.blob);
       const body = {
-        model: options.model,
+        model: visionModel,
         messages: [
           {
             role: "user",

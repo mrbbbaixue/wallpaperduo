@@ -5,8 +5,7 @@ import type { ProviderKind } from "@/types/domain";
 export const testProviderConnectivity = async (
   provider: ProviderKind,
   configs: ProviderConfigRecord,
-  passphrase?: string,
 ) => {
-  const adapter = createProvider(provider, configs, passphrase);
+  const adapter = createProvider(provider, configs);
   return adapter.testConnection();
 };
