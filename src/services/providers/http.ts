@@ -3,7 +3,6 @@ import {
   compactError,
   logError,
   logInfo,
-  logWarn,
   redactHeaders,
   shortText,
 } from "@/utils/debugLog";
@@ -17,8 +16,6 @@ interface DownloadProviderImageInput {
   timeoutMs: number;
   label: string;
   headers?: HeadersInit;
-  preferLocalProxy?: boolean;
-  allowLocalProxyFallback?: boolean;
 }
 
 export const parseExtraHeaders = (raw: string): Record<string, string> => {
@@ -133,76 +130,13 @@ export const fetchBlob = async (
   return response.blob();
 };
 
-const isLocalBrowser = (): boolean => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  const host = window.location.hostname;
-  return host === "localhost" || host === "127.0.0.1";
-};
-
-const hasSensitiveHeaders = (headers?: HeadersInit): boolean => {
-  if (!headers) {
-    return false;
-  }
-  const normalized = new Headers(headers);
-  return (
-    normalized.has("Authorization") ||
-    normalized.has("authorization") ||
-    normalized.has("x-api-key") ||
-    normalized.has("X-API-KEY")
-  );
-};
-
-const buildProxyUrl = (remoteUrl: string): string =>
-  `/api/image-proxy?url=${encodeURIComponent(remoteUrl)}`;
-
 export const downloadProviderImage = async ({
   url,
   timeoutMs,
   label,
   headers,
-  preferLocalProxy = false,
-  allowLocalProxyFallback = true,
 }: DownloadProviderImageInput): Promise<Blob> => {
-  const local = isLocalBrowser();
-  const absolute = /^https?:\/\//i.test(url);
-  const canUseProxy = local && absolute && !hasSensitiveHeaders(headers);
-
-  if (preferLocalProxy && canUseProxy) {
-    const proxyUrl = buildProxyUrl(url);
-    logInfo("Provider image download via local proxy (preferred)", {
-      label,
-      remoteUrl: url,
-      proxyUrl,
-    });
-    return fetchBlob(proxyUrl, { method: "GET" }, timeoutMs, {
-      label: `${label}:proxy-first`,
-    });
-  }
-
-  try {
-    return await fetchBlob(
-      url,
-      { method: "GET", headers },
-      timeoutMs,
-      { label: `${label}:direct` },
-    );
-  } catch (error) {
-    if (!allowLocalProxyFallback || !canUseProxy) {
-      throw error;
-    }
-    const proxyUrl = buildProxyUrl(url);
-    logWarn("Provider image direct download failed, retrying via local proxy", {
-      label,
-      remoteUrl: url,
-      proxyUrl,
-      error: compactError(error),
-    });
-    return fetchBlob(proxyUrl, { method: "GET" }, timeoutMs, {
-      label: `${label}:proxy-fallback`,
-    });
-  }
+  return fetchBlob(url, { method: "GET", headers }, timeoutMs, { label: `${label}:direct` });
 };
 
 export const toDataUrl = async (blob: Blob): Promise<string> => {

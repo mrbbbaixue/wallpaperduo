@@ -18,6 +18,9 @@ const buildLocalAnalysis = async (prepared: PreparedImage): Promise<SceneAnalysi
   let luminance = 0;
   let warm = 0;
   let cool = 0;
+  let rSum = 0;
+  let gSum = 0;
+  let bSum = 0;
 
   for (let i = 0; i < imageData.length; i += 4) {
     const r = imageData[i];
@@ -26,26 +29,51 @@ const buildLocalAnalysis = async (prepared: PreparedImage): Promise<SceneAnalysi
     luminance += 0.2126 * r + 0.7152 * g + 0.0722 * b;
     warm += r - b;
     cool += b - r;
+    rSum += r;
+    gSum += g;
+    bSum += b;
   }
 
   const pixels = imageData.length / 4;
   const avgLuminance = luminance / pixels;
+  const avgR = Math.round(rSum / pixels);
+  const avgG = Math.round(gSum / pixels);
+  const avgB = Math.round(bSum / pixels);
+
+  // Tone detection
+  const tone: "light" | "dark" = avgLuminance > 128 ? "light" : "dark";
+
+  // Time of day inference based on color temperature and luminance
+  const warmRatio = warm / pixels;
+  let inferredTime: "dawn" | "day" | "dusk" | "night";
+  if (avgLuminance < 60) {
+    inferredTime = "night";
+  } else if (avgLuminance < 100 && warmRatio > 20) {
+    inferredTime = "dusk";
+  } else if (avgLuminance < 120 && warmRatio > 10) {
+    inferredTime = "dawn";
+  } else {
+    inferredTime = "day";
+  }
+
   const mood =
     avgLuminance > 150
-      ? "bright daytime mood"
+      ? "明亮的日间光照"
       : avgLuminance > 95
-        ? "balanced natural light"
-        : "low-light mood";
-  const paletteTone = warm > cool ? "warm amber palette" : "cool cyan palette";
+        ? "均衡的自然光线"
+        : "低光环境";
+  const paletteTone = warm > cool ? "暖色调" : "冷色调";
 
   return {
-    summary: `Scene with ${mood}, ${paletteTone}, suitable for temporal lighting transitions.`,
-    subjects: ["main architecture", "environment details"],
-    foreground: ["major subject edges", "light source details"],
-    background: ["sky gradient", "ambient depth"],
+    summary: `${mood}场景，${paletteTone}，适合进行时段光照变换。`,
+    subjects: ["主体建筑/物体", "环境细节"],
+    foreground: ["前景主体边缘", "光源细节"],
+    background: ["天空渐变", "纵深氛围"],
     lighting: mood,
-    palette: [paletteTone, avgLuminance > 130 ? "high-key contrast" : "low-key contrast"],
-    risks: ["avoid changing composition geometry", "preserve key object positions"],
+    palette: [paletteTone, `rgb(${avgR},${avgG},${avgB})`],
+    risks: ["避免改变构图几何", "保持关键物体位置"],
+    tone,
+    timeOfDay: inferredTime,
   };
 };
 
@@ -55,10 +83,20 @@ export const runSceneAnalysis = async (
   userPrompt: string,
 ): Promise<SceneAnalysis> => {
   try {
-    return await provider.analyzeImage({
+    const result = await provider.analyzeImage({
       prepared,
       userPrompt,
     });
+    // Ensure tone and timeOfDay are present (may be missing from provider response)
+    if (!result.tone || !result.timeOfDay) {
+      const localAnalysis = await buildLocalAnalysis(prepared);
+      return {
+        ...result,
+        tone: result.tone ?? localAnalysis.tone,
+        timeOfDay: result.timeOfDay ?? localAnalysis.timeOfDay,
+      };
+    }
+    return result;
   } catch {
     return buildLocalAnalysis(prepared);
   }

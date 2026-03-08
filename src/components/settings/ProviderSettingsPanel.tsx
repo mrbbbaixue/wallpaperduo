@@ -1,13 +1,15 @@
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
-import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 import WifiFindRoundedIcon from "@mui/icons-material/WifiFindRounded";
 import {
   Alert,
   Button,
   Chip,
-  Divider,
+  FormControl,
   Grid,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   Tab,
   Tabs,
@@ -30,30 +32,28 @@ export const ProviderSettingsPanel = () => {
   const { t } = useTranslation();
   const selectedProvider = useSettingsStore((state) => state.selectedProvider);
   const setSelectedProvider = useSettingsStore((state) => state.setSelectedProvider);
+  const analysisProvider = useSettingsStore((state) => state.analysisProvider);
+  const setAnalysisProvider = useSettingsStore((state) => state.setAnalysisProvider);
+  const generationProvider = useSettingsStore((state) => state.generationProvider);
+  const setGenerationProvider = useSettingsStore((state) => state.setGenerationProvider);
   const providers = useSettingsStore((state) => state.providers);
   const setProviderConfig = useSettingsStore((state) => state.setProviderConfig);
   const setComfyWorkflowTemplate = useSettingsStore((state) => state.setComfyWorkflowTemplate);
   const setComfyNodeMapping = useSettingsStore((state) => state.setComfyNodeMapping);
+  const promptSettings = useSettingsStore((state) => state.promptSettings);
+  const setPromptSettings = useSettingsStore((state) => state.setPromptSettings);
   const lastConnectivity = useSettingsStore((state) => state.lastConnectivity);
   const setConnectivityResult = useSettingsStore((state) => state.setConnectivityResult);
-  const keysEncrypted = useSettingsStore((state) => state.keysEncrypted);
-  const encryptAllKeys = useSettingsStore((state) => state.encryptAllKeys);
-  const decryptAllKeys = useSettingsStore((state) => state.decryptAllKeys);
   const heicExperimentalEnabled = useSettingsStore((state) => state.heicExperimentalEnabled);
   const setHeicExperimentalEnabled = useSettingsStore((state) => state.setHeicExperimentalEnabled);
   const localFallbackEnabled = useSettingsStore((state) => state.localFallbackEnabled);
   const setLocalFallbackEnabled = useSettingsStore((state) => state.setLocalFallbackEnabled);
 
-  const [passphrase, setPassphrase] = useState("");
   const [localError, setLocalError] = useState("");
   const config = providers[selectedProvider];
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   const connectivityMutation = useMutation({
-    mutationFn: async () =>
-      testProviderConnectivity(selectedProvider, providers, passphrase || undefined),
+    mutationFn: async () => testProviderConnectivity(selectedProvider, providers),
     onSuccess: (data) => {
       setLocalError("");
       setConnectivityResult(selectedProvider, data);
@@ -68,8 +68,43 @@ export const ProviderSettingsPanel = () => {
 
   return (
     <Stack spacing={2}>
-      <SectionCard title={t("settings.title")} subtitle={t("settings.securityTip")}>
+      <SectionCard title={t("settings.providerSection")} subtitle={t("settings.routingHint")}>
         <Stack spacing={2}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>{t("settings.analysisProvider")}</InputLabel>
+                <Select
+                  value={analysisProvider}
+                  label={t("settings.analysisProvider")}
+                  onChange={(event) => setAnalysisProvider(event.target.value as ProviderKind)}
+                >
+                  {providerList.map((provider) => (
+                    <MenuItem key={provider} value={provider}>
+                      {provider}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>{t("settings.generationProvider")}</InputLabel>
+                <Select
+                  value={generationProvider}
+                  label={t("settings.generationProvider")}
+                  onChange={(event) => setGenerationProvider(event.target.value as ProviderKind)}
+                >
+                  {providerList.map((provider) => (
+                    <MenuItem key={provider} value={provider}>
+                      {provider}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+
           <Tabs
             value={selectedProvider}
             onChange={(_, value: ProviderKind) => setSelectedProvider(value)}
@@ -79,6 +114,7 @@ export const ProviderSettingsPanel = () => {
               <Tab key={provider} value={provider} label={provider} />
             ))}
           </Tabs>
+
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
@@ -101,16 +137,28 @@ export const ProviderSettingsPanel = () => {
                 }
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label={t("settings.model")}
+                label={t("settings.generationModel")}
                 value={config.model}
                 onChange={(event) =>
                   setProviderConfig(selectedProvider, { model: event.target.value })
                 }
               />
             </Grid>
+            {selectedProvider !== "comfyui" && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label={t("settings.analysisModel")}
+                  value={config.visionModel ?? ""}
+                  onChange={(event) =>
+                    setProviderConfig(selectedProvider, { visionModel: event.target.value })
+                  }
+                />
+              </Grid>
+            )}
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
@@ -137,6 +185,11 @@ export const ProviderSettingsPanel = () => {
                 }
               />
             </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ pt: 1.6 }}>
+                {t("settings.currentEditingProvider")}: {selectedProvider}
+              </Typography>
+            </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
@@ -150,12 +203,6 @@ export const ProviderSettingsPanel = () => {
               />
             </Grid>
           </Grid>
-          {selectedProvider === "ark" && isLocalhost && config.baseUrl !== "/api/ark" ? (
-            <Alert severity="warning">
-              Local dev detected. Set Ark Base URL to <code>/api/ark</code> to bypass browser CORS
-              via Vite proxy.
-            </Alert>
-          ) : null}
 
           {selectedProvider === "comfyui" ? (
             <Stack spacing={2}>
@@ -228,84 +275,70 @@ export const ProviderSettingsPanel = () => {
               />
             ) : null}
           </Stack>
-          {localError ? (
-            <Alert severity="error">{t(`errors.${localError}`, localError)}</Alert>
-          ) : null}
         </Stack>
       </SectionCard>
 
-      <SectionCard
-        title={t("settings.encryption")}
-        subtitle="localStorage + optional passphrase encryption"
-      >
+      <SectionCard title={t("settings.promptSettingsTitle")} subtitle={t("settings.promptSettingsDesc")}>
         <Stack spacing={2}>
           <TextField
-            label={t("settings.passphrase")}
-            type="password"
-            value={passphrase}
-            onChange={(event) => setPassphrase(event.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            label={t("settings.analysisPrompt")}
+            value={promptSettings.analysisUserPrompt}
+            onChange={(event) =>
+              setPromptSettings({ analysisUserPrompt: event.target.value })
+            }
           />
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button
-              variant="contained"
-              startIcon={<SecurityRoundedIcon />}
-              onClick={() => {
-                try {
-                  encryptAllKeys(passphrase);
-                  setLocalError("");
-                } catch (error) {
-                  setLocalError(toUserError(error));
-                }
-              }}
-            >
-              {t("settings.encrypt")}
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                try {
-                  decryptAllKeys(passphrase);
-                  setLocalError("");
-                } catch (error) {
-                  setLocalError(toUserError(error));
-                }
-              }}
-            >
-              {t("settings.decrypt")}
-            </Button>
-            <Chip
-              label={keysEncrypted ? "Encrypted" : "Plain text"}
-              color={keysEncrypted ? "warning" : "default"}
-            />
-          </Stack>
-          <Divider />
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-          >
-            <Typography variant="body2">HEIC experimental</Typography>
-            <Button
-              size="small"
-              variant={heicExperimentalEnabled ? "contained" : "outlined"}
-              onClick={() => setHeicExperimentalEnabled(!heicExperimentalEnabled)}
-            >
-              {heicExperimentalEnabled ? "Enabled" : "Disabled"}
-            </Button>
-            <Typography variant="body2">Local fallback</Typography>
-            <Button
-              size="small"
-              variant={localFallbackEnabled ? "contained" : "outlined"}
-              onClick={() => setLocalFallbackEnabled(!localFallbackEnabled)}
-            >
-              {localFallbackEnabled ? "Enabled" : "Disabled"}
-            </Button>
-          </Stack>
-          {localError ? (
-            <Alert severity="error">{t(`errors.${localError}`, localError)}</Alert>
-          ) : null}
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            label={t("settings.generationPromptPrefix")}
+            value={promptSettings.generationPrefix}
+            onChange={(event) =>
+              setPromptSettings({ generationPrefix: event.target.value })
+            }
+          />
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            label={t("settings.defaultNegativePrompt")}
+            value={promptSettings.defaultNegativePrompt}
+            onChange={(event) =>
+              setPromptSettings({ defaultNegativePrompt: event.target.value })
+            }
+          />
         </Stack>
       </SectionCard>
+
+      <SectionCard title={t("settings.runtimeTitle")} subtitle={t("settings.runtimeDesc")}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          alignItems={{ xs: "flex-start", sm: "center" }}
+        >
+          <Typography variant="body2">{t("settings.heicExperimental")}</Typography>
+          <Button
+            size="small"
+            variant={heicExperimentalEnabled ? "contained" : "outlined"}
+            onClick={() => setHeicExperimentalEnabled(!heicExperimentalEnabled)}
+          >
+            {heicExperimentalEnabled ? t("common.enabled") : t("common.disabled")}
+          </Button>
+          <Typography variant="body2">{t("settings.localFallback")}</Typography>
+          <Button
+            size="small"
+            variant={localFallbackEnabled ? "contained" : "outlined"}
+            onClick={() => setLocalFallbackEnabled(!localFallbackEnabled)}
+          >
+            {localFallbackEnabled ? t("common.enabled") : t("common.disabled")}
+          </Button>
+        </Stack>
+      </SectionCard>
+
+      {localError ? <Alert severity="error">{t(`errors.${localError}`, localError)}</Alert> : null}
     </Stack>
   );
 };

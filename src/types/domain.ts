@@ -40,6 +40,8 @@ export interface SceneAnalysis {
   lighting: string;
   palette: string[];
   risks: string[];
+  tone?: "light" | "dark";
+  timeOfDay?: TimeVariant;
 }
 
 export interface PromptVariant {
