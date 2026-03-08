@@ -55,7 +55,16 @@
     "alignDesc": "使用 ORB + RANSAC + Warp 对输出图进行对齐",
     "aligned": "已对齐",
     "manualNudge": "手动微调（基础）",
-    "baseSelect": "基准图"
+    "baseSelect": "基准图",
+    "singleMode": "单图预览",
+    "compareMode": "前后对比",
+    "status": {
+      "idle": "待开始",
+      "queued": "排队中",
+      "running": "生成中",
+      "succeeded": "已完成",
+      "failed": "失败"
+    }
   },
   "export": {
     "title": "导出向导",

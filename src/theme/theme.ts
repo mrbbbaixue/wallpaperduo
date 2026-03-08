@@ -16,7 +16,7 @@ export const buildTheme = (mode: "light" | "dark") => {
     },
     background: {
       default: isLight ? "#f6f0e7" : "#121417",
-      paper: isLight ? alpha("#ffffff", 0.6) : alpha("#1a1d22", 0.72),
+      paper: isLight ? alpha("#ffffff", 0.7) : alpha("#1a1d22", 0.78),
     },
     text: {
       primary: isLight ? "#1d2127" : "#f0ede7",
@@ -31,7 +31,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       ...palette,
     },
     shape: {
-      borderRadius: 8,
+      borderRadius: 10,
     },
     shadows: [
       "none",
@@ -119,8 +119,8 @@ export const buildTheme = (mode: "light" | "dark") => {
             color: palette.text.primary,
             backgroundColor: palette.background.default,
             backgroundImage: isLight
-              ? "radial-gradient(circle at 10% -10%, rgba(183,137,91,0.24), transparent 42%), radial-gradient(circle at 84% -16%, rgba(62,112,129,0.2), transparent 46%), linear-gradient(160deg, #f6f0e7 0%, #ece5db 45%, #e3e9ef 100%)"
-              : "radial-gradient(circle at 14% -14%, rgba(177,140,95,0.18), transparent 40%), radial-gradient(circle at 80% -20%, rgba(80,124,142,0.2), transparent 42%), linear-gradient(165deg, #121417 0%, #181c22 52%, #1b2029 100%)",
+              ? "linear-gradient(160deg, #f6f0e7 0%, #ece7df 48%, #e9eef4 100%)"
+              : "linear-gradient(165deg, #121417 0%, #181c22 54%, #1d232d 100%)",
             backgroundAttachment: "fixed",
           },
           "body::before": {
@@ -129,10 +129,10 @@ export const buildTheme = (mode: "light" | "dark") => {
             inset: 0,
             zIndex: -1,
             pointerEvents: "none",
-            opacity: isLight ? 0.22 : 0.12,
+            opacity: isLight ? 0.08 : 0.06,
             backgroundImage:
               "radial-gradient(circle at 1px 1px, rgba(34,40,48,0.18) 1px, transparent 0)",
-            backgroundSize: "3px 3px",
+            backgroundSize: "4px 4px",
           },
           "code, pre, .mono": {
             fontFamily: monoFamily,
@@ -149,35 +149,35 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 10,
+            borderRadius: 12,
             border: `1px solid ${palette.divider}`,
             backgroundColor: palette.background.paper,
-            backdropFilter: "blur(16px)",
+            backdropFilter: "blur(10px)",
             boxShadow: isLight
-              ? "0 14px 42px rgba(34, 44, 62, 0.14)"
-              : "0 16px 48px rgba(0, 0, 0, 0.45)",
+              ? "0 10px 28px rgba(34, 44, 62, 0.12)"
+              : "0 12px 30px rgba(0, 0, 0, 0.4)",
           },
         },
       },
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 6,
+            borderRadius: 7,
             minHeight: 38,
             paddingInline: 16,
           },
           contained: {
             color: "#f7f7f7",
             boxShadow: isLight
-              ? "0 10px 24px rgba(42, 92, 104, 0.26)"
-              : "0 12px 26px rgba(157, 205, 214, 0.15)",
+              ? "0 10px 20px rgba(42, 92, 104, 0.24)"
+              : "0 10px 22px rgba(157, 205, 214, 0.18)",
           },
         },
       },
       MuiIconButton: {
         styleOverrides: {
           root: {
-            borderRadius: 6,
+            borderRadius: 7,
             border: `1px solid ${alpha(palette.text.primary, isLight ? 0.12 : 0.2)}`,
             backgroundColor: alpha(palette.background.paper, isLight ? 0.7 : 0.5),
           },
@@ -186,7 +186,7 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 6,
+            borderRadius: 7,
             border: `1px solid ${palette.divider}`,
             backgroundColor: alpha(palette.background.paper, 0.8),
           },
@@ -203,9 +203,9 @@ export const buildTheme = (mode: "light" | "dark") => {
       MuiAppBar: {
         styleOverrides: {
           root: {
-            borderBottom: `1px solid ${palette.divider}`,
-            backgroundColor: alpha(palette.background.default, isLight ? 0.45 : 0.6),
-            backdropFilter: "blur(16px)",
+            borderBottom: "none",
+            backgroundColor: alpha(palette.background.default, isLight ? 0.72 : 0.78),
+            backdropFilter: "blur(10px)",
           },
         },
       },
@@ -215,7 +215,7 @@ export const buildTheme = (mode: "light" | "dark") => {
             borderRadius: 12,
             border: `1px solid ${palette.divider}`,
             backgroundColor: alpha(palette.background.default, isLight ? 0.82 : 0.9),
-            backdropFilter: "blur(18px)",
+            backdropFilter: "blur(12px)",
           },
         },
       },

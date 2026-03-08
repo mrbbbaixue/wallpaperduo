@@ -24,6 +24,8 @@ interface WorkflowState {
   ratioId: string;
   customRatio: { width: number; height: number };
   prepareMode: "crop" | "pad";
+  activeResultId?: string;
+  previewMode: "single" | "compare";
   sceneAnalysis?: SceneAnalysis;
   promptPlan?: PromptPlan;
   tasks: GenerationTask[];
@@ -34,6 +36,8 @@ interface WorkflowState {
   setRatioId: (ratioId: string) => void;
   setCustomRatio: (ratio: { width: number; height: number }) => void;
   setPrepareMode: (mode: "crop" | "pad") => void;
+  setActiveResultId: (taskId?: string) => void;
+  setPreviewMode: (mode: "single" | "compare") => void;
   setSceneAnalysis: (analysis: SceneAnalysis) => void;
   setPromptPlan: (plan: PromptPlan) => void;
   updatePromptVariant: (
@@ -52,6 +56,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   ratioId: "3:1",
   customRatio: { width: 3, height: 1 },
   prepareMode: "crop",
+  previewMode: "single",
   tasks: [],
   alignmentResults: {},
   exportMapping: defaultExportMapping,
@@ -64,11 +69,15 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       tasks: [],
       alignmentResults: {},
       exportMapping: defaultExportMapping,
+      activeResultId: undefined,
+      previewMode: "single",
     })),
   setPreparedImage: (preparedImage) => set({ preparedImage }),
   setRatioId: (ratioId) => set({ ratioId }),
   setCustomRatio: (customRatio) => set({ customRatio }),
   setPrepareMode: (prepareMode) => set({ prepareMode }),
+  setActiveResultId: (activeResultId) => set({ activeResultId }),
+  setPreviewMode: (previewMode) => set({ previewMode }),
   setSceneAnalysis: (sceneAnalysis) => set({ sceneAnalysis }),
   setPromptPlan: (promptPlan) => set({ promptPlan }),
   updatePromptVariant: (variantId, patch) =>
@@ -91,6 +100,8 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
         progress: 0,
       })),
       alignmentResults: {},
+      activeResultId: undefined,
+      previewMode: "single",
       exportMapping: {
         day: plan.variants.filter((item) => item.timeOfDay === "day").map((item) => item.id),
         sunrise: plan.variants.filter((item) => item.timeOfDay === "dawn").map((item) => item.id),
@@ -118,6 +129,8 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       tasks: [],
       alignmentResults: {},
       exportMapping: defaultExportMapping,
+      activeResultId: undefined,
+      previewMode: "single",
     })),
 }));
 

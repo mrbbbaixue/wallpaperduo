@@ -2,15 +2,7 @@ import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import {
-  AppBar,
-  Box,
-  Chip,
-  IconButton,
-  Stack,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { AppBar, Box, Chip, IconButton, Stack, Toolbar, Typography } from "@mui/material";
 import { useState, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -41,23 +33,10 @@ export const AppShell = ({ children }: PropsWithChildren) => {
         "&::before": {
           content: '""',
           position: "absolute",
-          inset: "-24% -8% auto -8%",
-          height: "52vh",
-          background:
-            "radial-gradient(circle at 12% 24%, rgba(158, 114, 72, 0.2), transparent 48%), radial-gradient(circle at 82% 16%, rgba(58, 109, 124, 0.24), transparent 50%)",
-          filter: "blur(70px)",
+          inset: 0,
           pointerEvents: "none",
-          zIndex: 0,
-        },
-        "&::after": {
-          content: '""',
-          position: "absolute",
-          inset: "auto -14% -32% -14%",
-          height: "40vh",
           background:
-            "radial-gradient(circle at 22% 64%, rgba(141, 161, 186, 0.22), transparent 48%), radial-gradient(circle at 74% 54%, rgba(189, 149, 102, 0.2), transparent 44%)",
-          filter: "blur(90px)",
-          pointerEvents: "none",
+            "radial-gradient(circle at 16% -8%, rgba(78, 124, 136, 0.12), transparent 40%), radial-gradient(circle at 88% 0%, rgba(179, 138, 89, 0.1), transparent 36%)",
           zIndex: 0,
         },
       }}
@@ -65,14 +44,14 @@ export const AppShell = ({ children }: PropsWithChildren) => {
       <AppBar position="sticky" color="transparent" elevation={0} sx={{ zIndex: 3 }}>
         <Toolbar
           sx={{
-            px: { xs: 1.5, md: 2.5 },
-            py: 1,
+            px: { xs: 1.25, md: 2.25 },
+            py: 0.9,
             alignItems: { xs: "flex-start", sm: "center" },
             flexWrap: "wrap",
-            gap: 1.25,
+            gap: 1,
           }}
         >
-          <Stack spacing={0.25} sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Stack spacing={0.2} sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
               variant="overline"
               color="text.secondary"
@@ -87,13 +66,15 @@ export const AppShell = ({ children }: PropsWithChildren) => {
           <Chip
             label={t("tagline")}
             size="small"
+            variant="outlined"
             sx={{
               maxWidth: { xs: "100%", md: 560 },
               alignSelf: { xs: "stretch", sm: "center" },
+              backgroundColor: "background.paper",
               "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" },
             }}
           />
-          <Stack direction="row" spacing={0.8} alignItems="center">
+          <Stack direction="row" spacing={0.75} alignItems="center">
             <IconButton onClick={toggleLanguage} aria-label="language" size="small">
               <LanguageRoundedIcon fontSize="small" />
             </IconButton>
