@@ -1,97 +1,137 @@
-# WallpaperDuo 调整计划 v3.0（当前版本）
+# WallpaperDuo UI 升级计划 v4.0（高端现代衬线版）
 
-## 1. 本次改造目标
+## 1. 目标与边界
 
-### 1.1 Provider 路由改造
-- 将“视觉分析”与“图像生成”解耦为两套独立选择：
-  - `analysisProvider`（视觉分析）
-  - `generationProvider`（图像生成）
-- 支持跨 Provider 组合：例如使用 OpenRouter 做视觉分析，同时使用 Ark 做图像生成。
-- Provider 配置中明确区分：
-  - 图像生成模型（Generation Model）
-  - 视觉分析模型（Analysis Model）
+### 1.1 核心目标
+- 将当前工作台升级为“高端现代”视觉风格，强调克制、秩序和高级质感。
+- 全局字体改为衬线体系，兼顾中文与英文显示质量。
+- 保留现有业务链路（上传、分析、生成、导出、设置），本次以 UI/UX 重构为主，不改核心能力。
 
-### 1.2 安全与设置改造
-- 去除本地密钥加密/解密流程（不再维护口令输入、密钥加解密按钮和对应状态）。
-- 保留 BYOK（用户自行填写 API Key）模式，配置存于本地。
-- 设置弹窗标题改为“模型与提示词设置”语义，避免“安全加密”误导。
-
-### 1.3 提示词设置外露
-- 在设置窗口新增 `Prompt Settings` 区块并落地到持久化配置：
-  - 视觉分析附加提示词（analysis prompt）
-  - 生成提示词前缀（generation prefix）
-  - 默认负面提示词（default negative prompt）
-- 预处理阶段与生成阶段均读取上述配置，形成可控默认行为。
-
-### 1.4 UI 与布局改造
-- 移除页面外层边距，改为接近 full-bleed 布局。
-- 增大主画布占比（左侧画布区域更宽）。
-- 默认画布比例改为 `3:1`。
-- 增加高斯模糊氛围层（背景与画布区域的模糊视觉）。
+### 1.2 设计方向
+- 视觉关键词：`Editorial`、`Luxury Minimal`、`Soft Glass`、`Spatial Rhythm`。
+- 页面气质从“工具面板”升级为“创作工作台”。
+- 保持 3:1 画布主导布局，但提升信息层级和留白节奏。
 
 ---
 
-## 2. 技术实现方案
+## 2. 代码现状审计（基于当前仓库）
 
-### 2.1 状态管理（`useSettingsStore`）
-- 新增字段：
-  - `analysisProvider`
-  - `generationProvider`
-  - `promptSettings`
-- 删除字段与行为：
-  - `keysEncrypted`
-  - `encryptAllKeys`
-  - `decryptAllKeys`
-  - `resolveApiKey`
-- `persist` 版本升级并迁移：
-  - 兼容旧 `selectedProvider`，迁移为分析/生成双路由默认值。
-  - 补全新的 `promptSettings` 默认配置。
+### 2.1 可见问题
+- 主题字体仍是无衬线（`IBM Plex Sans` + `Syne`），与“高端衬线”目标冲突。
+- 大量组件使用内联 `sx`，视觉规则分散，后续维护成本高。
+- `SectionCard` 间距与圆角较紧，信息密度偏高，不符合高端感所需的呼吸感。
+- 顶栏（`AppShell`）结构偏功能化，品牌层级和视觉重心不足。
+- `ResultsAndExport`、`ProviderSettingsPanel` 信息堆叠较重，缺少分组节奏与强调层级。
+- `src/App.css` 仍保留 Vite 模板样式，疑似遗留文件，易引入风格噪音。
 
-### 2.2 Provider 调用链
-- `createProvider` 改为直接读取明文 API Key（移除口令参数与解密逻辑）。
-- `testProviderConnectivity` 移除口令参数。
-- 预处理逻辑使用 `analysisProvider`。
-- 生成逻辑使用 `generationProvider`。
-
-### 2.3 设置窗口结构
-- 区块 A：模型路由与 Provider 配置
-  - 选择分析/生成 Provider
-  - 编辑各 Provider 的 Base URL / API Key / Generation Model / Analysis Model / Timeout / Concurrency / Extra Headers
-  - 连通性测试
-- 区块 B：提示词设置
-  - 分析附加提示词
-  - 生成前缀
-  - 默认负面提示词
-- 区块 C：运行选项
-  - HEIC 实验开关
-  - 本地回退开关
-
-### 2.4 画布与布局
-- 主页面网格改为左重右轻（画布优先）。
-- 去除外层 `Container` 带来的边距。
-- 画布容器添加 `aspect-ratio: 3 / 1`，并提高最小可视高度。
-- 添加模糊发光层（高斯模糊视觉）。
-- 预设比例列表将 `3:1` 作为默认首项，工作流默认比例同步为 `3:1`。
+### 2.2 风险点
+- 全局字体改造会影响中英文字符宽度，需重新校准按钮高度、输入框行高和断行。
+- 玻璃模糊和渐变叠层过多会增加绘制开销，需控制 blur 层数量和范围。
+- 设置面板字段较多，若只换皮不重排，视觉仍会显得拥挤。
 
 ---
 
-## 3. 验收标准
+## 3. 改造方案
 
-- [ ] 设置中可分别选择视觉分析 Provider 与图像生成 Provider。
-- [ ] 可实际使用“OpenRouter 分析 + Ark 生成”链路发起任务。
-- [ ] UI 不再出现密钥加解密相关控件与口令输入。
-- [ ] 提示词设置可在设置窗口编辑并影响预处理与生成默认行为。
-- [ ] 设置窗口标题已更新为新的语义标题。
-- [ ] 页面外层边距显著缩减，画布区域可视面积增大。
-- [ ] 默认比例为 `3:1`，画布呈现符合预期。
-- [ ] 页面具备高斯模糊视觉效果。
+### 3.1 建立统一设计令牌（Design Tokens）
+- 在 `src/theme/theme.ts` 建立高端化 token：
+  - 颜色：`ivory` / `charcoal` / `bronze` / `mist` 体系。
+  - 间距：8pt 基础上新增 `12/20/28/40` 的节奏层。
+  - 阴影：分离 `soft`, `elevated`, `hero` 三档。
+  - 圆角：收敛为 `12 / 18 / 28` 三档，不再随处自定义。
+- 将可复用样式从组件内联 `sx` 提升到主题 `components` 覆盖层，减少样式漂移。
+
+### 3.2 全局衬线字体系统
+- 字体策略：
+  - 中文主字体：`Noto Serif SC`。
+  - 英文/数字主字体：`Source Serif 4`（或 `Cormorant Garamond` 作为标题强调）。
+- 应用策略：
+  - `body`、`button`、`input`、`chip` 统一衬线族。
+  - `h1/h2/h3` 使用更高对比的衬线字重与更紧的字距。
+  - 代码/技术字段（如 provider id）保留等宽字体以提升识别性。
+- 调整 `line-height` 与 `letter-spacing`，避免中文衬线在小字号下发灰。
+
+### 3.3 页面骨架与空间重构
+- `MainPage`：
+  - 保持左 9 右 3 的主结构，但引入明确的垂直节奏分区。
+  - 下方结果区与上方工作区建立视觉分割（细线 + 光晕 + 间距）。
+- `AppShell`：
+  - 顶栏改为更轻量但更有品牌感的“悬浮带”。
+  - 标题与 tagline 形成主副层级，操作按钮弱化为次级视觉。
+- 画布区：
+  - 保持 `3:1` 主画幅，强化“展板感”（更精致边框、阴影和底部柔光）。
+
+### 3.4 关键组件重设计
+- `SectionCard`：
+  - 增加留白，优化标题区（标题、副标题、操作按钮）对齐规则。
+  - 卡片层级统一到主题，不在业务组件重复定义边框阴影。
+- `ControlPanel`：
+  - 由“线性堆叠”改为“步骤组块”（选择时段 -> 分析 -> Prompt -> 生成队列）。
+  - 每组块加简洁编号或小标题，提升扫描效率。
+- `ResultsAndExport`：
+  - 画廊卡片采用统一比例和更干净标签样式。
+  - 导出映射区改为更紧凑但层次清晰的矩阵布局。
+- `SettingsModal` / `ProviderSettingsPanel`：
+  - 增加分区标题与说明文本密度控制，减少“长表单压迫感”。
+  - 对高频项（Provider 路由、模型、API Key）做优先级前置。
+
+### 3.5 高端氛围细节
+- 背景：采用低饱和多层渐变 + 轻颗粒纹理，避免纯平背景。
+- 模糊：只保留 2-3 个关键高斯层，避免全局泛滥。
+- 动效：
+  - 页面进入、卡片浮现、按钮悬停采用统一缓动曲线。
+  - 动效时长收敛到 `160ms / 240ms / 420ms` 三档。
+- 暗色模式与亮色模式都保持“高端一致性”，不出现“换肤但换气质”问题。
+
+---
+
+## 4. 实施步骤（按优先级）
+
+1. 基线清理
+- 清理遗留样式文件与无效规则（重点检查 `src/App.css`）。
+- 盘点内联 `sx` 的重复样式，列出可主题化项。
+
+2. 主题与字体落地
+- 更新 `src/index.css` 字体导入与全局变量。
+- 重构 `src/theme/theme.ts` 的排版、颜色、阴影、组件覆盖。
+
+3. 骨架与卡片系统
+- 重构 `src/components/layout/AppShell.tsx`、`src/pages/MainPage.tsx`、`src/components/common/SectionCard.tsx`。
+- 先统一骨架和卡片，再进入业务面板样式。
+
+4. 业务面板视觉重排
+- 依次改造：
+  - `src/components/canvas/CanvasWorkspace.tsx`
+  - `src/components/control/ControlPanel.tsx`
+  - `src/components/results/ResultsAndExport.tsx`
+  - `src/components/settings/SettingsModal.tsx`
+  - `src/components/settings/ProviderSettingsPanel.tsx`
+
+5. 微交互与性能校准
+- 统一转场与悬停动效。
+- 控制 blur 与阴影开销，检查低端设备流畅度。
+
+6. 验证与收口
+- 运行 `npm run lint`、`npm run build`。
+- 做中英文、亮暗模式、移动端到桌面端的视觉回归检查。
+
+---
+
+## 5. 验收标准
+
+- [ ] 全局字体为衬线体系，中文和英文显示稳定、无明显错位。
+- [ ] 页面整体视觉达到“高端现代”目标：层级清晰、留白充足、质感统一。
+- [ ] 画布区域仍为 `3:1` 且视觉重心明确。
+- [ ] 顶栏、卡片、设置弹窗、结果区风格统一，不再出现“拼装感”。
+- [ ] 内联重复样式显著减少，主题 token 覆盖率提升。
+- [ ] 亮色/暗色模式均保持一致审美，不发生明显破版。
 - [ ] `npm run lint` 通过。
 - [ ] `npm run build` 通过。
 
 ---
 
-## 4. 变更影响说明
+## 6. 超出当前思路的建议（可选）
 
-- 旧版“本地密钥加密”功能属于破坏性移除；若历史数据中存在加密密钥，需用户重新填入明文密钥。
-- Provider 路由拆分后，分析与生成可独立优化，默认仍可保持同 Provider 以降低复杂度。
-- 提示词设置前置后，Prompt 行为更加可解释、可复用，便于后续做模板化扩展。
+- 引入“品牌叙事元素”：例如每个时段（晨/昼/昏/夜）对应一套微色调标签，让结果区更具收藏感。
+- 增加“演示模式”（Presentation Mode）：隐藏复杂控制，仅展示画布与结果，适合对外演示或截图传播。
+- 后续可考虑把 UI token 独立为 `theme/tokens.ts`，为未来多主题（Classic / Luxe / Studio）打基础。

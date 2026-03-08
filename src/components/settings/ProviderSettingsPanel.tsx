@@ -3,6 +3,7 @@ import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import WifiFindRoundedIcon from "@mui/icons-material/WifiFindRounded";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   FormControl,
@@ -69,56 +70,77 @@ export const ProviderSettingsPanel = () => {
   return (
     <Stack spacing={2}>
       <SectionCard title={t("settings.providerSection")} subtitle={t("settings.routingHint")}>
-        <Stack spacing={2}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>{t("settings.analysisProvider")}</InputLabel>
-                <Select
-                  value={analysisProvider}
-                  label={t("settings.analysisProvider")}
-                  onChange={(event) => setAnalysisProvider(event.target.value as ProviderKind)}
-                >
-                  {providerList.map((provider) => (
-                    <MenuItem key={provider} value={provider}>
-                      {provider}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>{t("settings.generationProvider")}</InputLabel>
-                <Select
-                  value={generationProvider}
-                  label={t("settings.generationProvider")}
-                  onChange={(event) => setGenerationProvider(event.target.value as ProviderKind)}
-                >
-                  {providerList.map((provider) => (
-                    <MenuItem key={provider} value={provider}>
-                      {provider}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-
-          <Tabs
-            value={selectedProvider}
-            onChange={(_, value: ProviderKind) => setSelectedProvider(value)}
-            variant="scrollable"
+        <Stack spacing={2.25}>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 1.5,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+            }}
           >
-            {providerList.map((provider) => (
-              <Tab key={provider} value={provider} label={provider} />
-            ))}
-          </Tabs>
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t("settings.analysisProvider")}</InputLabel>
+                  <Select
+                    value={analysisProvider}
+                    label={t("settings.analysisProvider")}
+                    onChange={(event) => setAnalysisProvider(event.target.value as ProviderKind)}
+                  >
+                    {providerList.map((provider) => (
+                      <MenuItem key={provider} value={provider}>
+                        {provider}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t("settings.generationProvider")}</InputLabel>
+                  <Select
+                    value={generationProvider}
+                    label={t("settings.generationProvider")}
+                    onChange={(event) => setGenerationProvider(event.target.value as ProviderKind)}
+                  >
+                    {providerList.map((provider) => (
+                      <MenuItem key={provider} value={provider}>
+                        {provider}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
 
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 1.5,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+            }}
+          >
+            <Tabs
+              value={selectedProvider}
+              onChange={(_, value: ProviderKind) => setSelectedProvider(value)}
+              variant="scrollable"
+              sx={{ mb: 1.5 }}
+            >
+              {providerList.map((provider) => (
+                <Tab key={provider} value={provider} label={provider} />
+              ))}
+            </Tabs>
+
+            <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
+                size="small"
                 label={t("settings.baseUrl")}
                 value={config.baseUrl}
                 onChange={(event) =>
@@ -129,6 +151,7 @@ export const ProviderSettingsPanel = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
+                size="small"
                 label={t("settings.apiKey")}
                 type="password"
                 value={config.apiKey}
@@ -140,6 +163,7 @@ export const ProviderSettingsPanel = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
+                size="small"
                 label={t("settings.generationModel")}
                 value={config.model}
                 onChange={(event) =>
@@ -151,6 +175,7 @@ export const ProviderSettingsPanel = () => {
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
+                  size="small"
                   label={t("settings.analysisModel")}
                   value={config.visionModel ?? ""}
                   onChange={(event) =>
@@ -162,6 +187,7 @@ export const ProviderSettingsPanel = () => {
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
+                size="small"
                 type="number"
                 label={t("settings.timeout")}
                 value={config.timeoutMs}
@@ -175,6 +201,7 @@ export const ProviderSettingsPanel = () => {
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
+                size="small"
                 type="number"
                 label={t("settings.concurrency")}
                 value={config.concurrency}
@@ -187,12 +214,16 @@ export const ProviderSettingsPanel = () => {
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <Typography variant="body2" color="text.secondary" sx={{ pt: 1.6 }}>
-                {t("settings.currentEditingProvider")}: {selectedProvider}
+                {t("settings.currentEditingProvider")}:{" "}
+                <Box component="span" className="mono">
+                  {selectedProvider}
+                </Box>
               </Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
+                size="small"
                 label={t("settings.extraHeaders")}
                 value={config.extraHeaders}
                 onChange={(event) =>
@@ -202,10 +233,20 @@ export const ProviderSettingsPanel = () => {
                 minRows={2}
               />
             </Grid>
-          </Grid>
+            </Grid>
+          </Box>
 
           {selectedProvider === "comfyui" ? (
-            <Stack spacing={2}>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1.5,
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: "background.paper",
+              }}
+            >
+              <Stack spacing={2}>
               <Typography variant="subtitle2">{t("settings.workflow")}</Typography>
               <TextField
                 fullWidth
@@ -219,6 +260,7 @@ export const ProviderSettingsPanel = () => {
                 <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
+                    size="small"
                     label="positivePromptNodeId"
                     value={providers.comfyui.nodeMapping.positivePromptNodeId}
                     onChange={(event) =>
@@ -229,6 +271,7 @@ export const ProviderSettingsPanel = () => {
                 <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
+                    size="small"
                     label="negativePromptNodeId"
                     value={providers.comfyui.nodeMapping.negativePromptNodeId}
                     onChange={(event) =>
@@ -239,6 +282,7 @@ export const ProviderSettingsPanel = () => {
                 <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
+                    size="small"
                     label="seedNodeId"
                     value={providers.comfyui.nodeMapping.seedNodeId}
                     onChange={(event) => setComfyNodeMapping({ seedNodeId: event.target.value })}
@@ -247,6 +291,7 @@ export const ProviderSettingsPanel = () => {
                 <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
+                    size="small"
                     label="timeVariableNodeId"
                     value={providers.comfyui.nodeMapping.timeVariableNodeId ?? ""}
                     onChange={(event) =>
@@ -255,10 +300,11 @@ export const ProviderSettingsPanel = () => {
                   />
                 </Grid>
               </Grid>
-            </Stack>
+              </Stack>
+            </Box>
           ) : null}
 
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Button
               variant="contained"
               startIcon={<WifiFindRoundedIcon />}
@@ -278,12 +324,25 @@ export const ProviderSettingsPanel = () => {
         </Stack>
       </SectionCard>
 
-      <SectionCard title={t("settings.promptSettingsTitle")} subtitle={t("settings.promptSettingsDesc")}>
-        <Stack spacing={2}>
+      <SectionCard
+        title={t("settings.promptSettingsTitle")}
+        subtitle={t("settings.promptSettingsDesc")}
+      >
+        <Stack
+          spacing={2}
+          sx={{
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
+          }}
+        >
           <TextField
             fullWidth
             multiline
             minRows={2}
+            size="small"
             label={t("settings.analysisPrompt")}
             value={promptSettings.analysisUserPrompt}
             onChange={(event) =>
@@ -294,6 +353,7 @@ export const ProviderSettingsPanel = () => {
             fullWidth
             multiline
             minRows={2}
+            size="small"
             label={t("settings.generationPromptPrefix")}
             value={promptSettings.generationPrefix}
             onChange={(event) =>
@@ -304,6 +364,7 @@ export const ProviderSettingsPanel = () => {
             fullWidth
             multiline
             minRows={2}
+            size="small"
             label={t("settings.defaultNegativePrompt")}
             value={promptSettings.defaultNegativePrompt}
             onChange={(event) =>
@@ -319,7 +380,9 @@ export const ProviderSettingsPanel = () => {
           spacing={1}
           alignItems={{ xs: "flex-start", sm: "center" }}
         >
-          <Typography variant="body2">{t("settings.heicExperimental")}</Typography>
+          <Typography variant="body2" sx={{ minWidth: 110 }}>
+            {t("settings.heicExperimental")}
+          </Typography>
           <Button
             size="small"
             variant={heicExperimentalEnabled ? "contained" : "outlined"}
@@ -327,7 +390,9 @@ export const ProviderSettingsPanel = () => {
           >
             {heicExperimentalEnabled ? t("common.enabled") : t("common.disabled")}
           </Button>
-          <Typography variant="body2">{t("settings.localFallback")}</Typography>
+          <Typography variant="body2" sx={{ minWidth: 92 }}>
+            {t("settings.localFallback")}
+          </Typography>
           <Button
             size="small"
             variant={localFallbackEnabled ? "contained" : "outlined"}

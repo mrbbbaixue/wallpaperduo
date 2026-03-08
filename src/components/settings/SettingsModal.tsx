@@ -27,16 +27,24 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
         sx: {
           maxHeight: "92vh",
           backdropFilter: "blur(20px)",
+          borderRadius: 2.5,
         },
       }}
     >
-      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          pb: 1,
+        }}
+      >
         {t("settings.dialogTitle")}
         <IconButton onClick={onClose} edge="end" aria-label="close">
           <CloseRoundedIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ p: { xs: 1.25, md: 1.75 } }}>
         <ProviderSettingsPanel />
       </DialogContent>
     </Dialog>

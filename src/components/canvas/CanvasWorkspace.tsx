@@ -1,5 +1,5 @@
 import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
-import { Box, Button, Stack, Typography, Alert } from "@mui/material";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,7 +17,8 @@ const checkerboardBg = `
 `;
 
 export const CanvasWorkspace = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === "zh";
   const inputRef = useRef<HTMLInputElement>(null);
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
@@ -88,6 +89,7 @@ export const CanvasWorkspace = () => {
   return (
     <SectionCard
       title={t("workspace.uploadTitle")}
+      subtitle={isZh ? "主画布采用 3:1 展板比例，优先保证构图完整。" : "Primary board uses a 3:1 ratio to preserve composition."}
       actions={
         <>
           <input
@@ -102,6 +104,7 @@ export const CanvasWorkspace = () => {
             size="small"
             startIcon={<UploadRoundedIcon />}
             onClick={() => inputRef.current?.click()}
+            sx={{ minWidth: 116 }}
           >
             {t("common.upload")}
           </Button>
@@ -118,8 +121,8 @@ export const CanvasWorkspace = () => {
             position: "relative",
             width: "100%",
             aspectRatio: "3 / 1",
-            minHeight: { xs: 240, md: 360 },
-            borderRadius: 2,
+            minHeight: { xs: 230, md: 350 },
+            borderRadius: 2.25,
             border: isDragging ? "2px dashed" : "1px solid",
             borderColor: isDragging ? "primary.main" : "divider",
             background: checkerboardBg,
@@ -127,20 +130,31 @@ export const CanvasWorkspace = () => {
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
-            backdropFilter: "blur(8px)",
-            transition: "border-color 0.2s, box-shadow 0.2s",
+            isolation: "isolate",
+            backdropFilter: "blur(10px)",
+            transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
             boxShadow: isDragging
-              ? "0 0 0 1px rgba(88, 189, 208, 0.4), 0 28px 70px rgba(88, 189, 208, 0.24)"
-              : "0 22px 60px rgba(16, 24, 29, 0.2)",
+              ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 24px 60px rgba(88, 189, 208, 0.22)"
+              : "0 20px 56px rgba(16, 24, 29, 0.22)",
             "&::after": {
               content: '""',
               position: "absolute",
-              inset: "12% 10% auto 10%",
-              height: "40%",
+              inset: "10% 8% auto 8%",
+              height: "52%",
               background:
-                "radial-gradient(circle at 30% 30%, rgba(56,149,169,0.26), transparent 52%), radial-gradient(circle at 72% 32%, rgba(245,165,103,0.22), transparent 48%)",
-              filter: "blur(26px)",
+                "radial-gradient(circle at 24% 36%, rgba(64, 131, 152, 0.28), transparent 54%), radial-gradient(circle at 72% 28%, rgba(178, 126, 74, 0.24), transparent 50%)",
+              filter: "blur(30px)",
               pointerEvents: "none",
+            },
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              borderRadius: "inherit",
+              border: "1px solid rgba(255,255,255,0.16)",
+              mixBlendMode: "overlay",
+              pointerEvents: "none",
+              zIndex: 1,
             },
           }}
         >
@@ -154,11 +168,15 @@ export const CanvasWorkspace = () => {
                 maxHeight: "100%",
                 objectFit: "contain",
                 position: "relative",
-                zIndex: 1,
+                zIndex: 2,
               }}
             />
           ) : (
-            <Stack alignItems="center" spacing={1} sx={{ py: 6, position: "relative", zIndex: 1 }}>
+            <Stack
+              alignItems="center"
+              spacing={1}
+              sx={{ py: 6, position: "relative", zIndex: 2 }}
+            >
               <UploadRoundedIcon sx={{ fontSize: 48, color: "text.disabled" }} />
               <Typography variant="body2" color="text.secondary">
                 {t("workspace.uploadHint")}
@@ -176,7 +194,7 @@ export const CanvasWorkspace = () => {
 
         {/* Time slot preview tabs (only when there are generated results) */}
         {succeededTasks.length > 0 && (
-          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+          <Stack direction="row" spacing={0.75} flexWrap="wrap">
             <Button
               size="small"
               variant={previewSlot === "source" ? "contained" : "outlined"}

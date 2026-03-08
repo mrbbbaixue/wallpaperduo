@@ -1,4 +1,4 @@
-import { Alert, Divider, Stack, Typography } from "@mui/material";
+import { Alert, Box, Divider, Stack, Typography } from "@mui/material";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -138,53 +138,104 @@ export const ControlPanel = () => {
           : `Analysis: ${analysisProvider} · Generation: ${generationProvider}`
       }
     >
-      <Stack spacing={2.5}>
-        {/* Time Slot Selector */}
-        <TimeSlotSelector
-          currentTimeOfDay={currentTimeOfDay}
-          detectedTimeOfDay={detectedTimeOfDay}
-          selectedSlots={selectedSlots}
-          onCurrentTimeChange={setCurrentTimeOfDay}
-          onSelectedSlotsChange={setSelectedSlots}
-        />
+      <Stack spacing={2}>
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "background.paper",
+          }}
+        >
+          <Stack spacing={1.25}>
+            <Typography variant="overline" color="text.secondary">
+              {isZh ? "01 选择时段" : "01 Select Slots"}
+            </Typography>
+            <TimeSlotSelector
+              currentTimeOfDay={currentTimeOfDay}
+              detectedTimeOfDay={detectedTimeOfDay}
+              selectedSlots={selectedSlots}
+              onCurrentTimeChange={setCurrentTimeOfDay}
+              onSelectedSlotsChange={setSelectedSlots}
+            />
+          </Stack>
+        </Box>
 
         <Divider />
 
-        {/* Scene Analysis Result */}
         {sceneAnalysis && (
           <>
-            <Stack spacing={0.5}>
-              <Typography variant="subtitle2">
-                {isZh ? "场景分析" : "Scene Analysis"}
-              </Typography>
-              <Typography variant="body2">{sceneAnalysis.summary}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
-              </Typography>
-            </Stack>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1.5,
+                border: "1px solid",
+                borderColor: "divider",
+                backgroundColor: "background.paper",
+              }}
+            >
+              <Stack spacing={0.75}>
+                <Typography variant="overline" color="text.secondary">
+                  {isZh ? "02 场景分析结果" : "02 Scene Analysis"}
+                </Typography>
+                <Typography variant="body2">{sceneAnalysis.summary}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
+                </Typography>
+              </Stack>
+            </Box>
             <Divider />
           </>
         )}
 
-        {/* Prompt Editor */}
-        <PromptEditor
-          selectedSlots={selectedSlots}
-          prompts={prompts}
-          onPromptChange={handlePromptChange}
-        />
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "background.paper",
+          }}
+        >
+          <Stack spacing={1.25}>
+            <Typography variant="overline" color="text.secondary">
+              {isZh ? "03 提示词编辑" : "03 Prompt Editing"}
+            </Typography>
+            <PromptEditor
+              selectedSlots={selectedSlots}
+              prompts={prompts}
+              onPromptChange={handlePromptChange}
+            />
+          </Stack>
+        </Box>
 
         <Divider />
 
-        {/* Generate Controls */}
-        <GenerateControls
-          selectedSlots={selectedSlots}
-          prompts={prompts}
-          onPreprocess={onPreprocess}
-          preprocessLoading={preprocessLoading}
-        />
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "background.paper",
+          }}
+        >
+          <Stack spacing={1.25}>
+            <Typography variant="overline" color="text.secondary">
+              {isZh ? "04 预处理与生成" : "04 Preprocess & Generate"}
+            </Typography>
+            <GenerateControls
+              selectedSlots={selectedSlots}
+              prompts={prompts}
+              onPreprocess={onPreprocess}
+              preprocessLoading={preprocessLoading}
+            />
+          </Stack>
+        </Box>
 
         {preprocessError && (
           <Alert severity="error" sx={{ py: 0 }}>
@@ -192,8 +243,22 @@ export const ControlPanel = () => {
           </Alert>
         )}
 
-        {/* Task Queue */}
-        <TaskQueue />
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "background.paper",
+          }}
+        >
+          <Stack spacing={1}>
+            <Typography variant="overline" color="text.secondary">
+              {isZh ? "05 任务队列" : "05 Task Queue"}
+            </Typography>
+            <TaskQueue />
+          </Stack>
+        </Box>
       </Stack>
     </SectionCard>
   );

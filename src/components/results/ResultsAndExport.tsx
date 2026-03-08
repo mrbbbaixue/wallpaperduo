@@ -87,16 +87,22 @@ export const ResultsAndExport = () => {
   };
 
   return (
-    <SectionCard title={isZh ? "生成结果与导出" : "Results & Export"}>
+    <SectionCard
+      title={isZh ? "生成结果与导出" : "Results & Export"}
+      subtitle={
+        isZh
+          ? "先检查预览质量，再映射时段并导出。"
+          : "Review output quality first, then map time buckets and export."
+      }
+    >
       <Stack spacing={2}>
-        {/* Results Gallery - horizontal scroll */}
         <Typography variant="subtitle2">
           {isZh ? "结果画廊" : "Results Gallery"}
         </Typography>
         <Box
           sx={{
             display: "flex",
-            gap: 2,
+            gap: 1.5,
             overflowX: "auto",
             pb: 1,
             "&::-webkit-scrollbar": { height: 6 },
@@ -108,7 +114,12 @@ export const ResultsAndExport = () => {
               key={task.id}
               sx={{
                 flexShrink: 0,
-                width: 220,
+                width: 232,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1.75,
+                p: 1,
+                bgcolor: "background.paper",
               }}
             >
               <Stack spacing={0.5}>
@@ -118,7 +129,9 @@ export const ResultsAndExport = () => {
                   alt={task.label}
                   sx={{
                     width: "100%",
-                    borderRadius: 2,
+                    aspectRatio: "4 / 3",
+                    objectFit: "cover",
+                    borderRadius: 1.5,
                     border: "1px solid",
                     borderColor: "divider",
                   }}
@@ -145,7 +158,6 @@ export const ResultsAndExport = () => {
 
         <Divider />
 
-        {/* Export Section */}
         <Typography variant="subtitle2">{t("export.title")}</Typography>
 
         <TextField
@@ -156,15 +168,24 @@ export const ResultsAndExport = () => {
           sx={{ maxWidth: 240 }}
         />
 
-        {/* Time slot mapping */}
         <Typography variant="caption" color="text.secondary">
           {t("export.mapping")}
         </Typography>
-        <Grid container spacing={1}>
+        <Grid container spacing={1.25}>
           {succeeded.map((task) => (
             <Grid key={task.id} size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
-                <Typography variant="caption" fontWeight={600}>{task.label}</Typography>
+              <Box
+                sx={{
+                  p: 1.25,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 1.5,
+                  bgcolor: "background.paper",
+                }}
+              >
+                <Typography variant="caption" fontWeight={600}>
+                  {task.label}
+                </Typography>
                 <Stack direction="row" spacing={0} flexWrap="wrap">
                   {(["day", "sunrise", "sunset", "night"] as Bucket[]).map((bucket) => (
                     <FormControlLabel
@@ -186,7 +207,6 @@ export const ResultsAndExport = () => {
           ))}
         </Grid>
 
-        {/* Export buttons */}
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <Button
             variant="contained"
