@@ -13,7 +13,14 @@ import {
   parseExtraHeaders,
   toDataUrl,
 } from "@/services/providers/http";
-import { compactError, logError, logInfo, maskSecret, redactHeaders } from "@/utils/debugLog";
+import {
+  compactError,
+  logError,
+  logInfo,
+  logWarn,
+  maskSecret,
+  redactHeaders,
+} from "@/utils/debugLog";
 
 interface OpenRouterProviderOptions {
   baseUrl: string;
@@ -70,10 +77,7 @@ const parseSceneJson = (text: string): SceneAnalysis => {
   };
 };
 
-const tryExtractImage = async (
-  data: OpenRouterChatResponse,
-  timeoutMs: number,
-): Promise<Blob> => {
+const tryExtractImage = async (data: OpenRouterChatResponse, timeoutMs: number): Promise<Blob> => {
   const choice = data.choices?.[0]?.message;
   const urlFromImageArray = choice?.images?.[0]?.image_url?.url;
   const urlFromMessage = choice?.image_url?.url;
@@ -89,7 +93,24 @@ const tryExtractImage = async (
   const url = urlFromImageArray ?? urlFromMessage ?? urlFromContent;
   const b64 = b64FromImageArray ?? b64FromContent;
 
+  // Prefer base64 to avoid CORS issues in production
+  if (b64) {
+    return decodeBase64Image(b64);
+  }
   if (url) {
+    // Warn about potential CORS issues in production when using URL
+    const isProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+    if (isProduction) {
+      logWarn(
+        "OpenRouter returned image URL instead of base64; downloading via proxy may fail in production",
+        {
+          url,
+        },
+      );
+    }
     return downloadProviderImage({
       url,
       timeoutMs,
@@ -97,9 +118,6 @@ const tryExtractImage = async (
       preferLocalProxy: true,
       allowLocalProxyFallback: true,
     });
-  }
-  if (b64) {
-    return decodeBase64Image(b64);
   }
   throw new Error("OPENROUTER_IMAGE_NOT_FOUND");
 };
@@ -122,14 +140,9 @@ export const createOpenRouterProvider = (options: OpenRouterProviderOptions): Im
     name: "openrouter",
     async testConnection() {
       const startedAt = performance.now();
-      await fetchJson(
-        `${options.baseUrl}/models`,
-        { method: "GET", headers },
-        options.timeoutMs,
-        {
-          label: "openrouter:testConnection",
-        },
-      );
+      await fetchJson(`${options.baseUrl}/models`, { method: "GET", headers }, options.timeoutMs, {
+        label: "openrouter:testConnection",
+      });
       logInfo("OpenRouter connectivity test passed", {
         elapsedMs: Math.round(performance.now() - startedAt),
       });

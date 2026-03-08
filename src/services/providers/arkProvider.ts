@@ -13,7 +13,14 @@ import {
   parseExtraHeaders,
   toDataUrl,
 } from "@/services/providers/http";
-import { compactError, logError, logInfo, maskSecret, redactHeaders } from "@/utils/debugLog";
+import {
+  compactError,
+  logError,
+  logInfo,
+  logWarn,
+  maskSecret,
+  redactHeaders,
+} from "@/utils/debugLog";
 
 interface ArkProviderOptions {
   baseUrl: string;
@@ -169,7 +176,7 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
             prompt,
             image: imageDataUrl,
             sequential_image_generation: "disabled",
-            response_format: "url",
+            response_format: "b64_json",
             size: estimateArkSizePreset(input.prepared.width, input.prepared.height),
             stream: false,
             watermark: true,
@@ -177,6 +184,7 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
         : {
             model: options.model,
             prompt,
+            response_format: "b64_json",
             size: `${input.prepared.width}x${input.prepared.height}`,
           };
 
@@ -185,7 +193,8 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
         seedreamMode: isSeedreamModel(options.model),
         payloadPreview: {
           ...payload,
-          image: typeof imageDataUrl === "string" ? `data-url(${imageDataUrl.length} chars)` : undefined,
+          image:
+            typeof imageDataUrl === "string" ? `data-url(${imageDataUrl.length} chars)` : undefined,
         },
       });
       const response = await fetchJson<ArkImageResponse>(
@@ -215,10 +224,23 @@ export const createArkProvider = (options: ArkProviderOptions): ImageProvider =>
         };
       }
       if (image?.url) {
-        logInfo("Ark generation returned URL image", {
+        logInfo("Ark generation returned URL image (unexpected, API should return b64_json)", {
           variantId: input.variant.id,
           imageUrl: image.url,
         });
+        // Warn about potential CORS issues in production
+        const isProduction =
+          typeof window !== "undefined" &&
+          window.location.hostname !== "localhost" &&
+          window.location.hostname !== "127.0.0.1";
+        if (isProduction) {
+          logWarn(
+            "Downloading image via proxy in production may fail due to missing /api/image-proxy endpoint",
+            {
+              variantId: input.variant.id,
+            },
+          );
+        }
         return {
           blob: await downloadProviderImage({
             url: image.url,
