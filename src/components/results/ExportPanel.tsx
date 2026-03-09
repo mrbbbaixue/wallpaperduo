@@ -33,6 +33,7 @@ export const ExportPanel = () => {
   const isZh = i18n.language === "zh";
   const tasks = useWorkflowStore((s) => s.tasks);
   const alignmentResults = useWorkflowStore((s) => s.alignmentResults);
+  const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const mapping = useWorkflowStore((s) => s.exportMapping);
   const setExportMapping = useWorkflowStore((s) => s.setExportMapping);
   const heicExperimentalEnabled = useSettingsStore((s) => s.heicExperimentalEnabled);
@@ -73,7 +74,13 @@ export const ExportPanel = () => {
         nightImageList: mapping.night,
       });
       if (!themeValidation.ok) throw new Error(themeValidation.message);
-      await downloadDdw({ tasks, mapping, alignmentResults, fileStem });
+      await downloadDdw({
+        tasks,
+        mapping,
+        alignmentResults,
+        baselineImageBlob: preparedImage?.blob,
+        fileStem,
+      });
       setMessage(t("export.compat"));
     } catch (exception) {
       setError(String(exception));

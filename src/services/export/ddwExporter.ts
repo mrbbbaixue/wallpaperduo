@@ -7,6 +7,7 @@ interface DdwExportInput {
   tasks: GenerationTask[];
   mapping: ExportMapping;
   alignmentResults?: Record<string, AlignmentResult>;
+  baselineImageBlob?: Blob;
   fileStem: string;
 }
 
@@ -16,8 +17,6 @@ interface ThemeJson {
   nightImageList: number[];
   sunriseImageList?: number[];
   sunsetImageList?: number[];
-  dayHighlight?: string;
-  nightHighlight?: string;
 }
 
 const pickBlob = (task: GenerationTask, aligned?: AlignmentResult): Blob | undefined => {
@@ -60,6 +59,10 @@ export const buildDdwBlob = async (input: DdwExportInput): Promise<Blob> => {
     zip.file(filename, blob);
   }
 
+  if (input.baselineImageBlob) {
+    zip.file(`${input.fileStem}_baseline.png`, input.baselineImageBlob);
+  }
+
   const mapIds = (ids: string[]) =>
     ids
       .map((id) => indexByVariantId.get(id))
@@ -71,8 +74,6 @@ export const buildDdwBlob = async (input: DdwExportInput): Promise<Blob> => {
     sunriseImageList: mapIds(input.mapping.sunrise),
     sunsetImageList: mapIds(input.mapping.sunset),
     nightImageList: mapIds(input.mapping.night),
-    dayHighlight: "#f4d3a6",
-    nightHighlight: "#6f8bb4",
   };
 
   const normalized = ensureRequiredLists(themeJson, indexByVariantId.size);

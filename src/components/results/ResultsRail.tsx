@@ -1,7 +1,9 @@
 import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import { Box, Button, ButtonBase, Chip, Stack, Typography } from "@mui/material";
+import { saveAs } from "file-saver";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -29,6 +31,10 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
 
   const activeIndex = useMemo(
     () => succeeded.findIndex((task) => task.id === activeResultId),
+    [activeResultId, succeeded],
+  );
+  const activeTask = useMemo(
+    () => (activeResultId ? succeeded.find((task) => task.id === activeResultId) : succeeded[0]),
     [activeResultId, succeeded],
   );
 
@@ -105,6 +111,13 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
     }
   };
 
+  const handleDownloadSingle = () => {
+    if (!activeTask?.result?.blob) return;
+    const safeLabel = activeTask.label.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
+    const filename = safeLabel ? `${safeLabel}.png` : `result_${activeTask.id}.png`;
+    saveAs(activeTask.result.blob, filename);
+  };
+
   return (
     <Box ref={railRef}>
       <SectionCard
@@ -141,6 +154,15 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
               disabled={!activeResultId}
             >
               {t("results.compareMode")}
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<DownloadRoundedIcon />}
+              onClick={handleDownloadSingle}
+              disabled={!activeTask?.result?.blob}
+            >
+              {t("common.download")}
             </Button>
             <Chip
               size="small"
