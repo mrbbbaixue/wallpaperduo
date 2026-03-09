@@ -23,6 +23,7 @@ interface GenerateControlsProps {
   prompts: PromptEntry[];
   onPreprocess: () => Promise<void>;
   preprocessLoading: boolean;
+  showAnalyze?: boolean;
 }
 
 export const GenerateControls = ({
@@ -30,6 +31,7 @@ export const GenerateControls = ({
   prompts,
   onPreprocess,
   preprocessLoading,
+  showAnalyze = true,
 }: GenerateControlsProps) => {
   const { t } = useTranslation();
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
@@ -103,17 +105,19 @@ export const GenerateControls = ({
       </Typography>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<PsychologyRoundedIcon />}
-          onClick={() => void onPreprocess()}
-          disabled={!preparedImage || preprocessLoading}
-        >
-          {preprocessLoading
-            ? t("common.loading")
-            : t("prompts.analyze")}
-        </Button>
+        {showAnalyze ? (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<PsychologyRoundedIcon />}
+            onClick={() => void onPreprocess()}
+            disabled={!preparedImage || preprocessLoading}
+          >
+            {preprocessLoading
+              ? t("common.loading")
+              : t("prompts.analyze")}
+          </Button>
+        ) : null}
         <Button
           variant="contained"
           size="small"

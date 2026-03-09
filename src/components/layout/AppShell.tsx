@@ -36,7 +36,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
           inset: 0,
           pointerEvents: "none",
           background:
-            "radial-gradient(circle at 16% -8%, rgba(78, 124, 136, 0.12), transparent 40%), radial-gradient(circle at 88% 0%, rgba(179, 138, 89, 0.1), transparent 36%)",
+            "radial-gradient(circle at 16% -8%, rgba(78, 124, 136, 0.07), transparent 40%), radial-gradient(circle at 88% 0%, rgba(179, 138, 89, 0.06), transparent 36%)",
           zIndex: 0,
         },
       }}

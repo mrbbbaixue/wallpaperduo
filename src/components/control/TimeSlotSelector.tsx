@@ -1,10 +1,5 @@
 import {
   Box,
-  Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Typography,
 } from "@mui/material";
@@ -46,13 +41,15 @@ export const TimeSlotSelector = ({
   };
 
   const getLabel = (slot: typeof timeSlots[number]) => (isZh ? slot.labelZh : slot.labelEn);
+  const detectedSlot = timeSlots.find((slot) => slot.key === detectedTimeOfDay);
+  const detectedLabel = detectedSlot ? getLabel(detectedSlot) : isZh ? "未识别" : "N/A";
 
   return (
     <Stack spacing={2}>
       {/* Current Time of Day */}
       <Stack spacing={1}>
         <Typography variant="subtitle2">
-          {isZh ? "当前时段" : "Current Time of Day"}
+          {isZh ? "参考图所处时段" : "Reference Time of Day"}
         </Typography>
 
         {/* Timeline progress bar */}
@@ -86,22 +83,9 @@ export const TimeSlotSelector = ({
           })}
         </Stack>
 
-        {/* Dropdown fallback */}
-        <FormControl size="small" sx={{ maxWidth: 200 }}>
-          <InputLabel>{isZh ? "AI 判断" : "AI Detected"}</InputLabel>
-          <Select
-            value={currentTimeOfDay ?? ""}
-            label={isZh ? "AI 判断" : "AI Detected"}
-            onChange={(e) => onCurrentTimeChange(e.target.value as TimeVariant)}
-          >
-            {timeSlots.map((slot) => (
-              <MenuItem key={slot.key} value={slot.key}>
-                {getLabel(slot)}
-                {detectedTimeOfDay === slot.key && " (AI)"}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Typography variant="caption" color="text.secondary">
+          {isZh ? `AI判断：${detectedLabel}` : `AI detected: ${detectedLabel}`}
+        </Typography>
       </Stack>
 
       {/* Target Slots to Generate */}
@@ -109,24 +93,32 @@ export const TimeSlotSelector = ({
         <Typography variant="subtitle2">
           {isZh ? "要生成的版本（可多选）" : "Versions to Generate (multi-select)"}
         </Typography>
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={0} sx={{ width: "100%" }}>
           {timeSlots.map((slot) => {
             const isSelected = selectedSlots.includes(slot.key);
-            const isCurrent = currentTimeOfDay === slot.key;
             return (
-              <Chip
+              <Box
                 key={slot.key}
-                label={`${getLabel(slot)}${isCurrent ? (isZh ? " (当前)" : " (current)") : ""}`}
                 onClick={() => toggleSlot(slot.key)}
-                variant={isSelected ? "filled" : "outlined"}
-                color="primary"
                 sx={{
+                  flex: 1,
+                  py: 0.8,
+                  border: "1px solid",
                   borderColor: isSelected ? slot.color : "divider",
-                  bgcolor: isSelected ? slot.color : "transparent",
-                  color: isSelected ? "#fff" : "text.primary",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  bgcolor: isSelected ? slot.color : "action.selected",
+                  color: isSelected ? "#ffffff" : "text.primary",
+                  "&:first-of-type": { borderRadius: "6px 0 0 6px" },
+                  "&:last-of-type": { borderRadius: "0 6px 6px 0" },
+                  transition: "all 0.2s",
                   fontWeight: isSelected ? 700 : 500,
+                  fontSize: "0.8rem",
+                  "&:hover": { opacity: 0.9 },
                 }}
-              />
+              >
+                {getLabel(slot)}
+              </Box>
             );
           })}
         </Stack>

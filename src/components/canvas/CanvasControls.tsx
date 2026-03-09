@@ -12,7 +12,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { aspectRatios } from "@/data/aspectRatios";
@@ -32,13 +32,20 @@ export const CanvasControls = () => {
   const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const normalizedRatioId = aspectRatios.some((item) => item.id === ratioId) ? ratioId : "16:9";
+
+  useEffect(() => {
+    if (ratioId !== normalizedRatioId) {
+      setRatioId(normalizedRatioId);
+    }
+  }, [normalizedRatioId, ratioId, setRatioId]);
 
   const ratio =
-    ratioId === "custom"
+    normalizedRatioId === "custom"
       ? customRatio
       : (() => {
-          const preset = aspectRatios.find((item) => item.id === ratioId);
-          return preset ? { width: preset.width, height: preset.height } : { width: 3, height: 1 };
+          const preset = aspectRatios.find((item) => item.id === normalizedRatioId);
+          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
         })();
 
   const onPrepare = async () => {
@@ -57,7 +64,7 @@ export const CanvasControls = () => {
         width: output.width,
         height: output.height,
         objectUrl: URL.createObjectURL(output.blob),
-        ratioId,
+        ratioId: normalizedRatioId,
         mode: prepareMode,
       });
       setPreparedImage(prepared);
@@ -75,7 +82,7 @@ export const CanvasControls = () => {
           <FormControl fullWidth size="small">
             <InputLabel>{t("workspace.ratio")}</InputLabel>
             <Select
-              value={ratioId}
+              value={normalizedRatioId}
               label={t("workspace.ratio")}
               onChange={(e) => setRatioId(e.target.value)}
             >
@@ -87,7 +94,7 @@ export const CanvasControls = () => {
             </Select>
           </FormControl>
         </Grid>
-        {ratioId === "custom" && (
+        {normalizedRatioId === "custom" && (
           <>
             <Grid size={{ xs: 3, sm: 2 }}>
               <TextField
@@ -115,7 +122,7 @@ export const CanvasControls = () => {
             </Grid>
           </>
         )}
-        <Grid size={{ xs: 12, sm: ratioId === "custom" ? 12 : 5 }}>
+        <Grid size={{ xs: 12, sm: normalizedRatioId === "custom" ? 12 : 5 }}>
           <ToggleButtonGroup
             exclusive
             value={prepareMode}
@@ -137,6 +144,11 @@ export const CanvasControls = () => {
       >
         {loading ? t("common.loading") : t("workspace.prepare")}
       </Button>
+      {sourceImage ? (
+        <Typography variant="caption" color="text.secondary">
+          {sourceImage.name} · {sourceImage.width}x{sourceImage.height}
+        </Typography>
+      ) : null}
       {preparedImage && (
         <Typography variant="caption" color="text.secondary">
           {t("workspace.prepared")} · {preparedImage.width}x{preparedImage.height}

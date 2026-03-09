@@ -1,7 +1,10 @@
-import { Alert, Box, Divider, Stack, Typography } from "@mui/material";
-import { useCallback, useState } from "react";
+import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
+import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
+import { Alert, Box, Button, Divider, Stack, Typography } from "@mui/material";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { CanvasControls } from "@/components/canvas/CanvasControls";
 import { SectionCard } from "@/components/common/SectionCard";
 import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
 import { PromptEditor } from "@/components/control/PromptEditor";
@@ -10,8 +13,9 @@ import { TaskQueue } from "@/components/control/TaskQueue";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
 import { createProvider } from "@/services/providers";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { useWorkflowStore } from "@/store/useWorkflowStore";
+import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { toUserError } from "@/utils/error";
+import { getImageSize, readFileAsBlob } from "@/utils/image";
 import type { TimeVariant } from "@/types/domain";
 
 interface PromptEntry {
@@ -23,8 +27,11 @@ interface PromptEntry {
 export const ControlPanel = () => {
   const { i18n, t } = useTranslation();
   const isZh = i18n.language === "zh";
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
+  const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const sceneAnalysis = useWorkflowStore((s) => s.sceneAnalysis);
   const setSceneAnalysis = useWorkflowStore((s) => s.setSceneAnalysis);
   const analysisProvider = useSettingsStore((s) => s.analysisProvider);
@@ -38,6 +45,7 @@ export const ControlPanel = () => {
   const [prompts, setPrompts] = useState<PromptEntry[]>([]);
   const [preprocessLoading, setPreprocessLoading] = useState(false);
   const [preprocessError, setPreprocessError] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const handlePromptChange = useCallback(
     (timeOfDay: TimeVariant, field: "prompt" | "negativePrompt", value: string) => {
@@ -129,6 +137,29 @@ export const ControlPanel = () => {
     }
   };
 
+  const onUploadFile = useCallback(
+    async (file?: File) => {
+      if (!file) return;
+      try {
+        const blob = await readFileAsBlob(file);
+        const size = await getImageSize(blob);
+        const loaded = buildLoadedImage({
+          name: file.name,
+          mimeType: blob.type || "image/png",
+          blob,
+          width: size.width,
+          height: size.height,
+          objectUrl: URL.createObjectURL(blob),
+        });
+        setUploadError("");
+        setSourceImage(loaded);
+      } catch {
+        setUploadError("INVALID_IMAGE");
+      }
+    },
+    [setSourceImage],
+  );
+
   return (
     <Box
       sx={{
@@ -149,7 +180,7 @@ export const ControlPanel = () => {
       }}
     >
       <SectionCard
-        title={isZh ? "控制面板" : "Control Panel"}
+        title={isZh ? "创作流程" : "Workflow"}
         subtitle={
           isZh
             ? `视觉分析: ${analysisProvider} · 图像生成: ${generationProvider}`
@@ -159,9 +190,15 @@ export const ControlPanel = () => {
         <Stack
           spacing={2}
           sx={{
-            height: { md: "100%" },
+            height: { md: "calc(100vh - 190px)" },
+            maxHeight: { md: "calc(100vh - 190px)" },
             overflowY: { md: "auto" },
             pr: { md: 0.5 },
+            "&::-webkit-scrollbar": { width: 8 },
+            "&::-webkit-scrollbar-thumb": {
+              borderRadius: 999,
+              backgroundColor: "action.hover",
+            },
           }}
         >
         <Box
@@ -175,7 +212,99 @@ export const ControlPanel = () => {
         >
           <Stack spacing={1.25}>
             <Typography variant="overline" color="text.secondary">
-              {isZh ? "01 选择时段" : "01 Select Slots"}
+              {isZh ? "01 基准图处理与 AI 分析" : "01 Baseline Prep & AI Analysis"}
+            </Typography>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: "none" }}
+              onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
+            />
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              alignItems={{ xs: "stretch", sm: "center" }}
+            >
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<UploadRoundedIcon />}
+                onClick={() => inputRef.current?.click()}
+                sx={{ minWidth: 116, width: { xs: "100%", sm: "fit-content" } }}
+              >
+                {t("common.upload")}
+              </Button>
+              <Typography variant="caption" color="text.secondary">
+                {sourceImage
+                  ? isZh
+                    ? "已加载参考图，可继续裁剪与准备。"
+                    : "Reference image loaded. Continue with crop and prepare."
+                  : isZh
+                    ? "先上传参考图，再设置比例和裁剪方式。"
+                    : "Upload a reference image, then set ratio and crop mode."}
+              </Typography>
+            </Stack>
+            {uploadError ? <Alert severity="error">{t(`errors.${uploadError}`, uploadError)}</Alert> : null}
+            <Box
+              sx={{
+                p: 1.1,
+                borderRadius: 1.2,
+                border: "1px solid",
+                borderColor: "divider",
+                backgroundColor: "background.paper",
+              }}
+            >
+              <CanvasControls />
+            </Box>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<PsychologyRoundedIcon />}
+                onClick={() => void onPreprocess()}
+                disabled={!preparedImage || preprocessLoading}
+              >
+                {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
+              </Button>
+              <Typography variant="caption" color="text.secondary">
+                {isZh ? `分析模型: ${analysisProvider}` : `Analysis model: ${analysisProvider}`}
+              </Typography>
+            </Stack>
+            {sceneAnalysis ? (
+              <Stack spacing={0.75}>
+                <Typography variant="body2">{sceneAnalysis.summary}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
+                </Typography>
+              </Stack>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                {isZh
+                  ? "先执行基准图准备，再进行 AI 场景分析。"
+                  : "Prepare baseline image first, then run AI scene analysis."}
+              </Typography>
+            )}
+          </Stack>
+        </Box>
+
+        <Divider />
+
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "action.hover",
+          }}
+        >
+          <Stack spacing={1.25}>
+            <Typography variant="overline" color="text.secondary">
+              {isZh ? "02 选择时段" : "02 Select Slots"}
             </Typography>
             <TimeSlotSelector
               currentTimeOfDay={currentTimeOfDay}
@@ -188,34 +317,6 @@ export const ControlPanel = () => {
         </Box>
 
         <Divider />
-
-        {sceneAnalysis && (
-          <>
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: 1.5,
-                border: "1px solid",
-                borderColor: "divider",
-                backgroundColor: "action.hover",
-              }}
-            >
-              <Stack spacing={0.75}>
-                <Typography variant="overline" color="text.secondary">
-                  {isZh ? "02 场景分析结果" : "02 Scene Analysis"}
-                </Typography>
-                <Typography variant="body2">{sceneAnalysis.summary}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
-                </Typography>
-              </Stack>
-            </Box>
-            <Divider />
-          </>
-        )}
 
         <Box
           sx={{
@@ -251,13 +352,14 @@ export const ControlPanel = () => {
         >
           <Stack spacing={1.25}>
             <Typography variant="overline" color="text.secondary">
-              {isZh ? "04 预处理与生成" : "04 Preprocess & Generate"}
+              {isZh ? "04 生成任务" : "04 Generate"}
             </Typography>
             <GenerateControls
               selectedSlots={selectedSlots}
               prompts={prompts}
               onPreprocess={onPreprocess}
               preprocessLoading={preprocessLoading}
+              showAnalyze={false}
             />
           </Stack>
         </Box>

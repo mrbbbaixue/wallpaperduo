@@ -15,8 +15,8 @@ export const buildTheme = (mode: "light" | "dark") => {
       main: isLight ? "#96683d" : "#deb685",
     },
     background: {
-      default: isLight ? "#f6f0e7" : "#121417",
-      paper: isLight ? alpha("#ffffff", 0.7) : alpha("#1a1d22", 0.78),
+      default: isLight ? "#fbf7f0" : "#1d2330",
+      paper: isLight ? alpha("#ffffff", 0.78) : alpha("#2a3444", 0.72),
     },
     text: {
       primary: isLight ? "#1d2127" : "#f0ede7",
@@ -119,8 +119,8 @@ export const buildTheme = (mode: "light" | "dark") => {
             color: palette.text.primary,
             backgroundColor: palette.background.default,
             backgroundImage: isLight
-              ? "linear-gradient(160deg, #f6f0e7 0%, #ece7df 48%, #e9eef4 100%)"
-              : "linear-gradient(165deg, #121417 0%, #181c22 54%, #1d232d 100%)",
+              ? "linear-gradient(160deg, #fbf7f0 0%, #f3ede4 52%, #eff4fa 100%)"
+              : "linear-gradient(165deg, #1d2330 0%, #273140 52%, #324052 100%)",
             backgroundAttachment: "fixed",
           },
           "body::before": {
@@ -129,9 +129,9 @@ export const buildTheme = (mode: "light" | "dark") => {
             inset: 0,
             zIndex: -1,
             pointerEvents: "none",
-            opacity: isLight ? 0.08 : 0.06,
+            opacity: isLight ? 0.05 : 0.035,
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(34,40,48,0.18) 1px, transparent 0)",
+              "radial-gradient(circle at 1px 1px, rgba(34,40,48,0.14) 1px, transparent 0)",
             backgroundSize: "4px 4px",
           },
           "code, pre, .mono": {
@@ -154,8 +154,8 @@ export const buildTheme = (mode: "light" | "dark") => {
             backgroundColor: palette.background.paper,
             backdropFilter: "blur(10px)",
             boxShadow: isLight
-              ? "0 10px 28px rgba(34, 44, 62, 0.12)"
-              : "0 12px 30px rgba(0, 0, 0, 0.4)",
+              ? "0 10px 24px rgba(34, 44, 62, 0.1)"
+              : "0 12px 24px rgba(0, 0, 0, 0.24)",
           },
         },
       },
