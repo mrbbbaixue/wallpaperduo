@@ -4,7 +4,7 @@ import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import { AppBar, Box, Chip, IconButton, Stack, Toolbar, Typography } from "@mui/material";
-import { useState, type PropsWithChildren } from "react";
+import { useEffect, useState, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SettingsModal } from "@/components/settings/SettingsModal";
@@ -18,6 +18,10 @@ export const AppShell = ({ children }: PropsWithChildren) => {
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = t("appName");
+  }, [t, i18n.language]);
 
   const toggleLanguage = () => {
     const next = language === "zh" ? "en" : "zh";
