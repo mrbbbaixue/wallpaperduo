@@ -204,7 +204,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 1.5,
+            borderRadius: 0,
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -249,7 +249,7 @@ export const ControlPanel = () => {
             <Box
               sx={{
                 p: 1.1,
-                borderRadius: 1.2,
+                borderRadius: 0,
                 border: "1px solid",
                 borderColor: "divider",
                 backgroundColor: "background.paper",
@@ -296,7 +296,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 1.5,
+            borderRadius: 0,
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -321,7 +321,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 1.5,
+            borderRadius: 0,
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -344,7 +344,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 1.5,
+            borderRadius: 0,
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -373,7 +373,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 1.5,
+            borderRadius: 0,
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",

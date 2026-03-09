@@ -54,21 +54,32 @@ export const MainPage = () => {
     <>
       <Grid
         container
-        spacing={0.9}
+        spacing={0}
         sx={{
           px: 0,
-          alignItems: "flex-start",
+          alignItems: "stretch",
         }}
       >
-        <Grid size={{ xs: 12, md: 9 }}>
-          <Stack spacing={1.25}>
-            <CanvasWorkspace />
-            {!isMobile ? <ResultsRail /> : null}
-          </Stack>
+        <Grid
+          size={{ xs: 12, md: 9 }}
+          sx={{
+            minWidth: 0,
+            pb: { xs: 1, md: 0 },
+          }}
+        >
+          <CanvasWorkspace />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Stack spacing={1.25}>
+        <Grid
+          size={{ xs: 12, md: 3 }}
+          sx={{
+            borderColor: "divider",
+            borderTop: { xs: "1px solid", md: "none" },
+            borderLeft: { xs: "none", md: "1px solid" },
+            pb: 1,
+          }}
+        >
+          <Stack spacing={0}>
             <ControlPanel />
             <ExportPanel />
           </Stack>

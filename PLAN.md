@@ -1,137 +1,129 @@
-# WallpaperDuo UI 升级计划 v4.0（高端现代衬线版）
+# WallpaperDuo UI 升级计划 v5.1（Edge-to-Edge + Collapsible Gallery）
 
-## 1. 目标与边界
+更新时间：2026-03-09
 
-### 1.1 核心目标
-- 将当前工作台升级为“高端现代”视觉风格，强调克制、秩序和高级质感。
-- 全局字体改为衬线体系，兼顾中文与英文显示质量。
-- 保留现有业务链路（上传、分析、生成、导出、设置），本次以 UI/UX 重构为主，不改核心能力。
+## 1. 本轮目标
 
-### 1.2 设计方向
-- 视觉关键词：`Editorial`、`Luxury Minimal`、`Soft Glass`、`Spatial Rhythm`。
-- 页面气质从“工具面板”升级为“创作工作台”。
-- 保持 3:1 画布主导布局，但提升信息层级和留白节奏。
+1. 把整体界面从“功能可用”升级为“高级创作工作台”（更强层级、更好留白、更统一气质）。
+2. 在左侧画布区域新增“可伸缩画廊缩略图”（可展开/收起），让用户在主视觉区完成选图与对比。
+3. 不改核心业务链路（上传、预处理、分析、生成、导出），只做 UI/UX 与交互组织升级。
+4. 布局改为 edge-to-edge：左右区域不做圆角、直接占满，左侧画布区采用无边界视觉。
 
----
+## 2. 现状快照（基于当前代码）
 
-## 2. 代码现状审计（基于当前仓库）
+1. 主布局在 [`src/pages/MainPage.tsx`](src/pages/MainPage.tsx) 中采用 `9/3`，左侧为画布，右侧为流程与导出。
+2. 左侧 [`src/components/canvas/CanvasWorkspace.tsx`](src/components/canvas/CanvasWorkspace.tsx) 只有主画布预览，没有内嵌缩略图带。
+3. 缩略图已存在于 [`src/components/results/ResultsRail.tsx`](src/components/results/ResultsRail.tsx)，当前在桌面端显示在左侧下方，移动端放到底部 Drawer。
+4. 主题基础已是衬线方向（[`src/theme/theme.ts`](src/theme/theme.ts)、[`src/index.css`](src/index.css)），但组件层仍有较多局部 `sx` 规则，视觉一致性还不够高。
 
-### 2.1 可见问题
-- 主题字体仍是无衬线（`IBM Plex Sans` + `Syne`），与“高端衬线”目标冲突。
-- 大量组件使用内联 `sx`，视觉规则分散，后续维护成本高。
-- `SectionCard` 间距与圆角较紧，信息密度偏高，不符合高端感所需的呼吸感。
-- 顶栏（`AppShell`）结构偏功能化，品牌层级和视觉重心不足。
-- `ResultsAndExport`、`ProviderSettingsPanel` 信息堆叠较重，缺少分组节奏与强调层级。
-- `src/App.css` 仍保留 Vite 模板样式，疑似遗留文件，易引入风格噪音。
+## 3. 设计方向（高级感）
 
-### 2.2 风险点
-- 全局字体改造会影响中英文字符宽度，需重新校准按钮高度、输入框行高和断行。
-- 玻璃模糊和渐变叠层过多会增加绘制开销，需控制 blur 层数量和范围。
-- 设置面板字段较多，若只换皮不重排，视觉仍会显得拥挤。
+视觉关键词：`Studio Editorial`、`Focused Canvas`、`Edge-to-Edge`。
 
----
+1. 强化“主舞台”：画布是第一视觉中心，控制区与导出区保持次级存在感。
+2. 控制“玻璃感”剂量：减少泛滥的 blur/阴影，把强调聚焦到主卡片和关键操作。
+3. 统一节奏系统：标题层级、卡片间距、按钮高度、边角半径保持一套规则。
+4. 提升品牌感：顶部 AppShell 更像“产品头部”，不是普通工具栏。
+5. 视觉边界最小化：去掉左右主区圆角和卡片感，改为平齐铺满式布局。
 
-## 3. 改造方案
+## 4. 关键新增：左侧画布画廊缩略图
 
-### 3.1 建立统一设计令牌（Design Tokens）
-- 在 `src/theme/theme.ts` 建立高端化 token：
-  - 颜色：`ivory` / `charcoal` / `bronze` / `mist` 体系。
-  - 间距：8pt 基础上新增 `12/20/28/40` 的节奏层。
-  - 阴影：分离 `soft`, `elevated`, `hero` 三档。
-  - 圆角：收敛为 `12 / 18 / 28` 三档，不再随处自定义。
-- 将可复用样式从组件内联 `sx` 提升到主题 `components` 覆盖层，减少样式漂移。
+结论：可以做，而且当前状态模型已经支持，改造成本可控。
 
-### 3.2 全局衬线字体系统
-- 字体策略：
-  - 中文主字体：`Noto Serif SC`。
-  - 英文/数字主字体：`Source Serif 4`（或 `Cormorant Garamond` 作为标题强调）。
-- 应用策略：
-  - `body`、`button`、`input`、`chip` 统一衬线族。
-  - `h1/h2/h3` 使用更高对比的衬线字重与更紧的字距。
-  - 代码/技术字段（如 provider id）保留等宽字体以提升识别性。
-- 调整 `line-height` 与 `letter-spacing`，避免中文衬线在小字号下发灰。
+### 4.1 交互定义
 
-### 3.3 页面骨架与空间重构
-- `MainPage`：
-  - 保持左 9 右 3 的主结构，但引入明确的垂直节奏分区。
-  - 下方结果区与上方工作区建立视觉分割（细线 + 光晕 + 间距）。
-- `AppShell`：
-  - 顶栏改为更轻量但更有品牌感的“悬浮带”。
-  - 标题与 tagline 形成主副层级，操作按钮弱化为次级视觉。
-- 画布区：
-  - 保持 `3:1` 主画幅，强化“展板感”（更精致边框、阴影和底部柔光）。
+1. 生成成功后，缩略图自动出现在画布区域下方（桌面端）。
+2. 点击缩略图切换 `activeResultId`，主画布即时更新。
+3. 保留“基准图/单图/对比”模式；切回基准图时取消结果高亮。
+4. 键盘仍支持左右切换（沿用 ResultsRail 的可访问性行为）。
+5. 新结果到达时自动滚动到可见区域并高亮一次（轻动效）。
+6. 缩略图区支持展开/收起：
+- 展开：显示完整缩略图带与计数信息。
+- 收起：保留一行轻量栏（标题 + 数量 + 展开按钮），最大化主画布可视空间。
 
-### 3.4 关键组件重设计
-- `SectionCard`：
-  - 增加留白，优化标题区（标题、副标题、操作按钮）对齐规则。
-  - 卡片层级统一到主题，不在业务组件重复定义边框阴影。
-- `ControlPanel`：
-  - 由“线性堆叠”改为“步骤组块”（选择时段 -> 分析 -> Prompt -> 生成队列）。
-  - 每组块加简洁编号或小标题，提升扫描效率。
-- `ResultsAndExport`：
-  - 画廊卡片采用统一比例和更干净标签样式。
-  - 导出映射区改为更紧凑但层次清晰的矩阵布局。
-- `SettingsModal` / `ProviderSettingsPanel`：
-  - 增加分区标题与说明文本密度控制，减少“长表单压迫感”。
-  - 对高频项（Provider 路由、模型、API Key）做优先级前置。
+### 4.2 布局策略
 
-### 3.5 高端氛围细节
-- 背景：采用低饱和多层渐变 + 轻颗粒纹理，避免纯平背景。
-- 模糊：只保留 2-3 个关键高斯层，避免全局泛滥。
-- 动效：
-  - 页面进入、卡片浮现、按钮悬停采用统一缓动曲线。
-  - 动效时长收敛到 `160ms / 240ms / 420ms` 三档。
-- 暗色模式与亮色模式都保持“高端一致性”，不出现“换肤但换气质”问题。
+1. 桌面端：画布区改为两段结构
+- 上段：3:1 主画布。
+- 下段：可伸缩横向缩略图带（展开时固定高度，超出横向滚动；收起时仅保留工具栏高度）。
+2. 移动端：继续保留底部 Drawer 结果入口，避免挤压主画布高度。
+3. 若结果为 0，缩略图区不占位。
+4. 左右区域容器去圆角、去内缩边界，整体铺满父级宽度。
+5. 左侧画布区采用无边界视觉（不加外边框，不做独立卡片边界）。
 
----
+### 4.3 技术落点
 
-## 4. 实施步骤（按优先级）
+1. 新增组件：`src/components/canvas/CanvasGalleryStrip.tsx`（建议）。
+2. 在 [`src/components/canvas/CanvasWorkspace.tsx`](src/components/canvas/CanvasWorkspace.tsx) 内组合主画布 + 画廊缩略图。
+3. 复用 `useWorkflowStore` 中已有状态：`tasks`、`activeResultId`、`previewMode`、`setActiveResultId`。
+4. [`src/components/results/ResultsRail.tsx`](src/components/results/ResultsRail.tsx) 转为“移动端底部胶片”专用，避免桌面端重复呈现两套缩略图。
+5. 画廊展开态建议新增本地 UI 状态：`isGalleryExpanded`（可放在 `CanvasWorkspace`，如需持久化再迁移到 store）。
 
-1. 基线清理
-- 清理遗留样式文件与无效规则（重点检查 `src/App.css`）。
-- 盘点内联 `sx` 的重复样式，列出可主题化项。
+## 5. 分阶段实施
 
-2. 主题与字体落地
-- 更新 `src/index.css` 字体导入与全局变量。
-- 重构 `src/theme/theme.ts` 的排版、颜色、阴影、组件覆盖。
+### Phase 1：视觉基线（高级感统一）
 
-3. 骨架与卡片系统
-- 重构 `src/components/layout/AppShell.tsx`、`src/pages/MainPage.tsx`、`src/components/common/SectionCard.tsx`。
-- 先统一骨架和卡片，再进入业务面板样式。
+涉及文件：
+- [`src/theme/theme.ts`](src/theme/theme.ts)
+- [`src/components/common/SectionCard.tsx`](src/components/common/SectionCard.tsx)
+- [`src/components/layout/AppShell.tsx`](src/components/layout/AppShell.tsx)
 
-4. 业务面板视觉重排
-- 依次改造：
-  - `src/components/canvas/CanvasWorkspace.tsx`
-  - `src/components/control/ControlPanel.tsx`
-  - `src/components/results/ResultsAndExport.tsx`
-  - `src/components/settings/SettingsModal.tsx`
-  - `src/components/settings/ProviderSettingsPanel.tsx`
+动作：
+1. 收敛圆角、阴影、边框透明度，减少局部自定义“漂移”。
+2. 统一标题/副标题/说明文字的层级与行高。
+3. 顶栏强化品牌层级，弱化图标按钮噪音。
+4. 主工作区改为 edge-to-edge：去掉左右主区圆角和容器边框式包裹。
 
-5. 微交互与性能校准
-- 统一转场与悬停动效。
-- 控制 blur 与阴影开销，检查低端设备流畅度。
+### Phase 2：左侧画廊缩略图落地（核心）
 
-6. 验证与收口
-- 运行 `npm run lint`、`npm run build`。
-- 做中英文、亮暗模式、移动端到桌面端的视觉回归检查。
+涉及文件：
+- [`src/components/canvas/CanvasWorkspace.tsx`](src/components/canvas/CanvasWorkspace.tsx)
+- [`src/components/canvas/CanvasGalleryStrip.tsx`](src/components/canvas/CanvasGalleryStrip.tsx)（新增）
+- [`src/pages/MainPage.tsx`](src/pages/MainPage.tsx)
+- [`src/components/results/ResultsRail.tsx`](src/components/results/ResultsRail.tsx)
 
----
+动作：
+1. 拆分原画布内容，抽出“缩略图带”子组件。
+2. 主画布与缩略图形成一个完整卡片，提高“左侧工作区闭环”体验。
+3. `MainPage` 中移除桌面端独立 ResultsRail，只保留移动端结果抽屉能力。
+4. 为缩略图带加入展开/收起交互，并在收起态保留最小控制条。
+5. 左侧主画布改为无边界视觉，不使用外层卡片轮廓。
 
-## 5. 验收标准
+### Phase 3：流程区与导出区精修
 
-- [ ] 全局字体为衬线体系，中文和英文显示稳定、无明显错位。
-- [ ] 页面整体视觉达到“高端现代”目标：层级清晰、留白充足、质感统一。
-- [ ] 画布区域仍为 `3:1` 且视觉重心明确。
-- [ ] 顶栏、卡片、设置弹窗、结果区风格统一，不再出现“拼装感”。
-- [ ] 内联重复样式显著减少，主题 token 覆盖率提升。
-- [ ] 亮色/暗色模式均保持一致审美，不发生明显破版。
-- [ ] `npm run lint` 通过。
-- [ ] `npm run build` 通过。
+涉及文件：
+- [`src/components/control/ControlPanel.tsx`](src/components/control/ControlPanel.tsx)
+- [`src/components/results/ExportPanel.tsx`](src/components/results/ExportPanel.tsx)
 
----
+动作：
+1. 降低步骤块视觉噪声（边框、底色、分割线密度）。
+2. 优化导出映射区域信息密度，减少“表单墙”观感。
+3. 统一按钮组和标签样式，提升可扫描性。
 
-## 6. 超出当前思路的建议（可选）
+### Phase 4：验收与回归
 
-- 引入“品牌叙事元素”：例如每个时段（晨/昼/昏/夜）对应一套微色调标签，让结果区更具收藏感。
-- 增加“演示模式”（Presentation Mode）：隐藏复杂控制，仅展示画布与结果，适合对外演示或截图传播。
-- 后续可考虑把 UI token 独立为 `theme/tokens.ts`，为未来多主题（Classic / Luxe / Studio）打基础。
+动作：
+1. `npm run lint`
+2. `npm run build`
+3. 视觉回归：中英文、亮暗主题、桌面/移动端。
+4. 交互回归：上传后预处理、生成、切图、对比、导出全链路。
+
+## 6. 风险与对策
+
+1. 缩略图过多导致性能压力
+- 对策：缩略图固定尺寸、`loading="lazy"`、限制一次性动效数量。
+2. 左侧区域高度被压缩
+- 对策：桌面端优先保证主画布高度，缩略图带高度固定且可滚动。
+3. 两套结果入口引发认知重复
+- 对策：桌面端只留画布内画廊，移动端保留 Drawer 入口。
+4. 无边界视觉导致区域分界不清
+- 对策：使用轻量分隔（色阶、间距、细线）替代卡片边框。
+
+## 7. 验收标准
+
+1. 左侧画布区域在有结果时出现可伸缩缩略图画廊，支持展开/收起，点击可切换主预览。
+2. 桌面端不再出现“画布下方一套 + 独立 ResultsRail 一套”的重复胶片区。
+3. 主画布仍保持 `3:1` 视觉主导，移动端不破版。
+4. 左右区域无圆角且占满布局，左侧画布呈现无边界视觉。
+5. 主题与样式节奏统一，页面观感明显提升为“高级创作台”。
+6. `npm run lint` 与 `npm run build` 通过。

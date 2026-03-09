@@ -107,7 +107,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ position: "relative", zIndex: 1, px: { xs: 0.75, md: 1.25 }, pb: 1.25 }}>
+      <Box sx={{ position: "relative", zIndex: 1, px: 0, pb: 0 }}>
         {children}
       </Box>
 

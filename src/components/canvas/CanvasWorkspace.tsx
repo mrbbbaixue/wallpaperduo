@@ -9,11 +9,13 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useTheme } from "@mui/material/styles";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { SectionCard } from "@/components/common/SectionCard";
+import { CanvasGalleryStrip } from "@/components/canvas/CanvasGalleryStrip";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
 
@@ -27,6 +29,8 @@ const checkerboardBg = `
 export const CanvasWorkspace = () => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
@@ -39,8 +43,14 @@ export const CanvasWorkspace = () => {
 
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
+  const previousSucceededCountRef = useRef(0);
 
-  const succeededTasks = tasks.filter((task) => task.status === "succeeded" && task.result);
+  const succeededTasks = useMemo(
+    () => tasks.filter((task) => task.status === "succeeded" && task.result?.blob),
+    [tasks],
+  );
+  const hasResults = succeededTasks.length > 0;
   const activeTask = activeResultId
     ? succeededTasks.find((task) => task.id === activeResultId)
     : undefined;
@@ -49,12 +59,25 @@ export const CanvasWorkspace = () => {
     if (succeededTasks.length === 0) {
       if (activeResultId) setActiveResultId(undefined);
       if (previewMode !== "single") setPreviewMode("single");
+      previousSucceededCountRef.current = 0;
       return;
     }
 
-    if (!activeResultId || !succeededTasks.some((task) => task.id === activeResultId)) {
+    const hasActive = activeResultId
+      ? succeededTasks.some((task) => task.id === activeResultId)
+      : false;
+    const hadResultsBefore = previousSucceededCountRef.current > 0;
+
+    if (!activeResultId && !hadResultsBefore) {
+      setActiveResultId(succeededTasks[0].id);
+      previousSucceededCountRef.current = succeededTasks.length;
+      return;
+    }
+
+    if (activeResultId && !hasActive) {
       setActiveResultId(succeededTasks[0].id);
     }
+    previousSucceededCountRef.current = succeededTasks.length;
   }, [
     activeResultId,
     previewMode,
@@ -113,26 +136,15 @@ export const CanvasWorkspace = () => {
   const compareReady = previewMode === "compare" && !!basePreviewUrl && !!resultPreviewUrl;
 
   return (
-    <Box
-      sx={{
-        "& > .MuiCard-root": {
-          border: 0,
-          borderRadius: 0,
-          boxShadow: "none",
-          background: "transparent",
-          backdropFilter: "none",
-        },
-        "& > .MuiCard-root::before": { display: "none" },
-      }}
-    >
-      <SectionCard hideHeader>
+    <Box sx={{ minWidth: 0 }}>
       <Stack spacing={1.5}>
-        {activeTask ? (
+        {hasResults ? (
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Button
               size="small"
               variant={activeResultId ? "outlined" : "contained"}
               onClick={() => setActiveResultId(undefined)}
+              sx={{ borderRadius: 0 }}
             >
               {t("results.baseSelect")}
             </Button>
@@ -144,17 +156,23 @@ export const CanvasWorkspace = () => {
                 if (next) setPreviewMode(next);
               }}
             >
-              <ToggleButton value="single">
+              <ToggleButton value="single" sx={{ borderRadius: 0 }}>
                 <ImageRoundedIcon sx={{ mr: 0.5, fontSize: 16 }} />
                 {t("results.singleMode")}
               </ToggleButton>
-              <ToggleButton value="compare">
+              <ToggleButton value="compare" sx={{ borderRadius: 0 }}>
                 <CompareArrowsRoundedIcon sx={{ mr: 0.5, fontSize: 16 }} />
                 {t("results.compareMode")}
               </ToggleButton>
             </ToggleButtonGroup>
             <Typography variant="caption" color="text.secondary">
-              {isZh ? `当前结果：${activeTask.label}` : `Current result: ${activeTask.label}`}
+              {activeTask
+                ? isZh
+                  ? `当前结果：${activeTask.label}`
+                  : `Current result: ${activeTask.label}`
+                : isZh
+                  ? "当前预览：基准图"
+                  : "Current preview: baseline"}
             </Typography>
           </Stack>
         ) : null}
@@ -172,16 +190,20 @@ export const CanvasWorkspace = () => {
               // Keep the canvas stage near full viewport height on desktop by default.
               md: "clamp(520px, calc(100vh - 190px), 920px)",
             },
-            borderRadius: 2,
-            border: isDragging ? "2px dashed" : "1px solid",
-            borderColor: isDragging ? "primary.main" : "divider",
-            background: checkerboardBg,
+            borderRadius: 0,
+            border: 0,
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), " +
+              checkerboardBg,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
             isolation: "isolate",
-            transition: "border-color 0.2s, box-shadow 0.2s",
+            transition: "outline-color 0.2s, box-shadow 0.2s",
+            outline: isDragging ? "2px dashed" : "none",
+            outlineColor: "primary.main",
+            outlineOffset: -2,
             boxShadow: isDragging
               ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 20px 48px rgba(88, 189, 208, 0.22)"
               : "none",
@@ -240,10 +262,15 @@ export const CanvasWorkspace = () => {
           )}
         </Box>
 
-        {error ? <Alert severity="error">{t(`errors.${error}`, error)}</Alert> : null}
+        {!isMobile ? (
+          <CanvasGalleryStrip
+            expanded={isGalleryExpanded}
+            onToggleExpanded={() => setIsGalleryExpanded((expanded) => !expanded)}
+          />
+        ) : null}
 
+        {error ? <Alert severity="error">{t(`errors.${error}`, error)}</Alert> : null}
       </Stack>
-      </SectionCard>
     </Box>
   );
 };

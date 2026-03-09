@@ -53,8 +53,11 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
     const hasActive = activeResultId
       ? succeeded.some((task) => task.id === activeResultId)
       : false;
+    const hadResultsBefore = previousCountRef.current > 0;
 
-    if (!hasActive) {
+    if (!activeResultId && !hadResultsBefore) {
+      setActiveResultId(succeeded[0].id);
+    } else if (activeResultId && !hasActive) {
       setActiveResultId(succeeded[0].id);
     }
 
