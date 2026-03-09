@@ -75,7 +75,20 @@ export const MainPage = () => {
           sx={{
             borderColor: "divider",
             borderTop: { xs: "1px solid", md: "none" },
-            borderLeft: { xs: "none", md: "1px solid" },
+            position: "relative",
+            "&::before": {
+              content: '""',
+              display: { xs: "none", md: "block" },
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: 18,
+              transform: "translateX(-100%)",
+              pointerEvents: "none",
+              background:
+                "linear-gradient(90deg, rgba(20, 22, 25, 0) 0%, rgba(20, 22, 25, 0.05) 55%, rgba(20, 22, 25, 0.1) 100%)",
+            },
             pb: 1,
           }}
         >
