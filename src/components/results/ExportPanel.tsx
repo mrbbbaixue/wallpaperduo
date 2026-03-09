@@ -114,7 +114,7 @@ export const ExportPanel = () => {
           border: "1px solid",
           borderColor: "divider",
           borderRadius: 2,
-          backgroundColor: "background.paper",
+          backgroundColor: "action.hover",
           "&::before": { display: "none" },
         }}
       >

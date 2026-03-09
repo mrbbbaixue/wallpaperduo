@@ -10,11 +10,10 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SectionCard } from "@/components/common/SectionCard";
-import { CanvasControls } from "@/components/canvas/CanvasControls";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
 
@@ -28,7 +27,6 @@ const checkerboardBg = `
 export const CanvasWorkspace = () => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
@@ -127,34 +125,7 @@ export const CanvasWorkspace = () => {
         "& > .MuiCard-root::before": { display: "none" },
       }}
     >
-      <SectionCard
-        title={t("workspace.uploadTitle")}
-        subtitle={
-          isZh
-            ? "主画布采用 3:1 展板比例，优先保证构图完整。"
-            : "Primary board uses a 3:1 ratio to preserve composition."
-        }
-        actions={
-          <>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              style={{ display: "none" }}
-              onChange={(event) => void onFile(event.currentTarget.files?.[0])}
-            />
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<UploadRoundedIcon />}
-              onClick={() => inputRef.current?.click()}
-              sx={{ minWidth: 116 }}
-            >
-              {t("common.upload")}
-            </Button>
-          </>
-        }
-      >
+      <SectionCard hideHeader>
       <Stack spacing={1.5}>
         {activeTask ? (
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -213,7 +184,7 @@ export const CanvasWorkspace = () => {
             transition: "border-color 0.2s, box-shadow 0.2s",
             boxShadow: isDragging
               ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 20px 48px rgba(88, 189, 208, 0.22)"
-              : "0 14px 36px rgba(16, 24, 29, 0.15)",
+              : "none",
           }}
         >
           {compareReady ? (
@@ -269,15 +240,8 @@ export const CanvasWorkspace = () => {
           )}
         </Box>
 
-        {sourceImage ? (
-          <Typography variant="caption" color="text.secondary">
-            {sourceImage.name} · {sourceImage.width}x{sourceImage.height}
-          </Typography>
-        ) : null}
-
         {error ? <Alert severity="error">{t(`errors.${error}`, error)}</Alert> : null}
 
-        {sourceImage ? <CanvasControls /> : null}
       </Stack>
       </SectionCard>
     </Box>

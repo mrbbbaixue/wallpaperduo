@@ -36,7 +36,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
           inset: 0,
           pointerEvents: "none",
           background:
-            "radial-gradient(circle at 16% -8%, rgba(78, 124, 136, 0.12), transparent 40%), radial-gradient(circle at 88% 0%, rgba(179, 138, 89, 0.1), transparent 36%)",
+            "radial-gradient(circle at 16% -8%, rgba(78, 124, 136, 0.07), transparent 40%), radial-gradient(circle at 88% 0%, rgba(179, 138, 89, 0.06), transparent 36%)",
           zIndex: 0,
         },
       }}
@@ -70,18 +70,24 @@ export const AppShell = ({ children }: PropsWithChildren) => {
             sx={{
               maxWidth: { xs: "100%", md: 560 },
               alignSelf: { xs: "stretch", sm: "center" },
-              backgroundColor: "background.paper",
+              backgroundColor: "transparent",
               "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" },
             }}
           />
           <Stack direction="row" spacing={0.75} alignItems="center">
-            <IconButton onClick={toggleLanguage} aria-label="language" size="small">
+            <IconButton
+              onClick={toggleLanguage}
+              aria-label="language"
+              size="small"
+              sx={{ backgroundColor: "transparent" }}
+            >
               <LanguageRoundedIcon fontSize="small" />
             </IconButton>
             <IconButton
               onClick={() => setThemeMode(themeMode === "light" ? "dark" : "light")}
               aria-label="theme"
               size="small"
+              sx={{ backgroundColor: "transparent" }}
             >
               {themeMode === "light" ? (
                 <DarkModeRoundedIcon fontSize="small" />
@@ -89,7 +95,12 @@ export const AppShell = ({ children }: PropsWithChildren) => {
                 <LightModeRoundedIcon fontSize="small" />
               )}
             </IconButton>
-            <IconButton onClick={() => setSettingsOpen(true)} aria-label="settings" size="small">
+            <IconButton
+              onClick={() => setSettingsOpen(true)}
+              aria-label="settings"
+              size="small"
+              sx={{ backgroundColor: "transparent" }}
+            >
               <SettingsRoundedIcon fontSize="small" />
             </IconButton>
           </Stack>
