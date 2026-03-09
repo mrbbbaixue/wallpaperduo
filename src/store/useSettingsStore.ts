@@ -11,7 +11,7 @@ import type {
 import type { ProviderKind } from "@/types/domain";
 
 type UiLanguage = "en" | "zh";
-type UiThemeMode = "light" | "dark";
+type UiThemeMode = "light" | "dark" | "system";
 
 interface PromptSettings {
   analysisUserPrompt: string;
@@ -100,11 +100,18 @@ const sanitizeLegacyApiKey = (value: unknown): string => {
   return value.startsWith("enc::") ? "" : value;
 };
 
+const normalizeThemeMode = (value: unknown): UiThemeMode => {
+  if (value === "light" || value === "dark" || value === "system") {
+    return value;
+  }
+  return "system";
+};
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       language: "zh",
-      themeMode: "light",
+      themeMode: "system",
       selectedProvider: "openrouter",
       analysisProvider: "openrouter",
       generationProvider: "openrouter",
@@ -161,7 +168,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "wallpaperduo.settings.v1",
-      version: 4,
+      version: 5,
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== "object") {
           return persistedState;
@@ -171,6 +178,7 @@ export const useSettingsStore = create<SettingsState>()(
           selectedProvider?: ProviderKind;
           analysisProvider?: ProviderKind;
           generationProvider?: ProviderKind;
+          themeMode?: UiThemeMode;
           providers?: {
             ark?: {
               baseUrl?: string;
@@ -240,6 +248,18 @@ export const useSettingsStore = create<SettingsState>()(
               ...defaultPromptSettings,
               ...(state.promptSettings ?? {}),
             },
+          };
+        }
+
+        if (version < 5) {
+          nextState = {
+            ...nextState,
+            themeMode: "system",
+          };
+        } else {
+          nextState = {
+            ...nextState,
+            themeMode: normalizeThemeMode(nextState.themeMode),
           };
         }
 

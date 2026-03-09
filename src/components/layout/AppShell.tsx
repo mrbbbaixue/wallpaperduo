@@ -1,3 +1,4 @@
+import BrightnessAutoRoundedIcon from "@mui/icons-material/BrightnessAutoRounded";
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
@@ -22,6 +23,18 @@ export const AppShell = ({ children }: PropsWithChildren) => {
     const next = language === "zh" ? "en" : "zh";
     setLanguage(next);
     void i18n.changeLanguage(next);
+  };
+
+  const cycleThemeMode = () => {
+    if (themeMode === "system") {
+      setThemeMode("light");
+      return;
+    }
+    if (themeMode === "light") {
+      setThemeMode("dark");
+      return;
+    }
+    setThemeMode("system");
   };
 
   return (
@@ -84,16 +97,14 @@ export const AppShell = ({ children }: PropsWithChildren) => {
               <LanguageRoundedIcon fontSize="small" />
             </IconButton>
             <IconButton
-              onClick={() => setThemeMode(themeMode === "light" ? "dark" : "light")}
-              aria-label="theme"
+              onClick={cycleThemeMode}
+              aria-label="theme-mode"
               size="small"
               sx={{ backgroundColor: "transparent" }}
             >
-              {themeMode === "light" ? (
-                <DarkModeRoundedIcon fontSize="small" />
-              ) : (
-                <LightModeRoundedIcon fontSize="small" />
-              )}
+              {themeMode === "system" ? <BrightnessAutoRoundedIcon fontSize="small" /> : null}
+              {themeMode === "light" ? <LightModeRoundedIcon fontSize="small" /> : null}
+              {themeMode === "dark" ? <DarkModeRoundedIcon fontSize="small" /> : null}
             </IconButton>
             <IconButton
               onClick={() => setSettingsOpen(true)}

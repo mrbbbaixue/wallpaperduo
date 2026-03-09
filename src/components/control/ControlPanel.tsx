@@ -1,6 +1,6 @@
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
-import { Alert, Box, Button, Divider, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -165,7 +165,7 @@ export const ControlPanel = () => {
       sx={{
         "& > .MuiCard-root": {
           border: 0,
-          borderRadius: 0,
+          borderRadius: "5px",
           boxShadow: "none",
           background: "transparent",
           backdropFilter: "none",
@@ -204,7 +204,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 0,
+            borderRadius: "5px",
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -249,7 +249,7 @@ export const ControlPanel = () => {
             <Box
               sx={{
                 p: 1.1,
-                borderRadius: 0,
+                borderRadius: "5px",
                 border: "1px solid",
                 borderColor: "divider",
                 backgroundColor: "background.paper",
@@ -291,12 +291,10 @@ export const ControlPanel = () => {
           </Stack>
         </Box>
 
-        <Divider />
-
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 0,
+            borderRadius: "5px",
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -316,12 +314,10 @@ export const ControlPanel = () => {
           </Stack>
         </Box>
 
-        <Divider />
-
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 0,
+            borderRadius: "5px",
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -339,12 +335,10 @@ export const ControlPanel = () => {
           </Stack>
         </Box>
 
-        <Divider />
-
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 0,
+            borderRadius: "5px",
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
@@ -373,7 +367,7 @@ export const ControlPanel = () => {
         <Box
           sx={{
             p: 1.5,
-            borderRadius: 0,
+            borderRadius: "5px",
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "action.hover",
