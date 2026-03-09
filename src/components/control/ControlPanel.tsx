@@ -170,7 +170,7 @@ export const ControlPanel = () => {
             borderRadius: 1.5,
             border: "1px solid",
             borderColor: "divider",
-            backgroundColor: "background.paper",
+            backgroundColor: "action.hover",
           }}
         >
           <Stack spacing={1.25}>
@@ -197,7 +197,7 @@ export const ControlPanel = () => {
                 borderRadius: 1.5,
                 border: "1px solid",
                 borderColor: "divider",
-                backgroundColor: "background.paper",
+                backgroundColor: "action.hover",
               }}
             >
               <Stack spacing={0.75}>
@@ -223,7 +223,7 @@ export const ControlPanel = () => {
             borderRadius: 1.5,
             border: "1px solid",
             borderColor: "divider",
-            backgroundColor: "background.paper",
+            backgroundColor: "action.hover",
           }}
         >
           <Stack spacing={1.25}>
@@ -246,7 +246,7 @@ export const ControlPanel = () => {
             borderRadius: 1.5,
             border: "1px solid",
             borderColor: "divider",
-            backgroundColor: "background.paper",
+            backgroundColor: "action.hover",
           }}
         >
           <Stack spacing={1.25}>
@@ -274,7 +274,7 @@ export const ControlPanel = () => {
             borderRadius: 1.5,
             border: "1px solid",
             borderColor: "divider",
-            backgroundColor: "background.paper",
+            backgroundColor: "action.hover",
           }}
         >
           <Stack spacing={1}>

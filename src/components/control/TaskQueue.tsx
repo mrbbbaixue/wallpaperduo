@@ -40,7 +40,7 @@ export const TaskQueue = () => {
               borderRadius: 1.5,
               border: "1px solid",
               borderColor: "divider",
-              bgcolor: "background.paper",
+              bgcolor: "action.hover",
             }}
           >
             <Stack spacing={0.55}>

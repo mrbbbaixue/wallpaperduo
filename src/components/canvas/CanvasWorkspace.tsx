@@ -213,7 +213,7 @@ export const CanvasWorkspace = () => {
             transition: "border-color 0.2s, box-shadow 0.2s",
             boxShadow: isDragging
               ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 20px 48px rgba(88, 189, 208, 0.22)"
-              : "0 14px 36px rgba(16, 24, 29, 0.15)",
+              : "none",
           }}
         >
           {compareReady ? (

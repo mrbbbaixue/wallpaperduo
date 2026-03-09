@@ -204,8 +204,8 @@ export const buildTheme = (mode: "light" | "dark") => {
         styleOverrides: {
           root: {
             borderBottom: "none",
-            backgroundColor: alpha(palette.background.default, isLight ? 0.72 : 0.78),
-            backdropFilter: "blur(10px)",
+            backgroundColor: "transparent",
+            backdropFilter: "none",
           },
         },
       },
