@@ -10,6 +10,7 @@ import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
 import { PromptEditor } from "@/components/control/PromptEditor";
 import { GenerateControls } from "@/components/control/GenerateControls";
 import { TaskQueue } from "@/components/control/TaskQueue";
+import { desktopWorkspaceHeight } from "@/constants/layout";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
 import { createProvider } from "@/services/providers";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -24,7 +25,11 @@ interface PromptEntry {
   negativePrompt: string;
 }
 
-export const ControlPanel = () => {
+interface ControlPanelProps {
+  desktopScrollManaged?: boolean;
+}
+
+export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps) => {
   const { i18n, t } = useTranslation();
   const isZh = i18n.language === "zh";
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +65,11 @@ export const ControlPanel = () => {
     [],
   );
 
-  const inferTimeOfDay = (analysis: { lighting: string; summary: string; timeOfDay?: TimeVariant }): TimeVariant => {
+  const inferTimeOfDay = (analysis: {
+    lighting: string;
+    summary: string;
+    timeOfDay?: TimeVariant;
+  }): TimeVariant => {
     // Use analyzer's result if available
     if (analysis.timeOfDay) return analysis.timeOfDay;
     const text = `${analysis.lighting} ${analysis.summary}`.toLowerCase();
@@ -107,7 +116,8 @@ export const ControlPanel = () => {
         slot === current
           ? prefixedBaseDesc
           : `${prefixedBaseDesc}, ${timeDesc[slot]}, ${keepComposition}`,
-      negativePrompt: promptSettings.defaultNegativePrompt || "blur, artifact, text, geometry shift, low quality",
+      negativePrompt:
+        promptSettings.defaultNegativePrompt || "blur, artifact, text, geometry shift, low quality",
     }));
   };
 
@@ -117,7 +127,11 @@ export const ControlPanel = () => {
       setPreprocessLoading(true);
       setPreprocessError("");
       const provider = createProvider(analysisProvider, providers);
-      const analysis = await runSceneAnalysis(provider, preparedImage, promptSettings.analysisUserPrompt);
+      const analysis = await runSceneAnalysis(
+        provider,
+        preparedImage,
+        promptSettings.analysisUserPrompt,
+      );
       setSceneAnalysis(analysis);
 
       const detected = inferTimeOfDay(analysis);
@@ -170,12 +184,12 @@ export const ControlPanel = () => {
           background: "transparent",
           backdropFilter: "none",
           minHeight: {
-            md: "clamp(520px, calc(100vh - 190px), 920px)",
+            md: desktopScrollManaged ? 0 : desktopWorkspaceHeight,
           },
         },
         "& > .MuiCard-root::before": { display: "none" },
         "& > .MuiCard-root > .MuiCardContent-root": {
-          height: { md: "100%" },
+          height: { md: desktopScrollManaged ? "auto" : "100%" },
         },
       }}
     >
@@ -190,10 +204,10 @@ export const ControlPanel = () => {
         <Stack
           spacing={2}
           sx={{
-            height: { md: "calc(100vh - 190px)" },
-            maxHeight: { md: "calc(100vh - 190px)" },
-            overflowY: { md: "auto" },
-            pr: { md: 0.5 },
+            height: { md: desktopScrollManaged ? "auto" : desktopWorkspaceHeight },
+            maxHeight: { md: desktopScrollManaged ? "none" : desktopWorkspaceHeight },
+            overflowY: { md: desktopScrollManaged ? "visible" : "auto" },
+            pr: { md: desktopScrollManaged ? 0 : 0.5 },
             "&::-webkit-scrollbar": { width: 8 },
             "&::-webkit-scrollbar-thumb": {
               borderRadius: 999,
@@ -201,185 +215,187 @@ export const ControlPanel = () => {
             },
           }}
         >
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: "5px",
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "action.hover",
-          }}
-        >
-          <Stack spacing={1.25}>
-            <Typography variant="overline" color="text.secondary">
-              {isZh ? "01 基准图处理与 AI 分析" : "01 Baseline Prep & AI Analysis"}
-            </Typography>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              style={{ display: "none" }}
-              onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
-            />
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              alignItems={{ xs: "stretch", sm: "center" }}
-            >
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<UploadRoundedIcon />}
-                onClick={() => inputRef.current?.click()}
-                sx={{ minWidth: 116, width: { xs: "100%", sm: "fit-content" } }}
-              >
-                {t("common.upload")}
-              </Button>
-              <Typography variant="caption" color="text.secondary">
-                {sourceImage
-                  ? isZh
-                    ? "已加载参考图，可继续裁剪与准备。"
-                    : "Reference image loaded. Continue with crop and prepare."
-                  : isZh
-                    ? "先上传参考图，再设置比例和裁剪方式。"
-                    : "Upload a reference image, then set ratio and crop mode."}
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "5px",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "action.hover",
+            }}
+          >
+            <Stack spacing={1.25}>
+              <Typography variant="overline" color="text.secondary">
+                {isZh ? "01 基准图处理与 AI 分析" : "01 Baseline Prep & AI Analysis"}
               </Typography>
-            </Stack>
-            {uploadError ? <Alert severity="error">{t(`errors.${uploadError}`, uploadError)}</Alert> : null}
-            <Box
-              sx={{
-                p: 1.1,
-                borderRadius: "5px",
-                border: "1px solid",
-                borderColor: "divider",
-                backgroundColor: "background.paper",
-              }}
-            >
-              <CanvasControls />
-            </Box>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<PsychologyRoundedIcon />}
-                onClick={() => void onPreprocess()}
-                disabled={!preparedImage || preprocessLoading}
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: "none" }}
+                onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
+              />
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1}
+                alignItems={{ xs: "stretch", sm: "center" }}
               >
-                {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
-              </Button>
-              <Typography variant="caption" color="text.secondary">
-                {isZh ? `分析模型: ${analysisProvider}` : `Analysis model: ${analysisProvider}`}
-              </Typography>
-            </Stack>
-            {sceneAnalysis ? (
-              <Stack spacing={0.75}>
-                <Typography variant="body2">{sceneAnalysis.summary}</Typography>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<UploadRoundedIcon />}
+                  onClick={() => inputRef.current?.click()}
+                  sx={{ minWidth: 116, width: { xs: "100%", sm: "fit-content" } }}
+                >
+                  {t("common.upload")}
+                </Button>
                 <Typography variant="caption" color="text.secondary">
-                  {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
+                  {sourceImage
+                    ? isZh
+                      ? "已加载参考图，可继续裁剪与准备。"
+                      : "Reference image loaded. Continue with crop and prepare."
+                    : isZh
+                      ? "先上传参考图，再设置比例和裁剪方式。"
+                      : "Upload a reference image, then set ratio and crop mode."}
                 </Typography>
               </Stack>
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                {isZh
-                  ? "先执行基准图准备，再进行 AI 场景分析。"
-                  : "Prepare baseline image first, then run AI scene analysis."}
+              {uploadError ? (
+                <Alert severity="error">{t(`errors.${uploadError}`, uploadError)}</Alert>
+              ) : null}
+              <Box
+                sx={{
+                  p: 1.1,
+                  borderRadius: "5px",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  backgroundColor: "background.paper",
+                }}
+              >
+                <CanvasControls />
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PsychologyRoundedIcon />}
+                  onClick={() => void onPreprocess()}
+                  disabled={!preparedImage || preprocessLoading}
+                >
+                  {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  {isZh ? `分析模型: ${analysisProvider}` : `Analysis model: ${analysisProvider}`}
+                </Typography>
+              </Stack>
+              {sceneAnalysis ? (
+                <Stack spacing={0.75}>
+                  <Typography variant="body2">{sceneAnalysis.summary}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
+                  </Typography>
+                </Stack>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  {isZh
+                    ? "先执行基准图准备，再进行 AI 场景分析。"
+                    : "Prepare baseline image first, then run AI scene analysis."}
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "5px",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "action.hover",
+            }}
+          >
+            <Stack spacing={1.25}>
+              <Typography variant="overline" color="text.secondary">
+                {isZh ? "02 选择时段" : "02 Select Slots"}
               </Typography>
-            )}
-          </Stack>
-        </Box>
+              <TimeSlotSelector
+                currentTimeOfDay={currentTimeOfDay}
+                detectedTimeOfDay={detectedTimeOfDay}
+                selectedSlots={selectedSlots}
+                onCurrentTimeChange={setCurrentTimeOfDay}
+                onSelectedSlotsChange={setSelectedSlots}
+              />
+            </Stack>
+          </Box>
 
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: "5px",
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "action.hover",
-          }}
-        >
-          <Stack spacing={1.25}>
-            <Typography variant="overline" color="text.secondary">
-              {isZh ? "02 选择时段" : "02 Select Slots"}
-            </Typography>
-            <TimeSlotSelector
-              currentTimeOfDay={currentTimeOfDay}
-              detectedTimeOfDay={detectedTimeOfDay}
-              selectedSlots={selectedSlots}
-              onCurrentTimeChange={setCurrentTimeOfDay}
-              onSelectedSlotsChange={setSelectedSlots}
-            />
-          </Stack>
-        </Box>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "5px",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "action.hover",
+            }}
+          >
+            <Stack spacing={1.25}>
+              <Typography variant="overline" color="text.secondary">
+                {isZh ? "03 提示词编辑" : "03 Prompt Editing"}
+              </Typography>
+              <PromptEditor
+                selectedSlots={selectedSlots}
+                prompts={prompts}
+                onPromptChange={handlePromptChange}
+              />
+            </Stack>
+          </Box>
 
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: "5px",
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "action.hover",
-          }}
-        >
-          <Stack spacing={1.25}>
-            <Typography variant="overline" color="text.secondary">
-              {isZh ? "03 提示词编辑" : "03 Prompt Editing"}
-            </Typography>
-            <PromptEditor
-              selectedSlots={selectedSlots}
-              prompts={prompts}
-              onPromptChange={handlePromptChange}
-            />
-          </Stack>
-        </Box>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "5px",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "action.hover",
+            }}
+          >
+            <Stack spacing={1.25}>
+              <Typography variant="overline" color="text.secondary">
+                {isZh ? "04 生成任务" : "04 Generate"}
+              </Typography>
+              <GenerateControls
+                selectedSlots={selectedSlots}
+                prompts={prompts}
+                onPreprocess={onPreprocess}
+                preprocessLoading={preprocessLoading}
+                showAnalyze={false}
+              />
+            </Stack>
+          </Box>
 
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: "5px",
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "action.hover",
-          }}
-        >
-          <Stack spacing={1.25}>
-            <Typography variant="overline" color="text.secondary">
-              {isZh ? "04 生成任务" : "04 Generate"}
-            </Typography>
-            <GenerateControls
-              selectedSlots={selectedSlots}
-              prompts={prompts}
-              onPreprocess={onPreprocess}
-              preprocessLoading={preprocessLoading}
-              showAnalyze={false}
-            />
-          </Stack>
-        </Box>
+          {preprocessError && (
+            <Alert severity="error" sx={{ py: 0 }}>
+              {t(`errors.${preprocessError}`, preprocessError)}
+            </Alert>
+          )}
 
-        {preprocessError && (
-          <Alert severity="error" sx={{ py: 0 }}>
-            {t(`errors.${preprocessError}`, preprocessError)}
-          </Alert>
-        )}
-
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: "5px",
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "action.hover",
-          }}
-        >
-          <Stack spacing={1}>
-            <Typography variant="overline" color="text.secondary">
-              {isZh ? "05 任务队列" : "05 Task Queue"}
-            </Typography>
-            <TaskQueue />
-          </Stack>
-        </Box>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "5px",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "action.hover",
+            }}
+          >
+            <Stack spacing={1}>
+              <Typography variant="overline" color="text.secondary">
+                {isZh ? "05 任务队列" : "05 Task Queue"}
+              </Typography>
+              <TaskQueue />
+            </Stack>
+          </Box>
         </Stack>
       </SectionCard>
     </Box>

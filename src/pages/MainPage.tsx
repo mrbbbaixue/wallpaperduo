@@ -18,6 +18,7 @@ import { CanvasWorkspace } from "@/components/canvas/CanvasWorkspace";
 import { ControlPanel } from "@/components/control/ControlPanel";
 import { ExportPanel } from "@/components/results/ExportPanel";
 import { ResultsRail } from "@/components/results/ResultsRail";
+import { desktopWorkspaceHeight } from "@/constants/layout";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 export const MainPage = () => {
@@ -73,6 +74,7 @@ export const MainPage = () => {
         <Grid
           size={{ xs: 12, md: 3 }}
           sx={{
+            minWidth: 0,
             borderColor: "divider",
             borderTop: { xs: "1px solid", md: "none" },
             position: "relative",
@@ -89,13 +91,41 @@ export const MainPage = () => {
               background:
                 "linear-gradient(90deg, rgba(20, 22, 25, 0) 0%, rgba(20, 22, 25, 0.05) 55%, rgba(20, 22, 25, 0.1) 100%)",
             },
-            pb: 1,
+            pb: { xs: 1, md: 0 },
           }}
         >
-          <Stack spacing={0}>
-            <ControlPanel />
-            <ExportPanel />
-          </Stack>
+          {isMobile ? (
+            <Stack spacing={0}>
+              <ControlPanel />
+              <ExportPanel />
+            </Stack>
+          ) : (
+            <Box
+              sx={{
+                height: desktopWorkspaceHeight,
+                minHeight: desktopWorkspaceHeight,
+                overflow: "hidden",
+              }}
+            >
+              <Stack
+                spacing={0}
+                sx={{
+                  height: "100%",
+                  overflowY: "auto",
+                  pr: 0.5,
+                  pb: 1,
+                  "&::-webkit-scrollbar": { width: 8 },
+                  "&::-webkit-scrollbar-thumb": {
+                    borderRadius: 999,
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <ControlPanel desktopScrollManaged />
+                <ExportPanel />
+              </Stack>
+            </Box>
+          )}
         </Grid>
       </Grid>
 
