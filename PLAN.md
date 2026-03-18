@@ -2,6 +2,30 @@
 
 更新时间：2025-03-19
 
+## 当前进度
+
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| Phase 1: 项目初始化 | ✅ 完成 | Tailwind、shadcn/ui、CF Workers 配置 |
+| Phase 2: 后端 Worker | ✅ 完成 | API 代理实现（test-connection、analyze、generate） |
+| Phase 3: 前端基础 | ✅ 完成 | AppShell、状态管理迁移、Provider 配置组件 |
+| Phase 4: 核心业务 | 🔄 进行中 | 需迁移业务组件到 shadcn/ui |
+| Phase 5: 导出与完善 | ⏳ 待开始 | - |
+
+### 已完成提交
+
+```
+751e7cc refactor: 迁移状态管理，简化 Provider 配置
+c5569fc feat: 实现 Worker API Provider 适配器
+983550f feat: 添加 shadcn/ui 基础组件
+79714c1 chore: 配置 Tailwind CSS、shadcn/ui 和 Cloudflare Workers
+d5fbe7b docs: 更新火山引擎 Provider 模板配置
+7bb5ecb docs: 添加 V2 重构实施计划
+c23dd09 docs: 添加 V2 重构设计文档
+```
+
+---
+
 ## 1. 目标概述
 
 将 WallpaperDuo 从纯前端 SPA 重构为 Cloudflare Workers 全栈应用：
@@ -29,28 +53,30 @@
 wallpaperduo/
 ├── src/                          # React 前端
 │   ├── components/
-│   │   ├── ui/                   # shadcn/ui 组件
+│   │   ├── ui/                   # shadcn/ui 组件 ✅
 │   │   ├── canvas/               # 画布相关
 │   │   ├── control/              # 控制面板
-│   │   ├── layout/               # 布局组件
-│   │   └── results/              # 结果展示
-│   ├── lib/                      # 工具函数
-│   ├── hooks/                    # 自定义 hooks
+│   │   ├── layout/               # 布局组件 ✅
+│   │   ├── results/              # 结果展示
+│   │   └── settings/             # 设置组件 ✅
+│   ├── lib/                      # 工具函数 ✅
+│   ├── hooks/                    # 自定义 hooks ✅
 │   ├── services/                 # 业务服务
-│   ├── store/                    # Zustand stores
-│   ├── types/                    # TypeScript 类型
+│   ├── store/                    # Zustand stores ✅
+│   ├── types/                    # TypeScript 类型 ✅
+│   ├── styles/                   # 全局样式 ✅
 │   ├── i18n/                     # 国际化
-│   └── main.tsx
-├── worker/                       # Cloudflare Worker
-│   ├── index.ts                  # Hono 应用入口
-│   └── routes/
-│       ├── analyze.ts            # 图像分析代理
-│       └── generate.ts           # 图像生成代理
+│   └── main.tsx                  # 入口 ✅
+├── worker/                       # Cloudflare Worker ✅
+│   ├── index.ts                  # Hono 应用入口 ✅
+│   ├── providers.ts              # Provider 适配器 ✅
+│   └── types.ts                  # Worker 类型 ✅
 ├── public/
-├── wrangler.toml                 # CF Workers 配置
+├── wrangler.toml                 # CF Workers 配置 ✅
 ├── vite.config.ts
-├── tailwind.config.ts
-├── components.json               # shadcn/ui 配置
+├── tailwind.config.ts            # ✅
+├── postcss.config.js             # ✅
+├── components.json               # shadcn/ui 配置 ✅
 └── package.json
 ```
 
@@ -134,10 +160,10 @@ interface ProviderTemplate {
 - [x] 深色/浅色主题
 
 ### 删除
-- [ ] 本地回退生成
-- [ ] HEIC 导出
-- [ ] ComfyUI Provider
-- [ ] 多 Provider 切换
+- [x] 本地回退生成（类型已移除）
+- [x] HEIC 导出（待删除文件）
+- [x] ComfyUI Provider（类型已移除）
+- [x] 多 Provider 切换（已简化为单一模式）
 
 ### 新增
 - [x] 自定义 Provider 配置
@@ -145,29 +171,29 @@ interface ProviderTemplate {
 
 ## 7. 分阶段实施
 
-### Phase 1: 项目初始化
-- [ ] 创建 v2 分支
-- [ ] 配置 Vite + React + TypeScript
-- [ ] 配置 Tailwind CSS
-- [ ] 安装配置 shadcn/ui
-- [ ] 配置 wrangler.toml
-- [ ] 创建 Hono Worker 骨架
+### Phase 1: 项目初始化 ✅
+- [x] 创建 v2 分支
+- [x] 配置 Vite + React + TypeScript
+- [x] 配置 Tailwind CSS
+- [x] 安装配置 shadcn/ui
+- [x] 配置 wrangler.toml
+- [x] 创建 Hono Worker 骨架
 
-### Phase 2: 后端 Worker
-- [ ] 实现 /api/test-connection
-- [ ] 实现 /api/analyze
-- [ ] 实现 /api/generate
-- [ ] 错误处理与日志
+### Phase 2: 后端 Worker ✅
+- [x] 实现 /api/test-connection
+- [x] 实现 /api/analyze
+- [x] 实现 /api/generate
+- [x] 错误处理与日志
 - [ ] 本地开发测试
 
-### Phase 3: 前端基础
-- [ ] AppShell 布局组件
-- [ ] shadcn/ui 基础组件导入
-- [ ] Provider 配置界面
-- [ ] Zustand store 迁移
-- [ ] i18n 配置
+### Phase 3: 前端基础 ✅
+- [x] AppShell 布局组件
+- [x] shadcn/ui 基础组件导入
+- [x] Provider 配置界面
+- [x] Zustand store 迁移
+- [x] i18n 配置
 
-### Phase 4: 核心业务
+### Phase 4: 核心业务 🔄
 - [ ] 图片上传组件
 - [ ] Canvas 预处理
 - [ ] 场景分析流程
@@ -175,7 +201,7 @@ interface ProviderTemplate {
 - [ ] 图像生成队列
 - [ ] ORB 对齐
 
-### Phase 5: 导出与完善
+### Phase 5: 导出与完善 ⏳
 - [ ] ZIP 导出
 - [ ] DDW 导出
 - [ ] 主题切换
@@ -197,8 +223,8 @@ run_worker_first = true
 
 ### 部署命令
 ```bash
-pnpm build    # 构建前端 + Worker
-pnpm deploy   # 部署到 Cloudflare
+npm run build    # 构建前端 + Worker
+npm run deploy   # 部署到 Cloudflare
 ```
 
 ## 9. 验收标准
