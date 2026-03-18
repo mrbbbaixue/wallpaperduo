@@ -166,8 +166,10 @@ const TEMPLATES: ProviderTemplate[] = [
     id: 'ark',
     name: '火山引擎 Ark',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-    defaultModel: 'doubao-seed-1-6-250815',
-    defaultVisionModel: 'doubao-vision-pro-32k-250328'
+    generateUrl: 'https://ark.cn-beijing.volces.com/api/v3/images/generations',
+    // 注意：实际使用需先部署模型，获得 ep- 开头的接入点ID
+    defaultModel: 'Doubao-Seedream-5.0-Lite',
+    defaultVisionModel: 'doubao-seed-2-0-lite'
   },
   {
     id: 'aliyun',

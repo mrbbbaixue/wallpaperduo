@@ -71,12 +71,14 @@ interface ProviderTemplate {
 
 ### 预设模板
 
-| 模板 | baseUrl | generateUrl | 默认模型 |
-|------|---------|-------------|----------|
-| 火山引擎 Ark | `ark.cn-beijing.volces.com/api/v3` | - | doubao-seed-1-6 |
-| 阿里云百炼 | `dashscope.aliyuncs.com/compatible-mode/v1` | `multimodal-generation/generation` | wanx2.1-t2i-turbo |
-| OpenRouter | `openrouter.ai/api/v1` | - | gemini-2.0-flash |
-| 自定义 | 用户填写 | 用户填写 | 用户填写 |
+| 模板 | baseUrl | generateUrl | 视觉模型 | 生成模型 |
+|------|---------|-------------|----------|----------|
+| 火山引擎 Ark | `ark.cn-beijing.volces.com/api/v3` | `/api/v3/images/generations` | doubao-seed-2-0-lite | Doubao-Seedream-5.0-Lite |
+| 阿里云百炼 | `dashscope.aliyuncs.com/compatible-mode/v1` | `multimodal-generation/generation` | qwen-vl-max | wanx2.1-t2i-turbo |
+| OpenRouter | `openrouter.ai/api/v1` | - | gemini-2.0-flash | gemini-2.0-flash |
+| 自定义 | 用户填写 | 用户填写 | 用户填写 | 用户填写 |
+
+> **注意**：火山方舟需先在控制台部署模型，获得 `ep-` 开头的接入点ID作为实际模型ID。
 
 ### 配置界面
 
