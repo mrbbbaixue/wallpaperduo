@@ -1,4 +1,4 @@
-export type ProviderKind = "openrouter" | "ark" | "comfyui";
+export type ProviderKind = "openrouter" | "ark" | "aliyun" | "comfyui";
 
 export type ThemeVariant = "dark" | "light";
 export type TimeVariant = "dawn" | "day" | "dusk" | "night";

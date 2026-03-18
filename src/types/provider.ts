@@ -37,6 +37,7 @@ export interface ComfyProviderConfig extends ProviderConfig {
 export type ProviderConfigRecord = {
   openrouter: ProviderConfig;
   ark: ProviderConfig;
+  aliyun: ProviderConfig;
   comfyui: ComfyProviderConfig;
 };
 

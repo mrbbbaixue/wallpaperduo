@@ -67,6 +67,15 @@ const createDefaultProviders = (): ProviderConfigRecord => ({
     concurrency: 2,
     extraHeaders: "{}",
   },
+  aliyun: {
+    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    apiKey: "",
+    model: "qwen-image-2.0-pro",
+    visionModel: "qwen3.5-plus",
+    timeoutMs: 60000,
+    concurrency: 2,
+    extraHeaders: "{}",
+  },
   comfyui: {
     baseUrl: "http://127.0.0.1:8188",
     apiKey: "",
@@ -168,7 +177,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "wallpaperduo.settings.v1",
-      version: 5,
+      version: 6,
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== "object") {
           return persistedState;
@@ -261,6 +270,19 @@ export const useSettingsStore = create<SettingsState>()(
             ...nextState,
             themeMode: normalizeThemeMode(nextState.themeMode),
           };
+        }
+
+        if (version < 6) {
+          const legacyProviders = (nextState as { providers?: Record<string, unknown> }).providers;
+          if (legacyProviders && !legacyProviders.aliyun) {
+            nextState = {
+              ...nextState,
+              providers: {
+                ...legacyProviders,
+                aliyun: createDefaultProviders().aliyun,
+              } as typeof state.providers,
+            };
+          }
         }
 
         return nextState;

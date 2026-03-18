@@ -24,7 +24,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import type { ProviderKind } from "@/types/domain";
 import { toUserError } from "@/utils/error";
 
-const providerList: ProviderKind[] = ["openrouter", "ark", "comfyui"];
+const providerList: ProviderKind[] = ["openrouter", "ark", "aliyun", "comfyui"];
 
 export const ProviderSettingsPanel = () => {
   const { t } = useTranslation();

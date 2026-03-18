@@ -1,4 +1,5 @@
 import { createArkProvider } from "@/services/providers/arkProvider";
+import { createAliyunProvider } from "@/services/providers/aliyunProvider";
 import { createComfyUiProvider } from "@/services/providers/comfyuiProvider";
 import { createOpenRouterProvider } from "@/services/providers/openrouterProvider";
 import type { ImageProvider } from "@/types/provider";
@@ -26,6 +27,13 @@ export const createProvider = (
     return createArkProvider({
       ...configs.ark,
       apiKey: configs.ark.apiKey,
+    });
+  }
+
+  if (provider === "aliyun") {
+    return createAliyunProvider({
+      ...configs.aliyun,
+      apiKey: configs.aliyun.apiKey,
     });
   }
 
