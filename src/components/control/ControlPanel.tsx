@@ -1,23 +1,20 @@
-import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
-import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
-import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import { ScanSearch, Upload } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasControls } from "@/components/canvas/CanvasControls";
 import { SectionCard } from "@/components/common/SectionCard";
-import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
-import { PromptEditor } from "@/components/control/PromptEditor";
 import { GenerateControls } from "@/components/control/GenerateControls";
+import { PromptEditor } from "@/components/control/PromptEditor";
 import { TaskQueue } from "@/components/control/TaskQueue";
-import { desktopWorkspaceHeight } from "@/constants/layout";
+import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
+import { Button } from "@/components/ui/button";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
-import { createProvider } from "@/services/providers";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
+import type { TimeVariant } from "@/types/domain";
 import { toUserError } from "@/utils/error";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
-import type { TimeVariant } from "@/types/domain";
 
 interface PromptEntry {
   timeOfDay: TimeVariant;
@@ -39,9 +36,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const sceneAnalysis = useWorkflowStore((s) => s.sceneAnalysis);
   const setSceneAnalysis = useWorkflowStore((s) => s.setSceneAnalysis);
-  const analysisProvider = useSettingsStore((s) => s.analysisProvider);
-  const generationProvider = useSettingsStore((s) => s.generationProvider);
-  const providers = useSettingsStore((s) => s.providers);
+  const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
 
   const [currentTimeOfDay, setCurrentTimeOfDay] = useState<TimeVariant | null>(null);
@@ -52,25 +47,11 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const [preprocessError, setPreprocessError] = useState("");
   const [uploadError, setUploadError] = useState("");
 
-  const handlePromptChange = useCallback(
-    (timeOfDay: TimeVariant, field: "prompt" | "negativePrompt", value: string) => {
-      setPrompts((prev) => {
-        const existing = prev.find((p) => p.timeOfDay === timeOfDay);
-        if (existing) {
-          return prev.map((p) => (p.timeOfDay === timeOfDay ? { ...p, [field]: value } : p));
-        }
-        return [...prev, { timeOfDay, prompt: "", negativePrompt: "", [field]: value }];
-      });
-    },
-    [],
-  );
-
   const inferTimeOfDay = (analysis: {
     lighting: string;
     summary: string;
     timeOfDay?: TimeVariant;
   }): TimeVariant => {
-    // Use analyzer's result if available
     if (analysis.timeOfDay) return analysis.timeOfDay;
     const text = `${analysis.lighting} ${analysis.summary}`.toLowerCase();
     if (/dawn|sunrise|morning|晨|日出|清晨|早晨/.test(text)) return "dawn";
@@ -81,11 +62,11 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
   const recommendSlots = (current: TimeVariant): TimeVariant[] => {
     const all: TimeVariant[] = ["dawn", "day", "dusk", "night"];
-    return all.filter((s) => s !== current);
+    return all.filter((slot) => slot !== current);
   };
 
   const generatePromptSuggestions = (
-    analysis: { summary: string; subjects: string[]; lighting: string },
+    analysis: { summary: string; subjects: string[] },
     current: TimeVariant,
     slots: TimeVariant[],
   ): PromptEntry[] => {
@@ -106,8 +87,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
     const timeDesc = isZh ? timeDescZh : timeDescEn;
     const keepComposition = isZh
-      ? "保持原有构图和细节不变"
-      : "preserve original composition and details";
+      ? "保持原有构图和主体位置"
+      : "preserve original composition and subject placement";
     const prefixedBaseDesc = [promptSettings.generationPrefix, baseDesc].filter(Boolean).join(", ");
 
     return slots.map((slot) => ({
@@ -121,17 +102,29 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     }));
   };
 
+  const handlePromptChange = (
+    timeOfDay: TimeVariant,
+    field: "prompt" | "negativePrompt",
+    value: string,
+  ) => {
+    setPrompts((prev) => {
+      const existing = prev.find((item) => item.timeOfDay === timeOfDay);
+      if (!existing) {
+        return [...prev, { timeOfDay, prompt: "", negativePrompt: "", [field]: value }];
+      }
+      return prev.map((item) =>
+        item.timeOfDay === timeOfDay ? { ...item, [field]: value } : item,
+      );
+    });
+  };
+
   const onPreprocess = async () => {
     if (!preparedImage) return;
+
     try {
       setPreprocessLoading(true);
       setPreprocessError("");
-      const provider = createProvider(analysisProvider, providers);
-      const analysis = await runSceneAnalysis(
-        provider,
-        preparedImage,
-        promptSettings.analysisUserPrompt,
-      );
+      const analysis = await runSceneAnalysis(provider, preparedImage, promptSettings.analysisUserPrompt);
       setSceneAnalysis(analysis);
 
       const detected = inferTimeOfDay(analysis);
@@ -142,8 +135,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       setSelectedSlots(recommended);
 
       const allSlots = [detected, ...recommended];
-      const suggestions = generatePromptSuggestions(analysis, detected, allSlots);
-      setPrompts(suggestions);
+      setPrompts(generatePromptSuggestions(analysis, detected, allSlots));
     } catch (exception) {
       setPreprocessError(toUserError(exception));
     } finally {
@@ -175,229 +167,133 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   );
 
   return (
-    <Box
-      sx={{
-        "& > .MuiCard-root": {
-          border: 0,
-          borderRadius: "5px",
-          boxShadow: "none",
-          background: "transparent",
-          backdropFilter: "none",
-          minHeight: {
-            md: desktopScrollManaged ? 0 : desktopWorkspaceHeight,
-          },
-        },
-        "& > .MuiCard-root::before": { display: "none" },
-        "& > .MuiCard-root > .MuiCardContent-root": {
-          height: { md: desktopScrollManaged ? "auto" : "100%" },
-        },
-      }}
-    >
+    <div className="min-w-0">
       <SectionCard
         title={isZh ? "创作流程" : "Workflow"}
         subtitle={
           isZh
-            ? `视觉分析: ${analysisProvider} · 图像生成: ${generationProvider}`
-            : `Analysis: ${analysisProvider} · Generation: ${generationProvider}`
+            ? `当前通过 ${provider.templateId} 执行场景分析与图像生成`
+            : `Scene analysis and image generation both run through ${provider.templateId}`
         }
       >
-        <Stack
-          spacing={2}
-          sx={{
-            height: { md: desktopScrollManaged ? "auto" : desktopWorkspaceHeight },
-            maxHeight: { md: desktopScrollManaged ? "none" : desktopWorkspaceHeight },
-            overflowY: { md: desktopScrollManaged ? "visible" : "auto" },
-            pr: { md: desktopScrollManaged ? 0 : 0.5 },
-            "&::-webkit-scrollbar": { width: 8 },
-            "&::-webkit-scrollbar-thumb": {
-              borderRadius: 999,
-              backgroundColor: "action.hover",
-            },
-          }}
-        >
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: "5px",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundColor: "action.hover",
-            }}
-          >
-            <Stack spacing={1.25}>
-              <Typography variant="overline" color="text.secondary">
+        <div className={desktopScrollManaged ? "space-y-4" : "space-y-4 md:max-h-[inherit] md:overflow-y-auto md:pr-1"}>
+          <div className="space-y-4 rounded-xl border border-border/70 bg-background/70 p-4">
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 {isZh ? "01 基准图处理与 AI 分析" : "01 Baseline Prep & AI Analysis"}
-              </Typography>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                style={{ display: "none" }}
-                onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
-              />
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1}
-                alignItems={{ xs: "stretch", sm: "center" }}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {isZh
+                  ? "先上传参考图，生成统一基准图后再做 AI 分析。"
+                  : "Upload a reference image, prepare a baseline, then run scene analysis."}
+              </p>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
+            />
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button type="button" onClick={() => inputRef.current?.click()}>
+                <Upload className="h-4 w-4" />
+                {t("common.upload")}
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                {sourceImage
+                  ? isZh
+                    ? "已加载参考图，可继续设置比例并生成基准图。"
+                    : "Reference image loaded. You can now prepare the baseline image."
+                  : isZh
+                    ? "支持 PNG / JPEG / WebP。"
+                    : "Supports PNG / JPEG / WebP."}
+              </p>
+            </div>
+
+            {uploadError ? <p className="text-sm text-destructive">{t(`errors.${uploadError}`, uploadError)}</p> : null}
+
+            <div className="rounded-xl border border-border/70 bg-background/60 p-4">
+              <CanvasControls />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void onPreprocess()}
+                disabled={!preparedImage || preprocessLoading}
               >
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<UploadRoundedIcon />}
-                  onClick={() => inputRef.current?.click()}
-                  sx={{ minWidth: 116, width: { xs: "100%", sm: "fit-content" } }}
-                >
-                  {t("common.upload")}
-                </Button>
-                <Typography variant="caption" color="text.secondary">
-                  {sourceImage
-                    ? isZh
-                      ? "已加载参考图，可继续裁剪与准备。"
-                      : "Reference image loaded. Continue with crop and prepare."
-                    : isZh
-                      ? "先上传参考图，再设置比例和裁剪方式。"
-                      : "Upload a reference image, then set ratio and crop mode."}
-                </Typography>
-              </Stack>
-              {uploadError ? (
-                <Alert severity="error">{t(`errors.${uploadError}`, uploadError)}</Alert>
-              ) : null}
-              <Box
-                sx={{
-                  p: 1.1,
-                  borderRadius: "5px",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  backgroundColor: "background.paper",
-                }}
-              >
-                <CanvasControls />
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<PsychologyRoundedIcon />}
-                  onClick={() => void onPreprocess()}
-                  disabled={!preparedImage || preprocessLoading}
-                >
-                  {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
-                </Button>
-                <Typography variant="caption" color="text.secondary">
-                  {isZh ? `分析模型: ${analysisProvider}` : `Analysis model: ${analysisProvider}`}
-                </Typography>
-              </Stack>
-              {sceneAnalysis ? (
-                <Stack spacing={0.75}>
-                  <Typography variant="body2">{sceneAnalysis.summary}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ")}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
-                  </Typography>
-                </Stack>
-              ) : (
-                <Typography variant="caption" color="text.secondary">
-                  {isZh
-                    ? "先执行基准图准备，再进行 AI 场景分析。"
-                    : "Prepare baseline image first, then run AI scene analysis."}
-                </Typography>
-              )}
-            </Stack>
-          </Box>
+                <ScanSearch className="h-4 w-4" />
+                {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {t("settings.provider")}: {provider.templateId}
+              </span>
+            </div>
 
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: "5px",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundColor: "action.hover",
-            }}
-          >
-            <Stack spacing={1.25}>
-              <Typography variant="overline" color="text.secondary">
-                {isZh ? "02 选择时段" : "02 Select Slots"}
-              </Typography>
-              <TimeSlotSelector
-                currentTimeOfDay={currentTimeOfDay}
-                detectedTimeOfDay={detectedTimeOfDay}
-                selectedSlots={selectedSlots}
-                onCurrentTimeChange={setCurrentTimeOfDay}
-                onSelectedSlotsChange={setSelectedSlots}
-              />
-            </Stack>
-          </Box>
+            {sceneAnalysis ? (
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">{sceneAnalysis.summary}</p>
+                <p>
+                  {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ") || (isZh ? "未识别" : "N/A")}
+                </p>
+                <p>
+                  {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {isZh ? "准备好基准图后，再执行场景分析。" : "Prepare the baseline image before scene analysis."}
+              </p>
+            )}
+          </div>
 
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: "5px",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundColor: "action.hover",
-            }}
-          >
-            <Stack spacing={1.25}>
-              <Typography variant="overline" color="text.secondary">
-                {isZh ? "03 提示词编辑" : "03 Prompt Editing"}
-              </Typography>
-              <PromptEditor
-                selectedSlots={selectedSlots}
-                prompts={prompts}
-                onPromptChange={handlePromptChange}
-              />
-            </Stack>
-          </Box>
+          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isZh ? "02 选择时段" : "02 Select Time Variants"}
+            </p>
+            <TimeSlotSelector
+              currentTimeOfDay={currentTimeOfDay}
+              detectedTimeOfDay={detectedTimeOfDay}
+              selectedSlots={selectedSlots}
+              onCurrentTimeChange={setCurrentTimeOfDay}
+              onSelectedSlotsChange={setSelectedSlots}
+            />
+          </div>
 
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: "5px",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundColor: "action.hover",
-            }}
-          >
-            <Stack spacing={1.25}>
-              <Typography variant="overline" color="text.secondary">
-                {isZh ? "04 生成任务" : "04 Generate"}
-              </Typography>
-              <GenerateControls
-                selectedSlots={selectedSlots}
-                prompts={prompts}
-                onPreprocess={onPreprocess}
-                preprocessLoading={preprocessLoading}
-                showAnalyze={false}
-              />
-            </Stack>
-          </Box>
+          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isZh ? "03 提示词编辑" : "03 Prompt Editing"}
+            </p>
+            <PromptEditor selectedSlots={selectedSlots} prompts={prompts} onPromptChange={handlePromptChange} />
+          </div>
 
-          {preprocessError && (
-            <Alert severity="error" sx={{ py: 0 }}>
-              {t(`errors.${preprocessError}`, preprocessError)}
-            </Alert>
-          )}
+          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isZh ? "04 批量生成" : "04 Batch Generation"}
+            </p>
+            <GenerateControls
+              selectedSlots={selectedSlots}
+              prompts={prompts}
+              onPreprocess={onPreprocess}
+              preprocessLoading={preprocessLoading}
+              showAnalyze={false}
+            />
+          </div>
 
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: "5px",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundColor: "action.hover",
-            }}
-          >
-            <Stack spacing={1}>
-              <Typography variant="overline" color="text.secondary">
-                {isZh ? "05 任务队列" : "05 Task Queue"}
-              </Typography>
-              <TaskQueue />
-            </Stack>
-          </Box>
-        </Stack>
+          {preprocessError ? <p className="text-sm text-destructive">{t(`errors.${preprocessError}`, preprocessError)}</p> : null}
+
+          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isZh ? "05 任务队列" : "05 Task Queue"}
+            </p>
+            <TaskQueue />
+          </div>
+        </div>
       </SectionCard>
-    </Box>
+    </div>
   );
 };

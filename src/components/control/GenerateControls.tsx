@@ -1,11 +1,9 @@
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
-import { Alert, Button, Stack, Typography } from "@mui/material";
+import { ScanSearch, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/ui/button";
 import { runGenerationQueue } from "@/services/generation/generationQueue";
-import { createProvider } from "@/services/providers";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 import type { GenerationTask, TimeVariant } from "@/types/domain";
@@ -37,10 +35,8 @@ export const GenerateControls = ({
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const setTasks = useWorkflowStore((s) => s.setTasks);
   const updateTask = useWorkflowStore((s) => s.updateTask);
-  const generationProvider = useSettingsStore((s) => s.generationProvider);
-  const providers = useSettingsStore((s) => s.providers);
+  const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
-  const localFallbackEnabled = useSettingsStore((s) => s.localFallbackEnabled);
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -60,12 +56,12 @@ export const GenerateControls = ({
       return {
         id: createId("gen"),
         label: slot,
-        theme: "dark" as const,
+        theme: slot === "night" ? "dark" : "light",
         timeOfDay: slot,
         prompt: entry?.prompt ?? "",
         negativePrompt: entry?.negativePrompt ?? promptSettings.defaultNegativePrompt,
         seed: Math.floor(Math.random() * 100000000),
-        status: "idle" as const,
+        status: "idle",
         progress: 0,
       };
     });
@@ -76,15 +72,12 @@ export const GenerateControls = ({
       const existingTasks = useWorkflowStore.getState().tasks;
       setTasks([...existingTasks, ...newTasks]);
 
-      const provider = createProvider(generationProvider, providers);
-      const concurrency = Math.max(1, providers[generationProvider].concurrency || 1);
       const completed = await runGenerationQueue({
         provider,
         prepared: preparedImage,
         tasks: newTasks,
-        concurrency,
+        concurrency: 2,
         retries: 1,
-        localFallback: localFallbackEnabled,
         onTaskUpdate: (taskId, patch) => updateTask(taskId, patch),
       });
 
@@ -99,41 +92,34 @@ export const GenerateControls = ({
   };
 
   return (
-    <Stack spacing={1.5}>
-      <Typography variant="subtitle2">
-        {t("settings.generationSection")}
-      </Typography>
-
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
         {showAnalyze ? (
           <Button
-            variant="outlined"
-            size="small"
-            startIcon={<PsychologyRoundedIcon />}
+            type="button"
+            variant="outline"
             onClick={() => void onPreprocess()}
             disabled={!preparedImage || preprocessLoading}
           >
-            {preprocessLoading
-              ? t("common.loading")
-              : t("prompts.analyze")}
+            <ScanSearch className="h-4 w-4" />
+            {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
           </Button>
         ) : null}
         <Button
-          variant="contained"
-          size="small"
-          startIcon={<AutoAwesomeRoundedIcon />}
+          type="button"
           onClick={() => void onGenerate()}
           disabled={!preparedImage || generating || selectedSlots.length === 0}
         >
+          <Sparkles className="h-4 w-4" />
           {generating ? t("common.loading") : t("common.generate")}
         </Button>
-      </Stack>
+      </div>
 
-      <Typography variant="caption" color="text.secondary">
-        {t("settings.generationProvider")}: {generationProvider}
-      </Typography>
+      <p className="text-sm text-muted-foreground">
+        {t("settings.provider")}: <span className="font-medium">{provider.templateId}</span>
+      </p>
 
-      {error && <Alert severity="error" sx={{ py: 0 }}>{t(`errors.${error}`, error)}</Alert>}
-    </Stack>
+      {error ? <p className="text-sm text-destructive">{t(`errors.${error}`, error)}</p> : null}
+    </div>
   );
 };

@@ -1,5 +1,6 @@
-import type { ImageProvider } from "@/types/provider";
 import type { PreparedImage, SceneAnalysis } from "@/types/domain";
+import type { ProviderConfig } from "@/types/provider";
+import { analyzePreparedImage } from "@/services/api/workerClient";
 import { loadImageFromBlob } from "@/utils/image";
 
 const buildLocalAnalysis = async (prepared: PreparedImage): Promise<SceneAnalysis> => {
@@ -78,15 +79,12 @@ const buildLocalAnalysis = async (prepared: PreparedImage): Promise<SceneAnalysi
 };
 
 export const runSceneAnalysis = async (
-  provider: ImageProvider,
+  provider: ProviderConfig,
   prepared: PreparedImage,
   userPrompt: string,
 ): Promise<SceneAnalysis> => {
   try {
-    const result = await provider.analyzeImage({
-      prepared,
-      userPrompt,
-    });
+    const result = await analyzePreparedImage(prepared, provider, userPrompt);
     // Ensure tone and timeOfDay are present (may be missing from provider response)
     if (!result.tone || !result.timeOfDay) {
       const localAnalysis = await buildLocalAnalysis(prepared);

@@ -1,5 +1,9 @@
 import type { ProviderConfig, SceneAnalysis } from "./types";
 
+type GeneratedImagePayload =
+  | { kind: "url"; value: string }
+  | { kind: "data-url"; value: string };
+
 export async function testConnection(config: ProviderConfig): Promise<{ ok: boolean; message: string }> {
   const url = `${config.baseUrl}/chat/completions`;
   const model = config.visionModel || config.model;
@@ -88,7 +92,7 @@ export async function generateImage(
   height: number,
   config: ProviderConfig,
   negativePrompt?: string
-): Promise<string> {
+): Promise<GeneratedImagePayload> {
   const url = config.generateUrl || `${config.baseUrl}/images/generations`;
 
   // OpenAI 兼容格式（无自定义 generateUrl）
@@ -114,7 +118,7 @@ export async function generateImage(
     const data = (await response.json()) as { data?: Array<{ url?: string }> };
     const imageUrl = data.data?.[0]?.url;
     if (!imageUrl) throw new Error("No image URL in response");
-    return imageUrl;
+    return { kind: "url", value: imageUrl };
   }
 
   // 阿里云 DashScope / 火山引擎 Ark 格式
@@ -165,5 +169,8 @@ export async function generateImage(
 
   const imageUrl = data.output?.choices?.[0]?.message?.content?.[0]?.image;
   if (!imageUrl) throw new Error("No image URL in response");
-  return imageUrl;
+  if (imageUrl.startsWith("data:")) {
+    return { kind: "data-url", value: imageUrl };
+  }
+  return { kind: "url", value: imageUrl };
 }

@@ -1,12 +1,12 @@
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import { useTranslation } from "react-i18next";
+
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
-  IconButton,
-} from "@mui/material";
-import { useTranslation } from "react-i18next";
-
+} from "@/components/ui/dialog";
 import { ProviderSettingsPanel } from "./ProviderSettingsPanel";
 
 interface SettingsModalProps {
@@ -18,34 +18,15 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const { t } = useTranslation();
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-      PaperProps={{
-        sx: {
-          maxHeight: "92vh",
-          backdropFilter: "blur(20px)",
-          borderRadius: 1.5,
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          pb: 1,
-        }}
-      >
-        {t("settings.dialogTitle")}
-        <IconButton onClick={onClose} edge="end" aria-label="close">
-          <CloseRoundedIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers sx={{ p: { xs: 1.25, md: 1.75 } }}>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[92vh] max-w-4xl overflow-hidden border-border/70 bg-background/95 p-0 backdrop-blur">
+        <DialogHeader className="border-b border-border/70 px-5 py-4 md:px-6">
+          <DialogTitle>{t("settings.dialogTitle")}</DialogTitle>
+          <DialogDescription>{t("settings.securityTip")}</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto px-5 py-5 md:px-6 md:py-6">
         <ProviderSettingsPanel />
+        </div>
       </DialogContent>
     </Dialog>
   );

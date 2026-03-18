@@ -1,6 +1,8 @@
+import type { ProviderKind } from "@/types/domain";
+
 // Provider 模板定义
 export interface ProviderTemplate {
-  id: string;
+  id: ProviderKind;
   name: string;
   baseUrl: string;
   generateUrl?: string;
@@ -10,7 +12,7 @@ export interface ProviderTemplate {
 
 // 用户配置的 Provider
 export interface ProviderConfig {
-  templateId: string;
+  templateId: ProviderKind;
   baseUrl: string;
   apiKey: string;
   model: string;

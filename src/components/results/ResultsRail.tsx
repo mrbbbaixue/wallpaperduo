@@ -1,13 +1,11 @@
-import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
-import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
-import { Box, Button, ButtonBase, Chip, Stack, Typography } from "@mui/material";
+import { ArrowLeftRight, Download, Image as ImageIcon, RotateCcw } from "lucide-react";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SectionCard } from "@/components/common/SectionCard";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 interface ResultsRailProps {
@@ -72,16 +70,11 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
     }
 
     previousCountRef.current = succeeded.length;
-  }, [
-    activeResultId,
-    inSheet,
-    previewMode,
-    setActiveResultId,
-    setPreviewMode,
-    succeeded,
-  ]);
+  }, [activeResultId, inSheet, previewMode, setActiveResultId, setPreviewMode, succeeded]);
 
-  if (succeeded.length === 0) return null;
+  if (succeeded.length === 0) {
+    return null;
+  }
 
   const selectAt = (nextIndex: number) => {
     const wrapped = (nextIndex + succeeded.length) % succeeded.length;
@@ -110,7 +103,6 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
     if (event.key === "End") {
       event.preventDefault();
       selectAt(succeeded.length - 1);
-      return;
     }
   };
 
@@ -122,137 +114,109 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
   };
 
   return (
-    <Box ref={railRef}>
+    <div ref={railRef}>
       <SectionCard
         title={isZh ? "结果胶片" : "Results Rail"}
         subtitle={
           isZh
-            ? "左右方向键切换结果，点击可回填主画布预览。"
-            : "Use Left/Right keys to switch results and click to update canvas preview."
+            ? "左右方向键切换结果，点击缩略图可回填主画布预览。"
+            : "Use Left/Right keys to switch results and click thumbnails to update the main preview."
         }
         actions={
-          <Stack direction="row" spacing={0.75} alignItems="center" useFlexGap flexWrap="wrap">
+          <>
             <Button
-              size="small"
-              variant={activeResultId ? "outlined" : "contained"}
-              startIcon={<RestartAltRoundedIcon />}
+              type="button"
+              size="sm"
+              variant={activeResultId ? "outline" : "default"}
               onClick={() => setActiveResultId(undefined)}
             >
+              <RotateCcw className="h-4 w-4" />
               {t("results.baseSelect")}
             </Button>
             <Button
-              size="small"
-              variant={previewMode === "single" ? "contained" : "outlined"}
-              startIcon={<ImageRoundedIcon />}
+              type="button"
+              size="sm"
+              variant={previewMode === "single" ? "default" : "outline"}
               onClick={() => setPreviewMode("single")}
               disabled={!activeResultId}
             >
+              <ImageIcon className="h-4 w-4" />
               {t("results.singleMode")}
             </Button>
             <Button
-              size="small"
-              variant={previewMode === "compare" ? "contained" : "outlined"}
-              startIcon={<CompareArrowsRoundedIcon />}
+              type="button"
+              size="sm"
+              variant={previewMode === "compare" ? "default" : "outline"}
               onClick={() => setPreviewMode("compare")}
               disabled={!activeResultId}
             >
+              <ArrowLeftRight className="h-4 w-4" />
               {t("results.compareMode")}
             </Button>
             <Button
-              size="small"
-              variant="outlined"
-              startIcon={<DownloadRoundedIcon />}
+              type="button"
+              size="sm"
+              variant="outline"
               onClick={handleDownloadSingle}
               disabled={!activeTask?.result?.blob}
             >
+              <Download className="h-4 w-4" />
               {t("common.download")}
             </Button>
-            <Chip
-              size="small"
-              label={isZh ? `${succeeded.length} 张结果` : `${succeeded.length} results`}
-            />
-          </Stack>
+            <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+              {isZh ? `${succeeded.length} 张结果` : `${succeeded.length} results`}
+            </span>
+          </>
         }
       >
-        <Box
+        <div
           role="listbox"
           aria-label={isZh ? "结果胶片" : "Results rail"}
           aria-activedescendant={activeResultId ? `result-option-${activeResultId}` : undefined}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          sx={{
-            display: "flex",
-            gap: 1,
-            overflowX: "auto",
-            pb: 0.5,
-            outline: "none",
-            "&::-webkit-scrollbar": { height: 7 },
-            "&::-webkit-scrollbar-thumb": {
-              borderRadius: 999,
-              backgroundColor: "action.hover",
-            },
-          }}
+          className="flex gap-3 overflow-x-auto pb-1 outline-none"
         >
           {succeeded.map((task) => {
             const selected = task.id === activeResultId;
             return (
-              <ButtonBase
+              <button
                 key={task.id}
                 id={`result-option-${task.id}`}
                 ref={(node) => {
                   cardRefs.current[task.id] = node;
                 }}
+                type="button"
                 role="option"
                 aria-selected={selected}
                 onClick={() => setActiveResultId(task.id)}
-                sx={{
-                  width: 198,
-                  flexShrink: 0,
-                  p: 0.75,
-                  borderRadius: 2,
-                  textAlign: "left",
-                  border: "1px solid",
-                  borderColor: selected ? "primary.main" : "divider",
-                  backgroundColor: selected ? "action.selected" : "background.paper",
-                  boxShadow: selected
-                    ? "0 12px 30px rgba(42, 92, 104, 0.24)"
-                    : "0 6px 18px rgba(17, 24, 39, 0.12)",
-                  transition: "all 0.18s ease",
-                  "&:focus-visible": {
-                    outline: "2px solid",
-                    outlineColor: "primary.main",
-                    outlineOffset: 2,
-                  },
-                }}
+                className={cn(
+                  "w-52 flex-shrink-0 rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  selected
+                    ? "border-primary bg-accent/40 shadow-lg"
+                    : "border-border/70 bg-background hover:bg-accent/40",
+                )}
               >
-                <Stack spacing={0.75} sx={{ width: "100%" }}>
-                  <Box
-                    component="img"
+                <div className="space-y-3">
+                  <img
                     src={task.result?.objectUrl}
                     alt={task.label}
-                    sx={{
-                      width: "100%",
-                      aspectRatio: "4 / 3",
-                      borderRadius: 1.5,
-                      objectFit: "cover",
-                      border: "1px solid",
-                      borderColor: "divider",
-                    }}
+                    className="aspect-[4/3] w-full rounded-lg border border-border/70 object-cover"
                   />
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" gap={0.75}>
-                    <Typography variant="caption" fontWeight={700} noWrap>
-                      {task.label}
-                    </Typography>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-semibold">{task.label}</p>
                     {selected ? (
-                      <Chip size="small" label={isZh ? "当前" : "Selected"} color="primary" />
+                      <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                        {isZh ? "当前" : "Selected"}
+                      </span>
                     ) : null}
-                  </Stack>
-                </Stack>
-              </ButtonBase>
+                  </div>
+                </div>
+              </button>
             );
           })}
-        </Box>
+        </div>
       </SectionCard>
-    </Box>
+    </div>
   );
 };

@@ -69,8 +69,8 @@
   "export": {
     "title": "导出向导",
     "ddw": "导出 DDW",
-    "heic": "导出 HEIC（实验）",
-    "heicFallback": "若 HEIC 失败将自动回退 PNG/JPEG",
+    "heic": "导出 ZIP",
+    "heicFallback": "生成结果会打包为 PNG ZIP 文件",
     "mapping": "时段分组映射",
     "compat": "WinDynamicDesktop 兼容性检查通过"
   },
@@ -78,7 +78,7 @@
     "title": "设置",
     "dialogTitle": "工作台模型与提示词设置",
     "providerSection": "模型路由与 Provider 配置",
-    "routingHint": "可分别选择视觉分析与图像生成 Provider，实现跨 Provider 组合。",
+    "routingHint": "分析与生成统一使用同一个 BYOK Provider，请求全部通过 Cloudflare Worker 代理。",
     "analysisProvider": "视觉分析 Provider",
     "generationProvider": "图像生成 Provider",
     "generationSection": "生成控制",
@@ -102,9 +102,9 @@
     "generationPromptPrefix": "生成提示词前缀",
     "defaultNegativePrompt": "默认负面提示词",
     "runtimeTitle": "运行选项",
-    "runtimeDesc": "导出与失败回退策略。",
-    "heicExperimental": "HEIC 实验模式",
-    "localFallback": "本地回退",
+    "runtimeDesc": "导出行为设置。",
+    "heicExperimental": "ZIP 导出",
+    "localFallback": "Worker 代理",
     "securityTip": "仅支持 BYOK：密钥以明文保存在本地浏览器，不提供平台托管密钥。"
   },
   "errors": {

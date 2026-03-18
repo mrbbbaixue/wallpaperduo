@@ -48,7 +48,7 @@ app.post("/api/analyze", async (c) => {
 app.post("/api/generate", async (c) => {
   try {
     const body = await c.req.json<GenerateRequest>();
-    const imageUrl = await generateImage(
+    const imagePayload = await generateImage(
       body.image,
       body.prompt,
       body.width,
@@ -56,7 +56,34 @@ app.post("/api/generate", async (c) => {
       body.provider,
       body.negativePrompt
     );
-    return c.json({ imageUrl });
+
+    if (imagePayload.kind === "data-url") {
+      const [header, encoded] = imagePayload.value.split(",", 2);
+      const mimeMatch = header.match(/^data:([^;]+);base64$/);
+      if (!mimeMatch || !encoded) {
+        throw new Error("Invalid data URL returned by provider");
+      }
+
+      const binary = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
+      return new Response(binary, {
+        headers: {
+          "Content-Type": mimeMatch[1],
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
+    const upstream = await fetch(imagePayload.value);
+    if (!upstream.ok) {
+      throw new Error(`Failed to fetch generated image: ${upstream.status}`);
+    }
+
+    return new Response(upstream.body, {
+      headers: {
+        "Content-Type": upstream.headers.get("Content-Type") ?? "image/png",
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
   }

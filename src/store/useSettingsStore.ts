@@ -31,6 +31,11 @@ interface SettingsState {
   setPromptSettings: (patch: Partial<PromptSettings>) => void;
 }
 
+type PersistedSettingsState = Pick<
+  SettingsState,
+  "language" | "themeMode" | "provider" | "promptSettings"
+>;
+
 const defaultPromptSettings: PromptSettings = {
   analysisUserPrompt: "关注场景结构、关键主体、光照与时段线索，输出简洁稳定的结构化描述。",
   generationPrefix: "高质量壁纸，保留原始构图和主体位置。",
@@ -72,14 +77,32 @@ export const useSettingsStore = create<SettingsState>()(
       name: "wallpaperduo.settings.v2",
       version: 1,
       migrate: (persistedState, version) => {
+        const currentState =
+          persistedState && typeof persistedState === "object"
+            ? (persistedState as Partial<PersistedSettingsState>)
+            : undefined;
+
         // 从 v1 迁移：重置为默认配置
         if (version < 1) {
           return {
-            ...persistedState,
+            language: currentState?.language ?? "zh",
+            themeMode: currentState?.themeMode ?? "system",
             provider: defaultProvider,
+            promptSettings: {
+              ...defaultPromptSettings,
+              ...currentState?.promptSettings,
+            },
           };
         }
-        return persistedState;
+        return {
+          language: currentState?.language ?? "zh",
+          themeMode: currentState?.themeMode ?? "system",
+          provider: currentState?.provider ?? defaultProvider,
+          promptSettings: {
+            ...defaultPromptSettings,
+            ...currentState?.promptSettings,
+          },
+        };
       },
       partialize: (state) => ({
         language: state.language,

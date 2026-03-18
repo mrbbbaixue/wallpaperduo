@@ -1,20 +1,16 @@
-import {
-  Alert,
-  Button,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { aspectRatios } from "@/data/aspectRatios";
 import { prepareCanvasImage } from "@/services/canvas/prepareCanvas";
 import { buildPreparedImage, useWorkflowStore } from "@/store/useWorkflowStore";
@@ -30,8 +26,10 @@ export const CanvasControls = () => {
   const setCustomRatio = useWorkflowStore((s) => s.setCustomRatio);
   const setPrepareMode = useWorkflowStore((s) => s.setPrepareMode);
   const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const normalizedRatioId = aspectRatios.some((item) => item.id === ratioId) ? ratioId : "16:9";
 
   useEffect(() => {
@@ -49,7 +47,10 @@ export const CanvasControls = () => {
         })();
 
   const onPrepare = async () => {
-    if (!sourceImage) return;
+    if (!sourceImage) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -76,85 +77,93 @@ export const CanvasControls = () => {
   };
 
   return (
-    <Stack spacing={1.5}>
-      <Grid container spacing={1.5} alignItems="center">
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>{t("workspace.ratio")}</InputLabel>
-            <Select
-              value={normalizedRatioId}
-              label={t("workspace.ratio")}
-              onChange={(e) => setRatioId(e.target.value)}
-            >
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="space-y-2">
+          <Label>{t("workspace.ratio")}</Label>
+          <Select value={normalizedRatioId} onValueChange={setRatioId}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {aspectRatios.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
+                <SelectItem key={item.id} value={item.id}>
                   {item.label}
-                </MenuItem>
+                </SelectItem>
               ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        {normalizedRatioId === "custom" && (
-          <>
-            <Grid size={{ xs: 3, sm: 2 }}>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                label="W"
-                value={customRatio.width}
-                onChange={(e) =>
-                  setCustomRatio({ ...customRatio, width: Math.max(1, Number(e.target.value || 1)) })
-                }
-              />
-            </Grid>
-            <Grid size={{ xs: 3, sm: 2 }}>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                label="H"
-                value={customRatio.height}
-                onChange={(e) =>
-                  setCustomRatio({ ...customRatio, height: Math.max(1, Number(e.target.value || 1)) })
-                }
-              />
-            </Grid>
-          </>
-        )}
-        <Grid size={{ xs: 12, sm: normalizedRatioId === "custom" ? 12 : 5 }}>
-          <ToggleButtonGroup
-            exclusive
-            value={prepareMode}
-            onChange={(_, value) => value && setPrepareMode(value)}
-            color="primary"
-            size="small"
-          >
-            <ToggleButton value="crop">{t("workspace.modeCrop")}</ToggleButton>
-            <ToggleButton value="pad">{t("workspace.modePad")}</ToggleButton>
-          </ToggleButtonGroup>
-        </Grid>
-      </Grid>
-      <Button
-        variant="contained"
-        size="small"
-        onClick={() => void onPrepare()}
-        disabled={loading || !sourceImage}
-        sx={{ width: "fit-content" }}
-      >
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t("workspace.mode")}</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={prepareMode === "crop" ? "default" : "outline"}
+              onClick={() => setPrepareMode("crop")}
+            >
+              {t("workspace.modeCrop")}
+            </Button>
+            <Button
+              type="button"
+              variant={prepareMode === "pad" ? "default" : "outline"}
+              onClick={() => setPrepareMode("pad")}
+            >
+              {t("workspace.modePad")}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {normalizedRatioId === "custom" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="custom-ratio-width">W</Label>
+            <Input
+              id="custom-ratio-width"
+              type="number"
+              value={customRatio.width}
+              onChange={(e) =>
+                setCustomRatio({
+                  ...customRatio,
+                  width: Math.max(1, Number(e.target.value || 1)),
+                })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="custom-ratio-height">H</Label>
+            <Input
+              id="custom-ratio-height"
+              type="number"
+              value={customRatio.height}
+              onChange={(e) =>
+                setCustomRatio({
+                  ...customRatio,
+                  height: Math.max(1, Number(e.target.value || 1)),
+                })
+              }
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <Button type="button" onClick={() => void onPrepare()} disabled={loading || !sourceImage}>
         {loading ? t("common.loading") : t("workspace.prepare")}
       </Button>
+
       {sourceImage ? (
-        <Typography variant="caption" color="text.secondary">
+        <p className="text-sm text-muted-foreground">
           {sourceImage.name} · {sourceImage.width}x{sourceImage.height}
-        </Typography>
+        </p>
       ) : null}
-      {preparedImage && (
-        <Typography variant="caption" color="text.secondary">
+      {preparedImage ? (
+        <p className="text-sm text-muted-foreground">
           {t("workspace.prepared")} · {preparedImage.width}x{preparedImage.height}
-        </Typography>
-      )}
-      {error && <Alert severity="error" sx={{ py: 0 }}>{error}</Alert>}
-    </Stack>
+        </p>
+      ) : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    </div>
   );
 };

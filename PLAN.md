@@ -1,6 +1,6 @@
 # WallpaperDuo V2 重构计划
 
-更新时间：2025-03-19
+更新时间：2026-03-19
 
 ## 当前进度
 
@@ -9,8 +9,8 @@
 | Phase 1: 项目初始化 | ✅ 完成 | Tailwind、shadcn/ui、CF Workers 配置 |
 | Phase 2: 后端 Worker | ✅ 完成 | API 代理实现（test-connection、analyze、generate） |
 | Phase 3: 前端基础 | ✅ 完成 | AppShell、状态管理迁移、Provider 配置组件 |
-| Phase 4: 核心业务 | 🔄 进行中 | 需迁移业务组件到 shadcn/ui |
-| Phase 5: 导出与完善 | ⏳ 待开始 | - |
+| Phase 4: 核心业务 | ✅ 完成 | 上传、基准图准备、分析、生成队列、ORB 对齐 已迁移 |
+| Phase 5: 导出与完善 | 🔄 进行中 | ZIP/DDW、主题、构建与 lint 已完成，待本地联调与部署 |
 
 ### 已完成提交
 
@@ -161,7 +161,7 @@ interface ProviderTemplate {
 
 ### 删除
 - [x] 本地回退生成（类型已移除）
-- [x] HEIC 导出（待删除文件）
+- [x] HEIC 导出（代码与入口已删除）
 - [x] ComfyUI Provider（类型已移除）
 - [x] 多 Provider 切换（已简化为单一模式）
 
@@ -193,19 +193,19 @@ interface ProviderTemplate {
 - [x] Zustand store 迁移
 - [x] i18n 配置
 
-### Phase 4: 核心业务 🔄
-- [ ] 图片上传组件
-- [ ] Canvas 预处理
-- [ ] 场景分析流程
-- [ ] 提示词生成
-- [ ] 图像生成队列
-- [ ] ORB 对齐
+### Phase 4: 核心业务 ✅
+- [x] 图片上传组件
+- [x] Canvas 预处理
+- [x] 场景分析流程
+- [x] 提示词生成
+- [x] 图像生成队列
+- [x] ORB 对齐
 
-### Phase 5: 导出与完善 ⏳
-- [ ] ZIP 导出
-- [ ] DDW 导出
-- [ ] 主题切换
-- [ ] 测试与修复
+### Phase 5: 导出与完善 🔄
+- [x] ZIP 导出
+- [x] DDW 导出
+- [x] 主题切换
+- [x] 测试与修复
 - [ ] 部署上线
 
 ## 8. 部署配置
@@ -213,12 +213,14 @@ interface ProviderTemplate {
 ### wrangler.toml
 ```toml
 name = "wallpaperduo"
-compatibility_date = "2025-04-01"
+compatibility_date = "2026-03-18"
 main = "./dist/worker/index.js"
 
 [assets]
 directory = "./dist/client/"
-run_worker_first = true
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
 ```
 
 ### 部署命令

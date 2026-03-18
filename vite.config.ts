@@ -5,12 +5,12 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   build: {
+    outDir: "dist/client",
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-mui": ["@mui/material", "@mui/icons-material", "@emotion/react", "@emotion/styled"],
           "vendor-state": [
             "zustand",
             "@tanstack/react-query",

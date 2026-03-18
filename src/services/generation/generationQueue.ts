@@ -1,17 +1,16 @@
-import { renderLocalFallbackVariant } from "@/services/generation/localFallback";
 import type { GenerationTask, PreparedImage } from "@/types/domain";
-import type { ImageProvider } from "@/types/provider";
+import type { ProviderConfig } from "@/types/provider";
+import { generateImageWithWorker } from "@/services/api/workerClient";
 import { compactError, logError, logInfo, logWarn } from "@/utils/debugLog";
 import { getImageSize } from "@/utils/image";
 import { toUserError } from "@/utils/error";
 
 interface GenerationQueueInput {
-  provider: ImageProvider;
+  provider: ProviderConfig;
   prepared: PreparedImage;
   tasks: GenerationTask[];
   concurrency: number;
   retries: number;
-  localFallback: boolean;
   onTaskUpdate?: (taskId: string, patch: Partial<GenerationTask>) => void;
 }
 
@@ -30,7 +29,7 @@ const runTaskWithRetry = async (
   task: GenerationTask,
 ): Promise<GenerationTask> => {
   logInfo("Generation task started", {
-    provider: input.provider.name,
+    provider: input.provider.templateId,
     taskId: task.id,
     label: task.label,
     retries: input.retries,
@@ -40,40 +39,41 @@ const runTaskWithRetry = async (
   for (let attempt = 0; attempt <= input.retries; attempt += 1) {
     try {
       logInfo("Generation attempt", {
-        provider: input.provider.name,
+        provider: input.provider.templateId,
         taskId: task.id,
         attempt: attempt + 1,
         totalAttempts: input.retries + 1,
       });
-      const payload = await input.provider.generateVariant({
+      const blob = await generateImageWithWorker({
         prepared: input.prepared,
-        variant: task,
+        provider: input.provider,
+        prompt: task.prompt,
+        negativePrompt: task.negativePrompt,
       });
-      const size = await getImageSize(payload.blob);
+      const size = await getImageSize(blob);
       const result = {
         variantId: task.id,
-        blob: payload.blob,
-        objectUrl: URL.createObjectURL(payload.blob),
+        blob,
+        objectUrl: URL.createObjectURL(blob),
         width: size.width,
         height: size.height,
-        provider: payload.provider,
-        source: payload.source,
+        provider: input.provider.templateId,
+        source: "provider",
         createdAt: new Date().toISOString(),
       } as const;
 
       updateTask(input.onTaskUpdate, task.id, { status: "succeeded", progress: 100, result });
       logInfo("Generation task succeeded", {
-        provider: input.provider.name,
+        provider: input.provider.templateId,
         taskId: task.id,
-        source: payload.source,
         width: size.width,
         height: size.height,
-        bytes: payload.blob.size,
+        bytes: blob.size,
       });
       return { ...task, status: "succeeded", progress: 100, result };
     } catch (error) {
       logWarn("Generation attempt failed", {
-        provider: input.provider.name,
+        provider: input.provider.templateId,
         taskId: task.id,
         attempt: attempt + 1,
         totalAttempts: input.retries + 1,
@@ -84,38 +84,9 @@ const runTaskWithRetry = async (
         continue;
       }
 
-      if (input.localFallback) {
-        const fallbackBlob = await renderLocalFallbackVariant(input.prepared.blob, task);
-        const size = await getImageSize(fallbackBlob);
-        const result = {
-          variantId: task.id,
-          blob: fallbackBlob,
-          objectUrl: URL.createObjectURL(fallbackBlob),
-          width: size.width,
-          height: size.height,
-          provider: input.provider.name,
-          source: "local-fallback",
-          createdAt: new Date().toISOString(),
-        } as const;
-        const warning = `Fallback used: ${toUserError(error)}`;
-        logWarn("Generation switched to local fallback", {
-          provider: input.provider.name,
-          taskId: task.id,
-          warning,
-          fallbackBytes: fallbackBlob.size,
-        });
-        updateTask(input.onTaskUpdate, task.id, {
-          status: "succeeded",
-          progress: 100,
-          error: warning,
-          result,
-        });
-        return { ...task, status: "succeeded", progress: 100, error: warning, result };
-      }
-
       const message = toUserError(error);
       logError("Generation task failed without fallback", {
-        provider: input.provider.name,
+        provider: input.provider.templateId,
         taskId: task.id,
         error: message,
       });
@@ -134,11 +105,10 @@ export const runGenerationQueue = async (
   const queue = [...input.tasks];
   const workers = Math.max(1, Math.min(input.concurrency || 1, queue.length || 1));
   logInfo("Generation queue started", {
-    provider: input.provider.name,
+    provider: input.provider.templateId,
     totalTasks: input.tasks.length,
     workers,
     retries: input.retries,
-    localFallback: input.localFallback,
   });
 
   await Promise.all(
@@ -159,7 +129,7 @@ export const runGenerationQueue = async (
   );
 
   logInfo("Generation queue finished", {
-    provider: input.provider.name,
+    provider: input.provider.templateId,
     totalTasks: results.length,
     succeeded: results.filter((task) => task.status === "succeeded").length,
     failed: results.filter((task) => task.status === "failed").length,
