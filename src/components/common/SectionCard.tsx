@@ -32,7 +32,7 @@ export const SectionCard = ({
       className={cn(
         "relative overflow-hidden",
         surface === "default" &&
-          "border-border/70 bg-card/90 shadow-[0_18px_55px_rgba(15,23,42,0.08)] backdrop-blur dark:shadow-[0_18px_55px_rgba(0,0,0,0.32)]",
+          "border-border/70 bg-card/90 shadow-[0_12px_30px_rgba(15,23,42,0.07)] backdrop-blur dark:shadow-[0_14px_32px_rgba(0,0,0,0.24)]",
         surface === "flat" && "rounded-none border-x-0 border-y-0 bg-transparent shadow-none",
       )}
     >

@@ -602,7 +602,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             />
           </WorkflowStepCard>
 
-          <div className="space-y-3 rounded-xl border border-border/70 bg-background/55 p-4">
+          <div className="space-y-3 rounded-lg border border-border/70 bg-background/55 p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">

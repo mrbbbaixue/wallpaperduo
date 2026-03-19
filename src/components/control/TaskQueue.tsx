@@ -42,7 +42,7 @@ export const TaskQueue = () => {
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="space-y-2 rounded-xl border border-border/70 bg-background/70 p-3"
+            className="space-y-2 rounded-lg border border-border/70 bg-background/70 p-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div>

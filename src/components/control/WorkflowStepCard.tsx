@@ -20,7 +20,7 @@ interface WorkflowStepCardProps {
 
 const toneStyle: Record<WorkflowStepTone, string> = {
   current:
-    "border-primary/35 bg-card/95 shadow-[0_14px_28px_rgba(15,23,42,0.10)] dark:shadow-[0_16px_32px_rgba(0,0,0,0.28)]",
+    "border-primary/35 bg-card/95 shadow-[0_10px_24px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_26px_rgba(0,0,0,0.22)]",
   complete: "border-border/70 bg-background/70",
   pending: "border-border/60 bg-background/40",
   attention: "border-amber-300/60 bg-amber-50/70 dark:border-amber-800/70 dark:bg-amber-950/20",
@@ -59,7 +59,7 @@ export const WorkflowStepCard = ({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border transition-all",
+        "overflow-hidden rounded-lg border transition-all",
         toneStyle[tone],
         disabled && !expanded && "opacity-75",
       )}

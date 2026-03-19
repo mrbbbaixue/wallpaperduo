@@ -215,7 +215,7 @@ export const ExportPanel = () => {
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="flex w-full items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-left transition-colors hover:bg-accent/60"
+          className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-background/70 px-4 py-3 text-left transition-colors hover:bg-accent/60"
         >
           <div>
             <p className="text-sm font-semibold">{isZh ? "导出配置" : "Export setup"}</p>
@@ -227,7 +227,7 @@ export const ExportPanel = () => {
         </button>
 
         {expanded ? (
-          <div className="space-y-4 rounded-xl border border-border/70 bg-background/70 p-4">
+          <div className="space-y-4 rounded-lg border border-border/70 bg-background/70 p-4">
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="export-file-stem">
                 {isZh ? "文件名前缀" : "File name stem"}
@@ -243,7 +243,7 @@ export const ExportPanel = () => {
               <p className="text-sm font-medium">{t("export.mapping")}</p>
               <div className="grid gap-3 md:grid-cols-2">
                 {succeeded.map((task) => (
-                  <div key={task.id} className="rounded-xl border border-border/70 bg-background p-4">
+                  <div key={task.id} className="rounded-lg border border-border/70 bg-background p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold">{task.label}</p>
                       {alignmentResults[task.id]?.status === "succeeded" ? (

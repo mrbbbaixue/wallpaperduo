@@ -199,7 +199,7 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-border/70 bg-transparent shadow-[0_14px_28px_rgba(15,23,42,0.08)] dark:shadow-[0_16px_32px_rgba(0,0,0,0.28)]",
+        "relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-border/70 bg-transparent shadow-[0_10px_22px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_24px_rgba(0,0,0,0.22)]",
         emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
       )}

@@ -164,9 +164,9 @@ export const CanvasGalleryStrip = ({
                 aria-selected={selected}
                 onClick={() => setActiveResultId(task.id)}
                 className={cn(
-                  "w-44 flex-shrink-0 rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "w-44 flex-shrink-0 rounded-lg border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
-                    ? "border-primary bg-accent/40 shadow-lg"
+                    ? "border-primary bg-accent/40 shadow-[0_8px_18px_rgba(15,23,42,0.08)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.22)]"
                     : "border-border/70 bg-background hover:bg-accent/40",
                 )}
               >
