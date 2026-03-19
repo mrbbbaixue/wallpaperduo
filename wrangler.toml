@@ -1,6 +1,6 @@
 name = "wallpaperduo"
 compatibility_date = "2026-03-18"
-main = "./dist/worker/index.js"
+main = "./worker/index.ts"
 compatibility_flags = ["nodejs_compat"]
 
 [observability]
