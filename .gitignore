@@ -45,3 +45,8 @@ coverage
 
 # Local scaffold residue
 /app/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
