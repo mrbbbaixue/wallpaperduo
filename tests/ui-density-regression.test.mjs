@@ -126,6 +126,11 @@ test("desktop editor layout stays seamless and lower steps remain expandable", (
 
 test("app shell uses a compact fixed header height for desktop viewport math", () => {
   const appShell = read("src/components/layout/AppShell.tsx");
+  assert.equal(
+    appShell.includes("WallpaperDuo Studio"),
+    false,
+    "AppShell should only show the logo and app name in the top-left brand area",
+  );
   assert.ok(
     appShell.includes("--app-header-height"),
     "AppShell should expose a shared header-height token",
@@ -133,6 +138,10 @@ test("app shell uses a compact fixed header height for desktop viewport math", (
   assert.ok(
     appShell.includes("h-14"),
     "AppShell should use a shorter fixed header height",
+  );
+  assert.ok(
+    appShell.includes("WD"),
+    "AppShell should render a compact logo mark next to the app name",
   );
 
   const mainPage = read("src/pages/MainPage.tsx");

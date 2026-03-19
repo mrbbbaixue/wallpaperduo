@@ -61,11 +61,16 @@ export const AppShell = ({ children }: PropsWithChildren) => {
       {/* Header */}
       <header className="sticky top-0 z-10 h-14 border-b border-border/40 bg-transparent">
         <div className="flex h-full items-center justify-between px-4 md:px-5">
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              WallpaperDuo Studio
-            </span>
-            <h1 className="text-lg font-semibold leading-tight md:text-[1.15rem]">{t("appName")}</h1>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div
+              aria-hidden="true"
+              className="flex h-8 w-8 shrink-0 items-center justify-center border border-border/70 bg-background/75 text-[11px] font-semibold tracking-[0.18em] text-foreground"
+            >
+              WD
+            </div>
+            <h1 className="truncate text-lg font-semibold leading-tight md:text-[1.15rem]">
+              {t("appName")}
+            </h1>
           </div>
 
           <div className="flex items-center gap-2">
