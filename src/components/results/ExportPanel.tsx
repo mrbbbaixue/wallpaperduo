@@ -243,11 +243,11 @@ export const ExportPanel = () => {
               <p className="text-sm font-medium">{t("export.mapping")}</p>
               <div className="grid gap-3 md:grid-cols-2">
                 {succeeded.map((task) => (
-                  <div key={task.id} className="rounded-none border border-border/70 bg-background p-4">
+                  <div key={task.id} className="rounded-lg border border-border/70 bg-background p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold">{task.label}</p>
                       {alignmentResults[task.id]?.status === "succeeded" ? (
-                        <span className="rounded-none border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700 dark:border-emerald-900/80 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700 dark:border-emerald-900/80 dark:bg-emerald-950/40 dark:text-emerald-300">
                           {t("results.aligned")}
                         </span>
                       ) : null}
@@ -256,7 +256,7 @@ export const ExportPanel = () => {
                       {(Object.keys(bucketLabels) as Bucket[]).map((bucket) => (
                         <label
                           key={bucket}
-                          className="flex items-center gap-2 rounded-none border border-border/60 px-3 py-2 text-sm"
+                          className="flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm"
                         >
                           <input
                             type="checkbox"

@@ -167,7 +167,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
               <Download className="h-4 w-4" />
               {t("common.download")}
             </Button>
-            <span className="rounded-none border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+            <span className="rounded-md border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
               {isZh ? `${succeeded.length} 张结果` : `${succeeded.length} results`}
             </span>
           </>
@@ -210,7 +210,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-semibold">{task.label}</p>
                     {selected ? (
-                      <span className="rounded-none border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                      <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
                         {isZh ? "当前" : "Selected"}
                       </span>
                     ) : null}

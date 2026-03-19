@@ -33,7 +33,7 @@ export function ProviderConfig() {
   const fieldLabelClassName = isZh
     ? "text-xs font-medium text-muted-foreground"
     : "text-[11px] uppercase tracking-[0.16em] text-muted-foreground";
-  const fieldClassName = "h-11 rounded-none bg-background/75";
+  const fieldClassName = "h-11 rounded-md bg-background/75";
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">

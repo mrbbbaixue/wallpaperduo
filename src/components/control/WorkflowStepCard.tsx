@@ -56,7 +56,7 @@ export const WorkflowStepCard = ({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-none border border-b border-l-0 border-r-0 border-t-0 transition-colors",
+        "overflow-hidden rounded-lg border border-b border-l-0 border-r-0 border-t-0 transition-colors",
         toneStyle[tone],
       )}
     >
@@ -71,7 +71,7 @@ export const WorkflowStepCard = ({
       >
         <div
           className={cn(
-            "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border text-xs font-semibold tracking-[0.16em]",
+            "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border text-xs font-semibold tracking-[0.16em]",
             tone === "current"
               ? "border-primary/20 bg-primary/10 text-foreground"
               : "border-border/70 bg-background/70 text-muted-foreground",
@@ -95,7 +95,7 @@ export const WorkflowStepCard = ({
             <div className="flex items-center gap-2 self-start">
               <span
                 className={cn(
-                  "inline-flex items-center whitespace-nowrap rounded-none border px-2.5 py-1 text-[11px] font-medium",
+                  "inline-flex items-center whitespace-nowrap rounded-md border px-2.5 py-1 text-[11px] font-medium",
                   badgeStyle[tone],
                 )}
               >

@@ -115,7 +115,7 @@ export const CanvasGalleryStrip = ({
           <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {isZh ? "结果画廊" : "Result Gallery"}
           </span>
-          <span className="rounded-none border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+          <span className="rounded-md border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
             {isZh ? `${succeeded.length} 张` : `${succeeded.length} items`}
           </span>
         </div>
@@ -134,7 +134,7 @@ export const CanvasGalleryStrip = ({
             type="button"
             onClick={onToggleExpanded}
             aria-label={expanded ? (isZh ? "收起画廊" : "Collapse gallery") : isZh ? "展开画廊" : "Expand gallery"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-border/70 bg-background transition-colors hover:bg-accent"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-background transition-colors hover:bg-accent"
           >
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>

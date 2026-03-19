@@ -106,10 +106,14 @@ test("desktop editor layout stays seamless and lower steps remain expandable", (
     false,
     "WorkflowStepCard header toggle should stay clickable for collapsed pending steps",
   );
-  assert.equal(
+  assert.ok(
     workflowCard.includes("rounded-lg"),
+    "WorkflowStepCard should keep a subtle rounded corner instead of a hard square edge",
+  );
+  assert.equal(
+    workflowCard.includes("rounded-xl"),
     false,
-    "WorkflowStepCard should drop rounded corners for the editor-style sidebar",
+    "WorkflowStepCard should avoid large rounded corners in the compact editor layout",
   );
   assert.ok(
     workflowCard.includes("expanded ? ("),

@@ -96,7 +96,7 @@ export const MainPage = () => {
           <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
             <DialogContent
               motionPreset="sheet"
-              className="max-h-[78vh] rounded-t-[1.75rem] border border-border/70 bg-background/98 p-0 shadow-2xl sm:rounded-t-[1.75rem]"
+              className="max-h-[78vh] rounded-t-lg border border-border/70 bg-background/98 p-0 shadow-2xl sm:rounded-t-lg"
             >
               <div
                 className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80"

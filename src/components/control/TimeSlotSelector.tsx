@@ -55,7 +55,7 @@ export const TimeSlotSelector = ({
                 : "Confirm the source time first, then choose the target variants."}
             </p>
           </div>
-          <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+          <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
             {isZh ? "AI 判断" : "AI detected"}:{" "}
             {detectedSlot ? getLabel(detectedSlot) : isZh ? "未识别" : "N/A"}
           </span>
@@ -77,7 +77,7 @@ export const TimeSlotSelector = ({
                 disabled={locked}
                 onClick={() => onCurrentTimeChange(slot.key)}
                 className={cn(
-                  "rounded-none border px-3 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-55",
+                  "rounded-md border px-3 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-55",
                   active
                     ? "border-transparent text-white"
                     : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
@@ -111,7 +111,7 @@ export const TimeSlotSelector = ({
                 disabled={locked}
                 onClick={() => toggleSlot(slot.key)}
                 className={cn(
-                  "rounded-none border px-3 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-55",
+                  "rounded-md border px-3 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-55",
                   selected
                     ? "border-transparent text-white"
                     : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",

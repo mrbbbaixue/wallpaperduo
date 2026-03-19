@@ -50,8 +50,8 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
     ? "text-xs font-medium text-muted-foreground"
     : "text-[11px] uppercase tracking-[0.16em] text-muted-foreground";
   const textAreaClassName =
-    "min-h-28 w-full rounded-none border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring";
-  const panelBlockClassName = "space-y-4 border border-border/70 bg-background/55 p-4";
+    "min-h-28 w-full rounded-md border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring";
+  const panelBlockClassName = "space-y-4 rounded-lg border border-border/70 bg-background/55 p-4";
 
   const handleTestConnection = async () => {
     setTesting(true);
@@ -88,7 +88,7 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
     if (activeSection === "provider") {
       return (
         <div className="space-y-4">
-          <div className="border border-border/70 bg-background/45 px-4 py-3 text-sm leading-6 text-muted-foreground">
+          <div className="rounded-lg border border-border/70 bg-background/45 px-4 py-3 text-sm leading-6 text-muted-foreground">
             {t("settings.routingHint")}
           </div>
           <div className={panelBlockClassName}>
@@ -200,11 +200,11 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
               variant="outline"
               onClick={() => void handleTestConnection()}
               disabled={testing || !provider.apiKey}
-              className="rounded-none"
+              className="rounded-md"
             >
               {testing ? (isZh ? "测试中..." : "Testing...") : t("settings.test")}
             </Button>
-            <Button type="button" onClick={onClose} className="rounded-none">
+            <Button type="button" onClick={onClose} className="rounded-md">
               {t("common.done")}
             </Button>
           </div>

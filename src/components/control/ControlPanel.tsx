@@ -44,7 +44,7 @@ const renderSummaryPills = (items: string[]) => (
     {items.filter(Boolean).map((item, index) => (
       <span
         key={`${item}-${index}`}
-        className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
+        className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
       >
         {item}
       </span>
@@ -341,10 +341,10 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
         }
         actions={
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+            <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
               {provider.templateId}
             </span>
-            <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+            <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
               {isZh ? `当前 ${activeStepIndex + 1}/4` : `Step ${activeStepIndex + 1}/4`}
             </span>
           </div>
@@ -391,12 +391,12 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             />
 
             <div className="space-y-3">
-              <div className="rounded-none border border-border/70 bg-background/70 p-3">
+              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button
                     type="button"
                     onClick={() => inputRef.current?.click()}
-                    className="h-11 rounded-none px-4"
+                    className="h-11 rounded-md px-4"
                   >
                     <Upload className="h-4 w-4" />
                     {t("common.upload")}
@@ -427,7 +427,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
               <CanvasControls />
 
-              <div className="rounded-none border border-border/70 bg-background/70 p-3">
+              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
@@ -437,7 +437,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                         : "Run this after preparing the baseline to detect subjects, lighting, and time of day."}
                     </p>
                   </div>
-                  <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+                  <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
                     {isZh ? "次动作" : "Secondary action"}
                   </span>
                 </div>
@@ -448,7 +448,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     variant="outline"
                     onClick={() => void onPreprocess()}
                     disabled={!preparedImage || preprocessLoading}
-                    className="h-10 rounded-none sm:w-fit"
+                    className="h-10 rounded-md sm:w-fit"
                   >
                     <ScanSearch className="h-4 w-4" />
                     {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
@@ -603,7 +603,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     : "The queue and export stay below the workflow so they do not compete with the active step."}
                 </p>
               </div>
-              <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+              <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
                 {tasks.length}
               </span>
             </div>

@@ -124,7 +124,7 @@ export const GenerateControls = ({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-none border border-border/70 bg-background/70 p-3">
+      <div className="rounded-lg border border-border/70 bg-background/70 p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <p className="text-sm font-semibold">
@@ -136,7 +136,7 @@ export const GenerateControls = ({
                 : "Review the variants and prompts before starting the queue."}
             </p>
           </div>
-          <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+          <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
             {provider.templateId}
           </span>
         </div>
@@ -145,13 +145,13 @@ export const GenerateControls = ({
             selectedSlots.map((slot) => (
               <span
                 key={slot}
-                className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
+                className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
               >
                 {i18n.language === "zh" ? slotLabels[slot].zh : slotLabels[slot].en}
               </span>
             ))
           ) : (
-            <span className="rounded-none border border-dashed border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+            <span className="rounded-md border border-dashed border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground">
               {i18n.language === "zh" ? "还未选择时段版本" : "No variants selected yet"}
             </span>
           )}
@@ -164,7 +164,7 @@ export const GenerateControls = ({
           variant="outline"
           onClick={() => void onPreprocess()}
           disabled={!preparedImage || preprocessLoading}
-          className="h-10 w-full rounded-none"
+          className="h-10 w-full rounded-md"
         >
           <ScanSearch className="h-4 w-4" />
           {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
@@ -175,7 +175,7 @@ export const GenerateControls = ({
         type="button"
         onClick={() => void onGenerate()}
         disabled={!preparedImage || generating || selectedSlots.length === 0}
-        className="h-11 w-full rounded-none"
+        className="h-11 w-full rounded-md"
       >
         <Sparkles className="h-4 w-4" />
         {generating
