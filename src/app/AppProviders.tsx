@@ -1,11 +1,9 @@
-import CssBaseline from "@mui/material/CssBaseline";
-import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
 
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { buildTheme } from "@/theme/theme";
+import { Toaster } from "@/components/ui/toaster";
 
 const queryClient = new QueryClient();
 const systemThemeQuery = "(prefers-color-scheme: dark)";
@@ -41,14 +39,21 @@ export const AppProviders = ({ children }: PropsWithChildren) => {
   }, []);
 
   const resolvedThemeMode = themeMode === "system" ? systemThemeMode : themeMode;
-  const theme = useMemo(() => buildTheme(resolvedThemeMode), [resolvedThemeMode]);
+
+  // 应用 dark 类到 html 元素
+  useEffect(() => {
+    const html = document.documentElement;
+    if (resolvedThemeMode === "dark") {
+      html.classList.add("dark");
+    } else {
+      html.classList.remove("dark");
+    }
+  }, [resolvedThemeMode]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
+      {children}
+      <Toaster />
     </QueryClientProvider>
   );
 };

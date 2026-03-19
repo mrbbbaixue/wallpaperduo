@@ -69,8 +69,8 @@
   "export": {
     "title": "Export Wizard",
     "ddw": "Export DDW",
-    "heic": "Export HEIC (Experimental)",
-    "heicFallback": "If HEIC fails, PNG/JPEG fallback will be used automatically",
+    "heic": "Export ZIP",
+    "heicFallback": "Generated results are bundled as PNG files in a ZIP archive",
     "mapping": "Time Group Mapping",
     "compat": "WinDynamicDesktop compatibility checks passed"
   },
@@ -78,7 +78,7 @@
     "title": "Settings",
     "dialogTitle": "Model and Prompt Settings",
     "providerSection": "Model Routing and Provider Config",
-    "routingHint": "Pick analysis and generation providers independently so you can mix providers.",
+    "routingHint": "Use one BYOK provider for both analysis and image generation, and route requests through the Cloudflare Worker.",
     "analysisProvider": "Analysis Provider",
     "generationProvider": "Generation Provider",
     "generationSection": "Generation Controls",
@@ -102,9 +102,9 @@
     "generationPromptPrefix": "Generation Prompt Prefix",
     "defaultNegativePrompt": "Default Negative Prompt",
     "runtimeTitle": "Runtime Options",
-    "runtimeDesc": "Export and fallback behavior settings.",
-    "heicExperimental": "HEIC Experimental",
-    "localFallback": "Local Fallback",
+    "runtimeDesc": "Export behavior settings.",
+    "heicExperimental": "ZIP Export",
+    "localFallback": "Worker Proxy",
     "securityTip": "BYOK only: API keys are stored in local browser storage as plain text."
   },
   "errors": {

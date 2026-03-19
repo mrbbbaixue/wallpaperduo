@@ -1,129 +1,244 @@
-# WallpaperDuo UI 升级计划 v5.1（Edge-to-Edge + Collapsible Gallery）
+# WallpaperDuo V2 重构计划
 
-更新时间：2026-03-09
+更新时间：2026-03-19
 
-## 1. 本轮目标
+## 当前进度
 
-1. 把整体界面从“功能可用”升级为“高级创作工作台”（更强层级、更好留白、更统一气质）。
-2. 在左侧画布区域新增“可伸缩画廊缩略图”（可展开/收起），让用户在主视觉区完成选图与对比。
-3. 不改核心业务链路（上传、预处理、分析、生成、导出），只做 UI/UX 与交互组织升级。
-4. 布局改为 edge-to-edge：左右区域不做圆角、直接占满，左侧画布区采用无边界视觉。
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| Phase 1: 项目初始化 | ✅ 完成 | Tailwind、shadcn/ui、CF Workers 配置 |
+| Phase 2: 后端 Worker | ✅ 完成 | API 代理实现（test-connection、analyze、generate） |
+| Phase 3: 前端基础 | ✅ 完成 | AppShell、状态管理迁移、Provider 配置组件 |
+| Phase 4: 核心业务 | ✅ 完成 | 上传、基准图准备、分析、生成队列、ORB 对齐 已迁移 |
+| Phase 5: 导出与完善 | 🔄 进行中 | ZIP/DDW、主题、构建与 lint 已完成，待本地联调与部署 |
 
-## 2. 现状快照（基于当前代码）
+### 已完成提交
 
-1. 主布局在 [`src/pages/MainPage.tsx`](src/pages/MainPage.tsx) 中采用 `9/3`，左侧为画布，右侧为流程与导出。
-2. 左侧 [`src/components/canvas/CanvasWorkspace.tsx`](src/components/canvas/CanvasWorkspace.tsx) 只有主画布预览，没有内嵌缩略图带。
-3. 缩略图已存在于 [`src/components/results/ResultsRail.tsx`](src/components/results/ResultsRail.tsx)，当前在桌面端显示在左侧下方，移动端放到底部 Drawer。
-4. 主题基础已是衬线方向（[`src/theme/theme.ts`](src/theme/theme.ts)、[`src/index.css`](src/index.css)），但组件层仍有较多局部 `sx` 规则，视觉一致性还不够高。
+```
+751e7cc refactor: 迁移状态管理，简化 Provider 配置
+c5569fc feat: 实现 Worker API Provider 适配器
+983550f feat: 添加 shadcn/ui 基础组件
+79714c1 chore: 配置 Tailwind CSS、shadcn/ui 和 Cloudflare Workers
+d5fbe7b docs: 更新火山引擎 Provider 模板配置
+7bb5ecb docs: 添加 V2 重构实施计划
+c23dd09 docs: 添加 V2 重构设计文档
+```
 
-## 3. 设计方向（高级感）
+---
 
-视觉关键词：`Studio Editorial`、`Focused Canvas`、`Edge-to-Edge`。
+## 1. 目标概述
 
-1. 强化“主舞台”：画布是第一视觉中心，控制区与导出区保持次级存在感。
-2. 控制“玻璃感”剂量：减少泛滥的 blur/阴影，把强调聚焦到主卡片和关键操作。
-3. 统一节奏系统：标题层级、卡片间距、按钮高度、边角半径保持一套规则。
-4. 提升品牌感：顶部 AppShell 更像“产品头部”，不是普通工具栏。
-5. 视觉边界最小化：去掉左右主区圆角和卡片感，改为平齐铺满式布局。
+将 WallpaperDuo 从纯前端 SPA 重构为 Cloudflare Workers 全栈应用：
 
-## 4. 关键新增：左侧画布画廊缩略图
+1. **解决 CORS 问题** - Worker 代理 AI API 请求，同源无跨域
+2. **UI 现代化** - 从 MUI 迁移到 shadcn/ui（Radix + Tailwind）
+3. **简化 Provider** - 模板预填 + 单一 Provider 模式 + 自定义支持
+4. **代码精简** - 删除本地回退、HEIC 导出、ComfyUI 支持
 
-结论：可以做，而且当前状态模型已经支持，改造成本可控。
+## 2. 技术栈
 
-### 4.1 交互定义
+| 层 | 技术 |
+|---|------|
+| 前端 | React 19 + TypeScript + Vite |
+| UI | shadcn/ui（Radix + Tailwind CSS） |
+| 状态 | Zustand |
+| 数据 | TanStack Query |
+| 后端 | Hono（Cloudflare Workers） |
+| 部署 | Cloudflare Workers（静态资产 + API） |
+| 国际化 | i18next |
 
-1. 生成成功后，缩略图自动出现在画布区域下方（桌面端）。
-2. 点击缩略图切换 `activeResultId`，主画布即时更新。
-3. 保留“基准图/单图/对比”模式；切回基准图时取消结果高亮。
-4. 键盘仍支持左右切换（沿用 ResultsRail 的可访问性行为）。
-5. 新结果到达时自动滚动到可见区域并高亮一次（轻动效）。
-6. 缩略图区支持展开/收起：
-- 展开：显示完整缩略图带与计数信息。
-- 收起：保留一行轻量栏（标题 + 数量 + 展开按钮），最大化主画布可视空间。
+## 3. 项目结构
 
-### 4.2 布局策略
+```
+wallpaperduo/
+├── src/                          # React 前端
+│   ├── components/
+│   │   ├── ui/                   # shadcn/ui 组件 ✅
+│   │   ├── canvas/               # 画布相关
+│   │   ├── control/              # 控制面板
+│   │   ├── layout/               # 布局组件 ✅
+│   │   ├── results/              # 结果展示
+│   │   └── settings/             # 设置组件 ✅
+│   ├── lib/                      # 工具函数 ✅
+│   ├── hooks/                    # 自定义 hooks ✅
+│   ├── services/                 # 业务服务
+│   ├── store/                    # Zustand stores ✅
+│   ├── types/                    # TypeScript 类型 ✅
+│   ├── styles/                   # 全局样式 ✅
+│   ├── i18n/                     # 国际化
+│   └── main.tsx                  # 入口 ✅
+├── worker/                       # Cloudflare Worker ✅
+│   ├── index.ts                  # Hono 应用入口 ✅
+│   ├── providers.ts              # Provider 适配器 ✅
+│   └── types.ts                  # Worker 类型 ✅
+├── public/
+├── wrangler.toml                 # CF Workers 配置 ✅
+├── vite.config.ts
+├── tailwind.config.ts            # ✅
+├── postcss.config.js             # ✅
+├── components.json               # shadcn/ui 配置 ✅
+└── package.json
+```
 
-1. 桌面端：画布区改为两段结构
-- 上段：3:1 主画布。
-- 下段：可伸缩横向缩略图带（展开时固定高度，超出横向滚动；收起时仅保留工具栏高度）。
-2. 移动端：继续保留底部 Drawer 结果入口，避免挤压主画布高度。
-3. 若结果为 0，缩略图区不占位。
-4. 左右区域容器去圆角、去内缩边界，整体铺满父级宽度。
-5. 左侧画布区采用无边界视觉（不加外边框，不做独立卡片边界）。
+## 4. Provider 模板设计
 
-### 4.3 技术落点
+### 模板定义
 
-1. 新增组件：`src/components/canvas/CanvasGalleryStrip.tsx`（建议）。
-2. 在 [`src/components/canvas/CanvasWorkspace.tsx`](src/components/canvas/CanvasWorkspace.tsx) 内组合主画布 + 画廊缩略图。
-3. 复用 `useWorkflowStore` 中已有状态：`tasks`、`activeResultId`、`previewMode`、`setActiveResultId`。
-4. [`src/components/results/ResultsRail.tsx`](src/components/results/ResultsRail.tsx) 转为“移动端底部胶片”专用，避免桌面端重复呈现两套缩略图。
-5. 画廊展开态建议新增本地 UI 状态：`isGalleryExpanded`（可放在 `CanvasWorkspace`，如需持久化再迁移到 store）。
+```typescript
+interface ProviderTemplate {
+  id: string;
+  name: string;
+  baseUrl: string;           // Chat/Analysis API
+  generateUrl?: string;      // 图像生成 URL（阿里云专用）
+  defaultModel: string;
+  defaultVisionModel?: string;
+}
+```
 
-## 5. 分阶段实施
+### 预设模板
 
-### Phase 1：视觉基线（高级感统一）
+| 模板 | baseUrl | generateUrl | 视觉模型 | 生成模型 |
+|------|---------|-------------|----------|----------|
+| 火山引擎 Ark | `ark.cn-beijing.volces.com/api/v3` | `/api/v3/images/generations` | doubao-seed-2-0-lite | Doubao-Seedream-5.0-Lite |
+| 阿里云百炼 | `dashscope.aliyuncs.com/compatible-mode/v1` | `multimodal-generation/generation` | qwen-vl-max | wanx2.1-t2i-turbo |
+| OpenRouter | `openrouter.ai/api/v1` | - | gemini-2.0-flash | gemini-2.0-flash |
+| 自定义 | 用户填写 | 用户填写 | 用户填写 | 用户填写 |
 
-涉及文件：
-- [`src/theme/theme.ts`](src/theme/theme.ts)
-- [`src/components/common/SectionCard.tsx`](src/components/common/SectionCard.tsx)
-- [`src/components/layout/AppShell.tsx`](src/components/layout/AppShell.tsx)
+> **注意**：火山方舟需先在控制台部署模型，获得 `ep-` 开头的接入点ID作为实际模型ID。
 
-动作：
-1. 收敛圆角、阴影、边框透明度，减少局部自定义“漂移”。
-2. 统一标题/副标题/说明文字的层级与行高。
-3. 顶栏强化品牌层级，弱化图标按钮噪音。
-4. 主工作区改为 edge-to-edge：去掉左右主区圆角和容器边框式包裹。
+### 配置界面
 
-### Phase 2：左侧画廊缩略图落地（核心）
+- 下拉选择模板 → 预填 URL 和模型
+- 用户填写 API Key
+- 可修改预填值
+- 单一 Provider 模式（非切换）
 
-涉及文件：
-- [`src/components/canvas/CanvasWorkspace.tsx`](src/components/canvas/CanvasWorkspace.tsx)
-- [`src/components/canvas/CanvasGalleryStrip.tsx`](src/components/canvas/CanvasGalleryStrip.tsx)（新增）
-- [`src/pages/MainPage.tsx`](src/pages/MainPage.tsx)
-- [`src/components/results/ResultsRail.tsx`](src/components/results/ResultsRail.tsx)
+## 5. API 设计
 
-动作：
-1. 拆分原画布内容，抽出“缩略图带”子组件。
-2. 主画布与缩略图形成一个完整卡片，提高“左侧工作区闭环”体验。
-3. `MainPage` 中移除桌面端独立 ResultsRail，只保留移动端结果抽屉能力。
-4. 为缩略图带加入展开/收起交互，并在收起态保留最小控制条。
-5. 左侧主画布改为无边界视觉，不使用外层卡片轮廓。
+### POST /api/analyze
+分析图像内容，返回场景信息。
 
-### Phase 3：流程区与导出区精修
+**Request:**
+```json
+{
+  "image": "data:image/png;base64,...",
+  "provider": { "baseUrl": "...", "apiKey": "...", "model": "..." },
+  "prompt": "可选用户提示"
+}
+```
 
-涉及文件：
-- [`src/components/control/ControlPanel.tsx`](src/components/control/ControlPanel.tsx)
-- [`src/components/results/ExportPanel.tsx`](src/components/results/ExportPanel.tsx)
+### POST /api/generate
+生成图像变体。
 
-动作：
-1. 降低步骤块视觉噪声（边框、底色、分割线密度）。
-2. 优化导出映射区域信息密度，减少“表单墙”观感。
-3. 统一按钮组和标签样式，提升可扫描性。
+**Request:**
+```json
+{
+  "image": "data:image/png;base64,...",
+  "prompt": "...",
+  "negativePrompt": "...",
+  "width": 1920,
+  "height": 1080,
+  "provider": { "baseUrl": "...", "apiKey": "...", "model": "..." }
+}
+```
 
-### Phase 4：验收与回归
+### POST /api/test-connection
+测试 Provider 连接。
 
-动作：
-1. `npm run lint`
-2. `npm run build`
-3. 视觉回归：中英文、亮暗主题、桌面/移动端。
-4. 交互回归：上传后预处理、生成、切图、对比、导出全链路。
+## 6. 功能清单
 
-## 6. 风险与对策
+### 保留
+- [x] 图片上传与预处理
+- [x] 宽高比选择
+- [x] AI 场景分析
+- [x] 提示词计划生成
+- [x] 多时段变体生成
+- [x] ORB 图像对齐
+- [x] WinDynamicDesktop 导出
+- [x] ZIP 导出
+- [x] 多语言支持
+- [x] 深色/浅色主题
 
-1. 缩略图过多导致性能压力
-- 对策：缩略图固定尺寸、`loading="lazy"`、限制一次性动效数量。
-2. 左侧区域高度被压缩
-- 对策：桌面端优先保证主画布高度，缩略图带高度固定且可滚动。
-3. 两套结果入口引发认知重复
-- 对策：桌面端只留画布内画廊，移动端保留 Drawer 入口。
-4. 无边界视觉导致区域分界不清
-- 对策：使用轻量分隔（色阶、间距、细线）替代卡片边框。
+### 删除
+- [x] 本地回退生成（类型已移除）
+- [x] HEIC 导出（代码与入口已删除）
+- [x] ComfyUI Provider（类型已移除）
+- [x] 多 Provider 切换（已简化为单一模式）
 
-## 7. 验收标准
+### 新增
+- [x] 自定义 Provider 配置
+- [x] Provider 模板
 
-1. 左侧画布区域在有结果时出现可伸缩缩略图画廊，支持展开/收起，点击可切换主预览。
-2. 桌面端不再出现“画布下方一套 + 独立 ResultsRail 一套”的重复胶片区。
-3. 主画布仍保持 `3:1` 视觉主导，移动端不破版。
-4. 左右区域无圆角且占满布局，左侧画布呈现无边界视觉。
-5. 主题与样式节奏统一，页面观感明显提升为“高级创作台”。
-6. `npm run lint` 与 `npm run build` 通过。
+## 7. 分阶段实施
+
+### Phase 1: 项目初始化 ✅
+- [x] 创建 v2 分支
+- [x] 配置 Vite + React + TypeScript
+- [x] 配置 Tailwind CSS
+- [x] 安装配置 shadcn/ui
+- [x] 配置 wrangler.toml
+- [x] 创建 Hono Worker 骨架
+
+### Phase 2: 后端 Worker ✅
+- [x] 实现 /api/test-connection
+- [x] 实现 /api/analyze
+- [x] 实现 /api/generate
+- [x] 错误处理与日志
+- [ ] 本地开发测试
+
+### Phase 3: 前端基础 ✅
+- [x] AppShell 布局组件
+- [x] shadcn/ui 基础组件导入
+- [x] Provider 配置界面
+- [x] Zustand store 迁移
+- [x] i18n 配置
+
+### Phase 4: 核心业务 ✅
+- [x] 图片上传组件
+- [x] Canvas 预处理
+- [x] 场景分析流程
+- [x] 提示词生成
+- [x] 图像生成队列
+- [x] ORB 对齐
+
+### Phase 5: 导出与完善 🔄
+- [x] ZIP 导出
+- [x] DDW 导出
+- [x] 主题切换
+- [x] 测试与修复
+- [ ] 部署上线
+
+## 8. 部署配置
+
+### wrangler.toml
+```toml
+name = "wallpaperduo"
+compatibility_date = "2026-03-18"
+main = "./dist/worker/index.js"
+
+[assets]
+directory = "./dist/client/"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+```
+
+### 部署命令
+```bash
+npm run build    # 构建前端 + Worker
+npm run deploy   # 部署到 Cloudflare
+```
+
+## 9. 验收标准
+
+1. 部署到 Cloudflare Workers，访问 `wallpaperduo.pages.dev`
+2. 前端调用 `/api/*` 无 CORS 错误
+3. Provider 模板选择 → 预填 → 填 Key → 测试连接成功
+4. 完整工作流：上传 → 分析 → 生成 → 导出
+5. ZIP 和 DDW 导出正常
+6. 中英文切换正常
+7. 深浅主题切换正常
+
+## 10. 详细设计文档
+
+参见 [`docs/superpowers/specs/2025-03-19-v2-refactor-design.md`](docs/superpowers/specs/2025-03-19-v2-refactor-design.md)

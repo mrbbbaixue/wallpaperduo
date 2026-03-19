@@ -1,4 +1,4 @@
-export type ProviderKind = "openrouter" | "ark" | "aliyun" | "comfyui";
+export type ProviderKind = "openrouter" | "ark" | "aliyun" | "custom";
 
 export type ThemeVariant = "dark" | "light";
 export type TimeVariant = "dawn" | "day" | "dusk" | "night";
@@ -69,7 +69,7 @@ export interface GenerationResult {
   width: number;
   height: number;
   provider: ProviderKind;
-  source: "provider" | "local-fallback";
+  source: "provider";
   createdAt: string;
 }
 

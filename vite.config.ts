@@ -7,12 +7,12 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), cloudflare()],
   build: {
+    outDir: "dist/client",
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-mui": ["@mui/material", "@mui/icons-material", "@emotion/react", "@emotion/styled"],
           "vendor-state": [
             "zustand",
             "@tanstack/react-query",

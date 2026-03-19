@@ -1,21 +1,10 @@
-import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
-import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
-import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
-import {
-  Alert,
-  Box,
-  Button,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-  useMediaQuery,
-} from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { ArrowLeftRight, Image as ImageIcon, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasGalleryStrip } from "@/components/canvas/CanvasGalleryStrip";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { desktopWorkspaceHeight } from "@/constants/layout";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
@@ -27,11 +16,11 @@ const checkerboardBg = `
   ) 50% / 20px 20px
 `;
 
+const mobileMediaQuery = "(max-width: 767px)";
+
 export const CanvasWorkspace = () => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
@@ -45,7 +34,22 @@ export const CanvasWorkspace = () => {
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(mobileMediaQuery).matches : false,
+  );
   const previousSucceededCountRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const media = window.matchMedia(mobileMediaQuery);
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
 
   const succeededTasks = useMemo(
     () => tasks.filter((task) => task.status === "succeeded" && task.result?.blob),
@@ -129,41 +133,36 @@ export const CanvasWorkspace = () => {
   const resultPreviewUrl = activeTask?.result?.objectUrl ?? null;
   const previewUrl = resultPreviewUrl ?? basePreviewUrl;
   const compareReady = previewMode === "compare" && !!basePreviewUrl && !!resultPreviewUrl;
+
   const resultControls = hasResults ? (
-    <Stack
-      direction="row"
-      spacing={1}
-      alignItems="center"
-      flexWrap="wrap"
-      useFlexGap
-      sx={{ pb: 1.5 }}
-    >
+    <div className="flex flex-wrap items-center gap-2 pb-2">
       <Button
-        size="small"
-        variant={activeResultId ? "outlined" : "contained"}
+        type="button"
+        size="sm"
+        variant={activeResultId ? "outline" : "default"}
         onClick={() => setActiveResultId(undefined)}
-        sx={{ borderRadius: 0 }}
       >
         {t("results.baseSelect")}
       </Button>
-      <ToggleButtonGroup
-        exclusive
-        size="small"
-        value={previewMode}
-        onChange={(_, next: "single" | "compare" | null) => {
-          if (next) setPreviewMode(next);
-        }}
+      <Button
+        type="button"
+        size="sm"
+        variant={previewMode === "single" ? "default" : "outline"}
+        onClick={() => setPreviewMode("single")}
       >
-        <ToggleButton value="single" sx={{ borderRadius: 0 }}>
-          <ImageRoundedIcon sx={{ mr: 0.5, fontSize: 16 }} />
-          {t("results.singleMode")}
-        </ToggleButton>
-        <ToggleButton value="compare" sx={{ borderRadius: 0 }}>
-          <CompareArrowsRoundedIcon sx={{ mr: 0.5, fontSize: 16 }} />
-          {t("results.compareMode")}
-        </ToggleButton>
-      </ToggleButtonGroup>
-      <Typography variant="caption" color="text.secondary">
+        <ImageIcon className="h-4 w-4" />
+        {t("results.singleMode")}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant={previewMode === "compare" ? "default" : "outline"}
+        onClick={() => setPreviewMode("compare")}
+      >
+        <ArrowLeftRight className="h-4 w-4" />
+        {t("results.compareMode")}
+      </Button>
+      <span className="text-sm text-muted-foreground">
         {activeTask
           ? isZh
             ? `当前结果：${activeTask.label}`
@@ -171,111 +170,71 @@ export const CanvasWorkspace = () => {
           : isZh
             ? "当前预览：基准图"
             : "Current preview: baseline"}
-      </Typography>
-    </Stack>
+      </span>
+    </div>
   ) : null;
+
   const stage = (
-    <Box
+    <div
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      sx={{
-        position: "relative",
-        width: "100%",
-        height: { md: "100%" },
+      className={cn(
+        "relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-background/60",
+        isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
+      )}
+      style={{
+        backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), ${checkerboardBg}`,
         aspectRatio: "3 / 1",
-        minHeight: {
-          xs: 230,
-          md: 0,
-        },
-        borderRadius: 0,
-        border: 0,
-        background:
-          "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), " + checkerboardBg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-        isolation: "isolate",
-        transition: "outline-color 0.2s, box-shadow 0.2s",
-        outline: isDragging ? "2px dashed" : "none",
-        outlineColor: "primary.main",
-        outlineOffset: -2,
-        boxShadow: isDragging
-          ? "0 0 0 1px rgba(88, 189, 208, 0.35), 0 20px 48px rgba(88, 189, 208, 0.22)"
-          : "none",
+        minHeight: isMobile ? 230 : undefined,
+        height: isMobile ? undefined : "100%",
       }}
     >
       {compareReady ? (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-          }}
-        >
-          <Stack spacing={0.5} sx={{ p: 1, borderRight: "1px solid", borderColor: "divider" }}>
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
+        <div className="grid h-full w-full grid-cols-2">
+          <div className="flex min-h-0 flex-col gap-2 border-r border-border/70 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {isZh ? "基准图" : "Baseline"}
-            </Typography>
-            <Box
-              component="img"
-              src={basePreviewUrl ?? ""}
-              alt="base preview"
-              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
-            />
-          </Stack>
-          <Stack spacing={0.5} sx={{ p: 1 }}>
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
+            </p>
+            <img src={basePreviewUrl ?? ""} alt="base preview" className="h-full w-full object-contain" />
+          </div>
+          <div className="flex min-h-0 flex-col gap-2 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {isZh ? "当前结果" : "Current result"}
-            </Typography>
-            <Box
-              component="img"
+            </p>
+            <img
               src={resultPreviewUrl ?? ""}
               alt={activeTask?.label ?? "result preview"}
-              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+              className="h-full w-full object-contain"
             />
-          </Stack>
-        </Box>
+          </div>
+        </div>
       ) : previewUrl ? (
-        <Box
-          component="img"
-          src={previewUrl}
-          alt="canvas preview"
-          sx={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-          }}
-        />
+        <img src={previewUrl} alt="canvas preview" className="max-h-full max-w-full object-contain" />
       ) : (
-        <Stack alignItems="center" spacing={1} sx={{ py: 6 }}>
-          <UploadRoundedIcon sx={{ fontSize: 48, color: "text.disabled" }} />
-          <Typography variant="body2" color="text.secondary">
-            {t("workspace.uploadHint")}
-          </Typography>
-        </Stack>
+        <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+          <UploadCloud className="h-12 w-12 text-muted-foreground/70" />
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("workspace.uploadHint")}</p>
+        </div>
       )}
-    </Box>
+    </div>
   );
 
   return (
-    <Box sx={{ minWidth: 0 }}>
-      <Stack spacing={1.5}>
+    <div className="min-w-0">
+      <div className="space-y-4">
         {isMobile ? (
           <>
             {resultControls}
             {stage}
           </>
         ) : (
-          <Box
-            sx={{
+          <div
+            className="grid overflow-hidden"
+            style={{
               height: desktopWorkspaceHeight,
               minHeight: desktopWorkspaceHeight,
-              display: "grid",
               gridTemplateRows: hasResults ? "auto minmax(0, 1fr) auto" : "minmax(0, 1fr)",
-              overflow: "hidden",
             }}
           >
             {resultControls}
@@ -286,11 +245,11 @@ export const CanvasWorkspace = () => {
                 onToggleExpanded={() => setIsGalleryExpanded((expanded) => !expanded)}
               />
             ) : null}
-          </Box>
+          </div>
         )}
 
-        {error ? <Alert severity="error">{t(`errors.${error}`, error)}</Alert> : null}
-      </Stack>
-    </Box>
+        {error ? <p className="text-sm text-destructive">{t(`errors.${error}`, error)}</p> : null}
+      </div>
+    </div>
   );
 };

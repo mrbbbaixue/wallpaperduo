@@ -1,20 +1,10 @@
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import {
-  Box,
-  Button,
-  ButtonBase,
-  Chip,
-  Collapse,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { ChevronDown, ChevronUp, Download } from "lucide-react";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 interface CanvasGalleryStripProps {
@@ -56,26 +46,25 @@ export const CanvasGalleryStrip = ({
       return;
     }
 
-    const previousIds = previousIdsRef.current;
-    const previousSet = new Set(previousIds);
+    const previousSet = new Set(previousIdsRef.current);
     const newcomer = succeeded.find((task) => !previousSet.has(task.id));
 
-    if (newcomer) {
-      if (expanded) {
-        window.setTimeout(() => {
-          cardRefs.current[newcomer.id]?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "nearest",
-          });
-        }, 40);
-      }
+    if (newcomer && expanded) {
+      window.setTimeout(() => {
+        cardRefs.current[newcomer.id]?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest",
+        });
+      }, 40);
     }
 
     previousIdsRef.current = succeeded.map((task) => task.id);
   }, [expanded, succeeded]);
 
-  if (succeeded.length === 0) return null;
+  if (succeeded.length === 0) {
+    return null;
+  }
 
   const selectAt = (nextIndex: number) => {
     const wrapped = (nextIndex + succeeded.length) % succeeded.length;
@@ -115,123 +104,86 @@ export const CanvasGalleryStrip = ({
   };
 
   return (
-    <Box sx={{ borderTop: "1px solid", borderColor: "divider" }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        spacing={1}
-        sx={{
-          py: 0.75,
-          borderBottom: expanded ? "1px solid" : "none",
-          borderColor: "divider",
-        }}
+    <div className="border-t border-border/70">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 py-3",
+          expanded ? "border-b border-border/70" : "",
+        )}
       >
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.07em" }}>
+        <div className="flex items-center gap-2">
+          <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {isZh ? "结果画廊" : "Result Gallery"}
-          </Typography>
-          <Chip
-            size="small"
-            label={isZh ? `${succeeded.length} 张` : `${succeeded.length} items`}
-            sx={{ borderRadius: 0 }}
-          />
-        </Stack>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
+          </span>
+          <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+            {isZh ? `${succeeded.length} 张` : `${succeeded.length} items`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
-            size="small"
-            variant="outlined"
-            startIcon={<DownloadRoundedIcon />}
+            type="button"
+            size="sm"
+            variant="outline"
             onClick={handleDownloadSingle}
             disabled={!activeTask?.result?.blob}
-            sx={{ borderRadius: 0 }}
           >
+            <Download className="h-4 w-4" />
             {t("common.download")}
           </Button>
-          <IconButton
-            size="small"
+          <button
+            type="button"
             onClick={onToggleExpanded}
             aria-label={expanded ? (isZh ? "收起画廊" : "Collapse gallery") : isZh ? "展开画廊" : "Expand gallery"}
-            sx={{ borderRadius: 0 }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-background transition-colors hover:bg-accent"
           >
-            {expanded ? <ExpandLessRoundedIcon fontSize="small" /> : <ExpandMoreRoundedIcon fontSize="small" />}
-          </IconButton>
-        </Stack>
-      </Stack>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
 
-      <Collapse in={expanded} timeout={220} unmountOnExit>
-        <Box
+      {expanded ? (
+        <div
           role="listbox"
           aria-label={isZh ? "结果画廊" : "Result gallery"}
           aria-activedescendant={activeResultId ? `gallery-option-${activeResultId}` : undefined}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          sx={{
-            display: "flex",
-            gap: 1,
-            overflowX: "auto",
-            py: 1,
-            outline: "none",
-            "&::-webkit-scrollbar": { height: 6 },
-            "&::-webkit-scrollbar-thumb": {
-              borderRadius: 0,
-              backgroundColor: "action.hover",
-            },
-          }}
+          className="flex gap-3 overflow-x-auto py-3 outline-none"
         >
           {succeeded.map((task) => {
             const selected = task.id === activeResultId;
             return (
-              <ButtonBase
+              <button
                 key={task.id}
                 id={`gallery-option-${task.id}`}
                 ref={(node) => {
                   cardRefs.current[task.id] = node;
                 }}
+                type="button"
                 role="option"
                 aria-selected={selected}
                 onClick={() => setActiveResultId(task.id)}
-                sx={{
-                  width: 168,
-                  flexShrink: 0,
-                  p: 0.75,
-                  borderRadius: 0,
-                  border: "1px solid",
-                  borderColor: selected ? "primary.main" : "divider",
-                  backgroundColor: selected ? "action.selected" : "background.paper",
-                  textAlign: "left",
-                  transition: "all 0.2s ease",
-                  "&:focus-visible": {
-                    outline: "2px solid",
-                    outlineColor: "primary.main",
-                    outlineOffset: 2,
-                  },
-                }}
+                className={cn(
+                  "w-44 flex-shrink-0 rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  selected
+                    ? "border-primary bg-accent/40 shadow-lg"
+                    : "border-border/70 bg-background hover:bg-accent/40",
+                )}
               >
-                <Stack spacing={0.6} sx={{ width: "100%" }}>
-                  <Box
-                    component="img"
+                <div className="space-y-2">
+                  <img
                     src={task.result?.objectUrl}
                     alt={task.label}
                     loading="lazy"
-                    sx={{
-                      width: "100%",
-                      aspectRatio: "4 / 3",
-                      objectFit: "cover",
-                      borderRadius: 0,
-                      border: "1px solid",
-                      borderColor: "divider",
-                    }}
+                    className="aspect-[4/3] w-full rounded-lg border border-border/70 object-cover"
                   />
-                  <Typography variant="caption" fontWeight={700} noWrap>
-                    {task.label}
-                  </Typography>
-                </Stack>
-              </ButtonBase>
+                  <p className="truncate text-sm font-semibold">{task.label}</p>
+                </div>
+              </button>
             );
           })}
-        </Box>
-      </Collapse>
-    </Box>
+        </div>
+      ) : null}
+    </div>
   );
 };

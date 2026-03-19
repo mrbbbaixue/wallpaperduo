@@ -1,420 +1,92 @@
-import WifiFindRoundedIcon from "@mui/icons-material/WifiFindRounded";
-import {
-  Alert,
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  Tab,
-  Tabs,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SectionCard } from "@/components/common/SectionCard";
-import { testProviderConnectivity } from "@/services/providers/testConnectivity";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ProviderConfig } from "@/components/settings/ProviderConfig";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import type { ProviderKind } from "@/types/domain";
-import { toUserError } from "@/utils/error";
-
-const providerList: ProviderKind[] = ["openrouter", "ark", "aliyun", "comfyui"];
 
 export const ProviderSettingsPanel = () => {
-  const { t } = useTranslation();
-  const selectedProvider = useSettingsStore((state) => state.selectedProvider);
-  const setSelectedProvider = useSettingsStore((state) => state.setSelectedProvider);
-  const analysisProvider = useSettingsStore((state) => state.analysisProvider);
-  const setAnalysisProvider = useSettingsStore((state) => state.setAnalysisProvider);
-  const generationProvider = useSettingsStore((state) => state.generationProvider);
-  const setGenerationProvider = useSettingsStore((state) => state.setGenerationProvider);
-  const providers = useSettingsStore((state) => state.providers);
-  const setProviderConfig = useSettingsStore((state) => state.setProviderConfig);
-  const setComfyWorkflowTemplate = useSettingsStore((state) => state.setComfyWorkflowTemplate);
-  const setComfyNodeMapping = useSettingsStore((state) => state.setComfyNodeMapping);
+  const { i18n, t } = useTranslation();
+  const isZh = i18n.language === "zh";
+  const provider = useSettingsStore((state) => state.provider);
   const promptSettings = useSettingsStore((state) => state.promptSettings);
   const setPromptSettings = useSettingsStore((state) => state.setPromptSettings);
-  const lastConnectivity = useSettingsStore((state) => state.lastConnectivity);
-  const setConnectivityResult = useSettingsStore((state) => state.setConnectivityResult);
-  const heicExperimentalEnabled = useSettingsStore((state) => state.heicExperimentalEnabled);
-  const setHeicExperimentalEnabled = useSettingsStore((state) => state.setHeicExperimentalEnabled);
-  const localFallbackEnabled = useSettingsStore((state) => state.localFallbackEnabled);
-  const setLocalFallbackEnabled = useSettingsStore((state) => state.setLocalFallbackEnabled);
-
-  const [localError, setLocalError] = useState("");
-  const config = providers[selectedProvider];
-
-  const connectivityMutation = useMutation({
-    mutationFn: async () => testProviderConnectivity(selectedProvider, providers),
-    onSuccess: (data) => {
-      setLocalError("");
-      setConnectivityResult(selectedProvider, data);
-    },
-    onError: (error) => setLocalError(toUserError(error)),
-  });
-
-  const latestConnectivity = useMemo(
-    () => lastConnectivity[selectedProvider],
-    [lastConnectivity, selectedProvider],
-  );
 
   return (
-    <Stack spacing={2}>
+    <div className="space-y-4">
       <SectionCard title={t("settings.providerSection")} subtitle={t("settings.routingHint")}>
-        <Stack spacing={2.25}>
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: 1.5,
-              border: "1px solid",
-              borderColor: "divider",
-              bgcolor: "background.paper",
-            }}
-          >
-            <Grid container spacing={1.5}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>{t("settings.analysisProvider")}</InputLabel>
-                  <Select
-                    value={analysisProvider}
-                    label={t("settings.analysisProvider")}
-                    onChange={(event) => setAnalysisProvider(event.target.value as ProviderKind)}
-                  >
-                    {providerList.map((provider) => (
-                      <MenuItem key={provider} value={provider}>
-                        {provider}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>{t("settings.generationProvider")}</InputLabel>
-                  <Select
-                    value={generationProvider}
-                    label={t("settings.generationProvider")}
-                    onChange={(event) => setGenerationProvider(event.target.value as ProviderKind)}
-                  >
-                    {providerList.map((provider) => (
-                      <MenuItem key={provider} value={provider}>
-                        {provider}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: 1.5,
-              border: "1px solid",
-              borderColor: "divider",
-              bgcolor: "background.paper",
-            }}
-          >
-            <Tabs
-              value={selectedProvider}
-              onChange={(_, value: ProviderKind) => setSelectedProvider(value)}
-              variant="scrollable"
-              sx={{ mb: 1.5 }}
-            >
-              {providerList.map((provider) => (
-                <Tab key={provider} value={provider} label={provider} />
-              ))}
-            </Tabs>
-
-            <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label={t("settings.baseUrl")}
-                value={config.baseUrl}
-                onChange={(event) =>
-                  setProviderConfig(selectedProvider, { baseUrl: event.target.value })
-                }
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label={t("settings.apiKey")}
-                type="password"
-                value={config.apiKey}
-                onChange={(event) =>
-                  setProviderConfig(selectedProvider, { apiKey: event.target.value })
-                }
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label={t("settings.generationModel")}
-                value={config.model}
-                onChange={(event) =>
-                  setProviderConfig(selectedProvider, { model: event.target.value })
-                }
-              />
-            </Grid>
-            {selectedProvider !== "comfyui" && (
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={t("settings.analysisModel")}
-                  value={config.visionModel ?? ""}
-                  onChange={(event) =>
-                    setProviderConfig(selectedProvider, { visionModel: event.target.value })
-                  }
-                />
-              </Grid>
-            )}
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                label={t("settings.timeout")}
-                value={config.timeoutMs}
-                onChange={(event) =>
-                  setProviderConfig(selectedProvider, {
-                    timeoutMs: Math.max(1000, Number(event.target.value)),
-                  })
-                }
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                label={t("settings.concurrency")}
-                value={config.concurrency}
-                onChange={(event) =>
-                  setProviderConfig(selectedProvider, {
-                    concurrency: Math.max(1, Number(event.target.value)),
-                  })
-                }
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ pt: 1.6 }}>
-                {t("settings.currentEditingProvider")}:{" "}
-                <Box component="span" className="mono">
-                  {selectedProvider}
-                </Box>
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label={t("settings.extraHeaders")}
-                value={config.extraHeaders}
-                onChange={(event) =>
-                  setProviderConfig(selectedProvider, { extraHeaders: event.target.value })
-                }
-                multiline
-                minRows={2}
-              />
-            </Grid>
-            </Grid>
-          </Box>
-
-          {selectedProvider === "comfyui" ? (
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: 1.5,
-                border: "1px solid",
-                borderColor: "divider",
-                bgcolor: "background.paper",
-              }}
-            >
-              <Stack spacing={2}>
-              <Typography variant="subtitle2">{t("settings.workflow")}</Typography>
-              <TextField
-                fullWidth
-                multiline
-                minRows={8}
-                value={providers.comfyui.workflowTemplate}
-                onChange={(event) => setComfyWorkflowTemplate(event.target.value)}
-              />
-              <Typography variant="subtitle2">{t("settings.nodeMap")}</Typography>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="positivePromptNodeId"
-                    value={providers.comfyui.nodeMapping.positivePromptNodeId}
-                    onChange={(event) =>
-                      setComfyNodeMapping({ positivePromptNodeId: event.target.value })
-                    }
-                  />
-                </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="negativePromptNodeId"
-                    value={providers.comfyui.nodeMapping.negativePromptNodeId}
-                    onChange={(event) =>
-                      setComfyNodeMapping({ negativePromptNodeId: event.target.value })
-                    }
-                  />
-                </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="seedNodeId"
-                    value={providers.comfyui.nodeMapping.seedNodeId}
-                    onChange={(event) => setComfyNodeMapping({ seedNodeId: event.target.value })}
-                  />
-                </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="timeVariableNodeId"
-                    value={providers.comfyui.nodeMapping.timeVariableNodeId ?? ""}
-                    onChange={(event) =>
-                      setComfyNodeMapping({ timeVariableNodeId: event.target.value })
-                    }
-                  />
-                </Grid>
-              </Grid>
-              </Stack>
-            </Box>
-          ) : null}
-
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Button
-              variant="contained"
-              startIcon={<WifiFindRoundedIcon />}
-              onClick={() => connectivityMutation.mutate()}
-              disabled={connectivityMutation.isPending}
-            >
-              {connectivityMutation.isPending ? t("common.loading") : t("settings.test")}
-            </Button>
-            </Stack>
-            {latestConnectivity ? (
-              <Alert severity={latestConnectivity.ok ? "success" : "error"} sx={{ py: 0.5 }}>
-                <Stack spacing={0.4}>
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  <Typography variant="body2" fontWeight={600}>
-                    {latestConnectivity.message}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" className="mono">
-                    {latestConnectivity.latencyMs}ms
-                  </Typography>
-                  </Stack>
-                  {latestConnectivity.details ? (
-                    <Typography variant="caption" color="text.secondary">
-                      {latestConnectivity.details}
-                    </Typography>
-                  ) : null}
-                </Stack>
-              </Alert>
-            ) : null}
-          </Stack>
-        </Stack>
+        <ProviderConfig />
       </SectionCard>
 
       <SectionCard
         title={t("settings.promptSettingsTitle")}
         subtitle={t("settings.promptSettingsDesc")}
       >
-        <Stack
-          spacing={2}
-          sx={{
-            p: 1.5,
-            borderRadius: 1.5,
-            border: "1px solid",
-            borderColor: "divider",
-            bgcolor: "background.paper",
-          }}
-        >
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            size="small"
-            label={t("settings.analysisPrompt")}
-            value={promptSettings.analysisUserPrompt}
-            onChange={(event) =>
-              setPromptSettings({ analysisUserPrompt: event.target.value })
-            }
-          />
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            size="small"
-            label={t("settings.generationPromptPrefix")}
-            value={promptSettings.generationPrefix}
-            onChange={(event) =>
-              setPromptSettings({ generationPrefix: event.target.value })
-            }
-          />
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            size="small"
-            label={t("settings.defaultNegativePrompt")}
-            value={promptSettings.defaultNegativePrompt}
-            onChange={(event) =>
-              setPromptSettings({ defaultNegativePrompt: event.target.value })
-            }
-          />
-        </Stack>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="analysis-prompt">{t("settings.analysisPrompt")}</Label>
+            <textarea
+              id="analysis-prompt"
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              value={promptSettings.analysisUserPrompt}
+              onChange={(event) => setPromptSettings({ analysisUserPrompt: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="generation-prefix">{t("settings.generationPromptPrefix")}</Label>
+            <textarea
+              id="generation-prefix"
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              value={promptSettings.generationPrefix}
+              onChange={(event) => setPromptSettings({ generationPrefix: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="negative-prompt">{t("settings.defaultNegativePrompt")}</Label>
+            <textarea
+              id="negative-prompt"
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              value={promptSettings.defaultNegativePrompt}
+              onChange={(event) => setPromptSettings({ defaultNegativePrompt: event.target.value })}
+            />
+          </div>
+        </div>
       </SectionCard>
 
-      <SectionCard title={t("settings.runtimeTitle")} subtitle={t("settings.runtimeDesc")}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          alignItems={{ xs: "flex-start", sm: "center" }}
-        >
-          <Typography variant="body2" sx={{ minWidth: 110 }}>
-            {t("settings.heicExperimental")}
-          </Typography>
-          <Button
-            size="small"
-            variant={heicExperimentalEnabled ? "contained" : "outlined"}
-            onClick={() => setHeicExperimentalEnabled(!heicExperimentalEnabled)}
-          >
-            {heicExperimentalEnabled ? t("common.enabled") : t("common.disabled")}
-          </Button>
-          <Typography variant="body2" sx={{ minWidth: 92 }}>
-            {t("settings.localFallback")}
-          </Typography>
-          <Button
-            size="small"
-            variant={localFallbackEnabled ? "contained" : "outlined"}
-            onClick={() => setLocalFallbackEnabled(!localFallbackEnabled)}
-          >
-            {localFallbackEnabled ? t("common.enabled") : t("common.disabled")}
-          </Button>
-        </Stack>
+      <SectionCard title={t("settings.title")} subtitle={t("settings.securityTip")}>
+        <div className="space-y-3">
+          <div className="rounded-lg border border-dashed border-border/80 bg-muted/35 px-4 py-3 text-sm leading-6 text-muted-foreground">
+            {isZh
+              ? "当前版本已经移除多 Provider 切换、本地回退和 HEIC 导出，所有分析与生成都会走同一个自定义 Provider，并由 Cloudflare Worker 代理请求。"
+              : "This version removes multi-provider switching, local fallback, and HEIC export. Analysis and generation now share a single custom provider routed through the Cloudflare Worker."}
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="settings-provider-readonly">{t("settings.provider")}</Label>
+              <Input
+                id="settings-provider-readonly"
+                value={provider.templateId}
+                readOnly
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="settings-workflow-readonly">
+                {isZh ? "部署说明" : "Deployment note"}
+              </Label>
+              <Input
+                id="settings-workflow-readonly"
+                value={
+                  isZh
+                    ? "前端静态资源 + /api/* Worker 同仓部署"
+                    : "Static assets + /api/* Worker in one deploy"
+                }
+                readOnly
+              />
+            </div>
+          </div>
+        </div>
       </SectionCard>
-
-      {localError ? <Alert severity="error">{t(`errors.${localError}`, localError)}</Alert> : null}
-    </Stack>
+    </div>
   );
 };
