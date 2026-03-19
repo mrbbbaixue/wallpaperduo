@@ -17,7 +17,8 @@ import { prepareCanvasImage } from "@/services/canvas/prepareCanvas";
 import { buildPreparedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 
 export const CanvasControls = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === "zh";
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const ratioId = useWorkflowStore((s) => s.ratioId);
@@ -30,6 +31,9 @@ export const CanvasControls = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const fieldLabelClassName = isZh
+    ? "text-xs font-medium text-muted-foreground"
+    : "text-[11px] uppercase tracking-[0.18em] text-muted-foreground";
 
   const normalizedRatioId = aspectRatios.some((item) => item.id === ratioId) ? ratioId : "16:9";
 
@@ -81,7 +85,7 @@ export const CanvasControls = () => {
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="space-y-2">
-          <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <Label className={fieldLabelClassName}>
             {t("workspace.ratio")}
           </Label>
           <Select value={normalizedRatioId} onValueChange={setRatioId}>
@@ -99,7 +103,7 @@ export const CanvasControls = () => {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <Label className={fieldLabelClassName}>
             {t("workspace.mode")}
           </Label>
           <div className="grid grid-cols-2 gap-2">
@@ -134,7 +138,7 @@ export const CanvasControls = () => {
           <div className="space-y-2">
             <Label
               htmlFor="custom-ratio-width"
-              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+              className={fieldLabelClassName}
             >
               W
             </Label>
@@ -154,7 +158,7 @@ export const CanvasControls = () => {
           <div className="space-y-2">
             <Label
               htmlFor="custom-ratio-height"
-              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+              className={fieldLabelClassName}
             >
               H
             </Label>

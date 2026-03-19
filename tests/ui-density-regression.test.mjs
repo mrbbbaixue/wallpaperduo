@@ -150,3 +150,15 @@ test("app shell uses a compact fixed header height for desktop viewport math", (
     "MainPage should size the desktop workbench from the shared header height token",
   );
 });
+
+test("canvas controls use locale-aware typography for narrow sidebar labels", () => {
+  const canvasControls = read("src/components/canvas/CanvasControls.tsx");
+  assert.ok(
+    canvasControls.includes("const { t, i18n } = useTranslation();"),
+    "CanvasControls should inspect the current locale when styling sidebar labels",
+  );
+  assert.ok(
+    canvasControls.includes('const fieldLabelClassName = isZh'),
+    "CanvasControls should use a dedicated label style for Chinese copy in the narrow sidebar",
+  );
+});
