@@ -78,13 +78,12 @@
   "settings": {
     "title": "设置",
     "dialogTitle": "工作台模型与提示词设置",
-    "dialogSubtitle": "管理 Provider、Prompt 默认值与运行方式。",
+    "dialogSubtitle": "管理 Provider 与 Prompt 默认值。",
     "providerSection": "模型路由与 Provider 配置",
     "routingHint": "分析与生成统一使用同一个 BYOK Provider，请求全部通过 Cloudflare Worker 代理。",
     "sections": {
       "provider": "Provider 与模型",
-      "prompts": "Prompt 默认值",
-      "runtime": "运行与导出"
+      "prompts": "Prompt 默认值"
     },
     "autoSaveHint": "设置会自动保存到当前浏览器",
     "analysisProvider": "视觉分析 Provider",
@@ -109,16 +108,6 @@
     "analysisPrompt": "视觉分析附加提示词",
     "generationPromptPrefix": "生成提示词前缀",
     "defaultNegativePrompt": "默认负面提示词",
-    "runtimeTitle": "运行选项",
-    "runtimeDesc": "导出行为设置。",
-    "runtimeSummaryTitle": "当前运行方式",
-    "runtimeSummaryDesc": "这些项目在当前版本中固定，不需要额外配置。",
-    "runtimeProxyLabel": "请求路由",
-    "runtimeProxyValue": "所有分析与生成统一经过 Cloudflare Worker 代理",
-    "runtimeExportLabel": "导出方式",
-    "runtimeExportValue": "保留 PNG ZIP 与 DDW 导出工作流",
-    "runtimeStorageLabel": "设置保存",
-    "runtimeStorageValue": "仅保存到当前浏览器本地存储",
     "heicExperimental": "ZIP 导出",
     "localFallback": "Worker 代理"
   },

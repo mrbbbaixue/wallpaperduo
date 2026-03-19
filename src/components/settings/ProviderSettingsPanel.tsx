@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProviderConfig } from "@/components/settings/ProviderConfig";
 import { testConnectionWithWorker } from "@/services/api/workerClient";
@@ -10,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { toUserError } from "@/utils/error";
 
-type SettingsSectionKey = "provider" | "prompts" | "runtime";
+type SettingsSectionKey = "provider" | "prompts";
 
 interface ProviderSettingsPanelProps {
   onClose: () => void;
@@ -43,12 +42,6 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
       label: t("settings.sections.prompts"),
       title: t("settings.promptSettingsTitle"),
       description: t("settings.promptSettingsDesc"),
-    },
-    {
-      key: "runtime",
-      label: t("settings.sections.runtime"),
-      title: t("settings.runtimeSummaryTitle"),
-      description: t("settings.runtimeSummaryDesc"),
     },
   ];
 
@@ -105,68 +98,43 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
       );
     }
 
-    if (activeSection === "prompts") {
-      return (
-        <div className={panelBlockClassName}>
-          <div className="space-y-2">
-            <Label className={fieldLabelClassName} htmlFor="analysis-prompt">
-              {t("settings.analysisPrompt")}
-            </Label>
-            <textarea
-              id="analysis-prompt"
-              className={textAreaClassName}
-              value={promptSettings.analysisUserPrompt}
-              onChange={(event) => setPromptSettings({ analysisUserPrompt: event.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className={fieldLabelClassName} htmlFor="generation-prefix">
-              {t("settings.generationPromptPrefix")}
-            </Label>
-            <textarea
-              id="generation-prefix"
-              className={textAreaClassName}
-              value={promptSettings.generationPrefix}
-              onChange={(event) => setPromptSettings({ generationPrefix: event.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className={fieldLabelClassName} htmlFor="negative-prompt">
-              {t("settings.defaultNegativePrompt")}
-            </Label>
-            <textarea
-              id="negative-prompt"
-              className={textAreaClassName}
-              value={promptSettings.defaultNegativePrompt}
-              onChange={(event) => setPromptSettings({ defaultNegativePrompt: event.target.value })}
-            />
-          </div>
+    return (
+      <div className={panelBlockClassName}>
+        <div className="space-y-2">
+          <Label className={fieldLabelClassName} htmlFor="analysis-prompt">
+            {t("settings.analysisPrompt")}
+          </Label>
+          <textarea
+            id="analysis-prompt"
+            className={textAreaClassName}
+            value={promptSettings.analysisUserPrompt}
+            onChange={(event) => setPromptSettings({ analysisUserPrompt: event.target.value })}
+          />
         </div>
-      );
-    }
-
-    if (activeSection === "runtime") {
-      return (
-        <div className="space-y-4">
-          <div className={panelBlockClassName}>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label className={fieldLabelClassName}>{t("settings.runtimeProxyLabel")}</Label>
-                <Input value={t("settings.runtimeProxyValue")} readOnly className="h-11 rounded-none bg-background/75" />
-              </div>
-              <div className="space-y-2">
-                <Label className={fieldLabelClassName}>{t("settings.runtimeExportLabel")}</Label>
-                <Input value={t("settings.runtimeExportValue")} readOnly className="h-11 rounded-none bg-background/75" />
-              </div>
-              <div className="space-y-2">
-                <Label className={fieldLabelClassName}>{t("settings.runtimeStorageLabel")}</Label>
-                <Input value={t("settings.runtimeStorageValue")} readOnly className="h-11 rounded-none bg-background/75" />
-              </div>
-            </div>
-          </div>
+        <div className="space-y-2">
+          <Label className={fieldLabelClassName} htmlFor="generation-prefix">
+            {t("settings.generationPromptPrefix")}
+          </Label>
+          <textarea
+            id="generation-prefix"
+            className={textAreaClassName}
+            value={promptSettings.generationPrefix}
+            onChange={(event) => setPromptSettings({ generationPrefix: event.target.value })}
+          />
         </div>
-      );
-    }
+        <div className="space-y-2">
+          <Label className={fieldLabelClassName} htmlFor="negative-prompt">
+            {t("settings.defaultNegativePrompt")}
+          </Label>
+          <textarea
+            id="negative-prompt"
+            className={textAreaClassName}
+            value={promptSettings.defaultNegativePrompt}
+            onChange={(event) => setPromptSettings({ defaultNegativePrompt: event.target.value })}
+          />
+        </div>
+      </div>
+    );
   };
 
   return (

@@ -78,13 +78,12 @@
   "settings": {
     "title": "Settings",
     "dialogTitle": "Model and Prompt Settings",
-    "dialogSubtitle": "Manage provider details, prompt defaults, and runtime behavior.",
+    "dialogSubtitle": "Manage provider details and prompt defaults.",
     "providerSection": "Model Routing and Provider Config",
     "routingHint": "Use one BYOK provider for both analysis and image generation, and route requests through the Cloudflare Worker.",
     "sections": {
       "provider": "Provider & Models",
-      "prompts": "Prompt Defaults",
-      "runtime": "Runtime & Export"
+      "prompts": "Prompt Defaults"
     },
     "autoSaveHint": "Settings are saved automatically in this browser",
     "analysisProvider": "Analysis Provider",
@@ -109,16 +108,6 @@
     "analysisPrompt": "Analysis Prompt Add-on",
     "generationPromptPrefix": "Generation Prompt Prefix",
     "defaultNegativePrompt": "Default Negative Prompt",
-    "runtimeTitle": "Runtime Options",
-    "runtimeDesc": "Export behavior settings.",
-    "runtimeSummaryTitle": "Current runtime behavior",
-    "runtimeSummaryDesc": "These items are fixed in the current version and do not require extra configuration.",
-    "runtimeProxyLabel": "Request routing",
-    "runtimeProxyValue": "All analysis and generation requests go through the Cloudflare Worker proxy",
-    "runtimeExportLabel": "Export flow",
-    "runtimeExportValue": "PNG ZIP and DDW export workflows remain available",
-    "runtimeStorageLabel": "Settings storage",
-    "runtimeStorageValue": "Saved only in the current browser's local storage",
     "heicExperimental": "ZIP Export",
     "localFallback": "Worker Proxy"
   },
