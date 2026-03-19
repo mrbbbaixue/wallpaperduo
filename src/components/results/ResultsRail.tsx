@@ -122,6 +122,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
             ? "左右方向键切换结果，点击缩略图可回填主画布预览。"
             : "Use Left/Right keys to switch results and click thumbnails to update the main preview."
         }
+        surface={inSheet ? "default" : "flat"}
         actions={
           <>
             <Button

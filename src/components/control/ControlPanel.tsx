@@ -198,6 +198,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             ? `当前通过 ${provider.templateId} 执行场景分析与图像生成`
             : `Scene analysis and image generation both run through ${provider.templateId}`
         }
+        surface="flat"
       >
         <div className={desktopScrollManaged ? "space-y-4" : "space-y-4 md:max-h-[inherit] md:overflow-y-auto md:pr-1"}>
           <div className="space-y-4 rounded-xl border border-border/70 bg-background/70 p-4">

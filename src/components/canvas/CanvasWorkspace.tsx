@@ -200,7 +200,7 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-background/60",
+        "relative flex w-full items-center justify-center overflow-hidden border-y border-border/70 bg-transparent",
         emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
       )}
@@ -253,7 +253,7 @@ export const CanvasWorkspace = () => {
         className="hidden"
         onChange={(event) => void onFile(event.currentTarget.files?.[0])}
       />
-      <div className="space-y-4">
+        <div className="space-y-4">
         {isMobile ? (
           <>
             {resultControls}

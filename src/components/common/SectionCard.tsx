@@ -1,4 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 import {
   Card,
@@ -13,6 +14,7 @@ interface SectionCardProps extends PropsWithChildren {
   subtitle?: ReactNode;
   actions?: ReactNode;
   hideHeader?: boolean;
+  surface?: "default" | "flat";
 }
 
 export const SectionCard = ({
@@ -20,14 +22,27 @@ export const SectionCard = ({
   subtitle,
   actions,
   hideHeader = false,
+  surface = "default",
   children,
 }: SectionCardProps) => {
   const showHeader = !hideHeader && (title || subtitle || actions);
 
   return (
-    <Card className="relative overflow-hidden border-border/70 bg-card/90 shadow-[0_18px_55px_rgba(15,23,42,0.08)] backdrop-blur dark:shadow-[0_18px_55px_rgba(0,0,0,0.32)]">
+    <Card
+      className={cn(
+        "relative overflow-hidden",
+        surface === "default" &&
+          "border-border/70 bg-card/90 shadow-[0_18px_55px_rgba(15,23,42,0.08)] backdrop-blur dark:shadow-[0_18px_55px_rgba(0,0,0,0.32)]",
+        surface === "flat" && "rounded-none border-x-0 border-y-0 bg-transparent shadow-none",
+      )}
+    >
       {showHeader ? (
-        <CardHeader className="gap-3 p-5 pb-0 md:p-6 md:pb-0">
+        <CardHeader
+          className={cn(
+            "gap-3 p-5 pb-0 md:p-6 md:pb-0",
+            surface === "flat" && "px-0 pt-0",
+          )}
+        >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               {title ? (
@@ -51,7 +66,12 @@ export const SectionCard = ({
           </div>
         </CardHeader>
       ) : null}
-      <CardContent className={showHeader ? "p-5 md:p-6" : "p-5 md:p-6"}>
+      <CardContent
+        className={cn(
+          "p-5 md:p-6",
+          surface === "flat" && (showHeader ? "px-0 pb-0" : "px-0 py-0"),
+        )}
+      >
         <div className="space-y-4">{children}</div>
       </CardContent>
     </Card>

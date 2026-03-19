@@ -209,6 +209,7 @@ export const ExportPanel = () => {
           ? "结果生成后可执行 ORB 对齐，再导出 PNG ZIP 或 WinDynamicDesktop 主题。"
           : "Run ORB alignment before exporting PNG ZIP bundles or WinDynamicDesktop themes."
       }
+      surface="flat"
     >
       <div className="space-y-4">
         <button

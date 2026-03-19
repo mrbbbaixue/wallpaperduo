@@ -1,1 +1,1 @@
-export const desktopWorkspaceHeight = "clamp(520px, calc(100vh - 190px), 920px)";
+export const desktopWorkspaceHeight = "max(520px, calc(100dvh - 97px))";

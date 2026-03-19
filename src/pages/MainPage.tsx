@@ -62,7 +62,7 @@ export const MainPage = () => {
 
   return (
     <>
-      <div className="grid min-w-0 gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_360px] md:px-6">
+      <div className="grid min-w-0 gap-4 px-4 py-4 md:min-h-[calc(100dvh-73px)] md:grid-cols-[minmax(0,1fr)_360px] md:items-stretch md:gap-6 md:px-6 md:pb-0">
         <div className="min-w-0">
           <CanvasWorkspace />
         </div>
@@ -79,7 +79,7 @@ export const MainPage = () => {
               style={{ height: desktopWorkspaceHeight, minHeight: desktopWorkspaceHeight }}
             >
               <div className="h-full overflow-y-auto pr-1">
-                <div className="space-y-4 pb-4">
+                <div className="space-y-4 pb-0">
                   <ControlPanel desktopScrollManaged />
                   <ExportPanel />
                 </div>
