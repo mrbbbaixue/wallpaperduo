@@ -25,16 +25,5 @@ export default defineConfig({
       },
     },
   },
-  base: (() => {
-    if (process.env.VITE_BASE_PATH) {
-      return process.env.VITE_BASE_PATH;
-    }
-
-    if (process.env.GITHUB_ACTIONS === "true") {
-      const repo = process.env.GITHUB_REPOSITORY?.split("/")[1];
-      return repo ? `/${repo}/` : "/";
-    }
-
-    return "/";
-  })(),
+  base: process.env.VITE_BASE_PATH || "/",
 });

@@ -20,21 +20,33 @@ npm install
 npm run dev
 ```
 
-### 2. 生产构建与本地预览
+推荐使用 Node.js 22 LTS（最低 `20.19.0`）和 npm 10+。
+
+### 2. 质量检查与生产构建
 
 ```bash
+npm run check
 npm run build
+```
+
+### 3. 本地预览
+
+```bash
 npm run preview
 ```
 
-### 3. GitHub Pages 自动部署
+`npm run preview` 用于预览 Vite 产物。
 
-仓库已包含 [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) 工作流：  
-推送到 `main` 后会自动构建并发布 `dist` 到 GitHub Pages。
+如果你要连同 `/api/*` Worker 一起验证，请使用：
 
-需要在仓库设置中确认：
+```bash
+npm run preview:worker
+```
 
-1. 打开 `Settings -> Pages`
-2. `Source` 选择 `GitHub Actions`
+### 4. Cloudflare Workers 部署
 
-> 说明：根据 Vite 部署规范，项目在 GitHub Actions 中会使用仓库名作为 `base` 路径（如 `/<repo>/`），当前 `vite.config.ts` 已处理。
+```bash
+npm run deploy
+```
+
+当前项目的前端静态资源与 `/api/*` Worker 路由采用同源部署，默认目标是 Cloudflare Workers，不再维护 GitHub Pages 部署路径。

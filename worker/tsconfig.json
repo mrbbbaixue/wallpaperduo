@@ -5,8 +5,7 @@
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
-    "outDir": "../dist/worker",
-    "rootDir": ".",
+    "noEmit": true,
     "types": ["@cloudflare/workers-types"]
   },
   "include": ["./**/*.ts"]

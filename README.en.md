@@ -20,21 +20,33 @@ npm install
 npm run dev
 ```
 
-### 2. Production build and local preview
+Use Node.js 22 LTS when possible (minimum `20.19.0`) with npm 10+.
+
+### 2. Quality checks and production build
 
 ```bash
+npm run check
 npm run build
+```
+
+### 3. Local preview
+
+```bash
 npm run preview
 ```
 
-### 3. GitHub Pages auto deployment
+`npm run preview` serves the built Vite assets only.
 
-This repo already includes [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml).  
-When you push to `main`, it will build and publish `dist` to GitHub Pages automatically.
+To validate the Worker and `/api/*` routes together, use:
 
-Make sure your repository settings are:
+```bash
+npm run preview:worker
+```
 
-1. Open `Settings -> Pages`
-2. Set `Source` to `GitHub Actions`
+### 4. Cloudflare Workers deployment
 
-> Note: Following Vite deployment guidance, the project uses repo-based `base` path in GitHub Actions (such as `/<repo>/`). The current `vite.config.ts` already handles this.
+```bash
+npm run deploy
+```
+
+This project expects same-origin deployment for the static app and `/api/*` Worker routes, and Cloudflare Workers is the maintained deployment target.
