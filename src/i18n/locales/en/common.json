@@ -84,8 +84,7 @@
     "sections": {
       "provider": "Provider & Models",
       "prompts": "Prompt Defaults",
-      "runtime": "Runtime & Export",
-      "info": "Read-only Info"
+      "runtime": "Runtime & Export"
     },
     "autoSaveHint": "Settings are saved automatically in this browser",
     "analysisProvider": "Analysis Provider",
@@ -120,13 +119,8 @@
     "runtimeExportValue": "PNG ZIP and DDW export workflows remain available",
     "runtimeStorageLabel": "Settings storage",
     "runtimeStorageValue": "Saved only in the current browser's local storage",
-    "readonlyTitle": "Current environment info",
-    "readonlyDesc": "These values help confirm the actual workspace configuration.",
-    "providerTemplate": "Provider template",
-    "deploymentNote": "Deployment note",
     "heicExperimental": "ZIP Export",
-    "localFallback": "Worker Proxy",
-    "securityTip": "BYOK only: API keys are stored in local browser storage as plain text."
+    "localFallback": "Worker Proxy"
   },
   "errors": {
     "INVALID_IMAGE": "Unsupported image file. Please use PNG/JPEG/WebP.",

@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { toUserError } from "@/utils/error";
 
-type SettingsSectionKey = "provider" | "prompts" | "runtime" | "info";
+type SettingsSectionKey = "provider" | "prompts" | "runtime";
 
 interface ProviderSettingsPanelProps {
   onClose: () => void;
@@ -49,12 +49,6 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
       label: t("settings.sections.runtime"),
       title: t("settings.runtimeSummaryTitle"),
       description: t("settings.runtimeSummaryDesc"),
-    },
-    {
-      key: "info",
-      label: t("settings.sections.info"),
-      title: t("settings.readonlyTitle"),
-      description: t("settings.readonlyDesc"),
     },
   ];
 
@@ -173,44 +167,6 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
         </div>
       );
     }
-
-    return (
-      <div className="space-y-4">
-        <div className="border border-dashed border-border/80 bg-muted/35 px-4 py-3 text-sm leading-6 text-muted-foreground">
-          {t("settings.securityTip")}
-        </div>
-        <div className={panelBlockClassName}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className={fieldLabelClassName} htmlFor="settings-provider-readonly">
-                {t("settings.providerTemplate")}
-              </Label>
-              <Input
-                id="settings-provider-readonly"
-                value={provider.templateId}
-                readOnly
-                className="h-11 rounded-none bg-background/75"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className={fieldLabelClassName} htmlFor="settings-workflow-readonly">
-                {t("settings.deploymentNote")}
-              </Label>
-              <Input
-                id="settings-workflow-readonly"
-                value={
-                  isZh
-                    ? "前端静态资源 + /api/* Worker 同仓部署"
-                    : "Static assets + /api/* Worker in one deploy"
-                }
-                readOnly
-                className="h-11 rounded-none bg-background/75"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (

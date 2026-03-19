@@ -191,11 +191,45 @@ test("settings modal uses system-settings split layout with fixed footer actions
     panel.includes("handleTestConnection"),
     "ProviderSettingsPanel should host the fixed footer connectivity action",
   );
+  assert.equal(
+    panel.includes('type SettingsSectionKey = "provider" | "prompts" | "runtime" | "info"'),
+    false,
+    "ProviderSettingsPanel should remove the obsolete info section key",
+  );
+  assert.equal(
+    panel.includes('t("settings.sections.info")'),
+    false,
+    "ProviderSettingsPanel should not render the obsolete current environment section",
+  );
 
   const providerConfig = read("src/components/settings/ProviderConfig.tsx");
   assert.equal(
     providerConfig.includes("handleTestConnection"),
     false,
     "ProviderConfig should focus on fields once footer actions move to the settings shell",
+  );
+
+  const zhLocale = read("src/i18n/locales/zh/common.json");
+  assert.equal(
+    zhLocale.includes('"info": "只读信息"'),
+    false,
+    "Chinese locale should remove the obsolete settings info section label",
+  );
+  assert.equal(
+    zhLocale.includes('"readonlyTitle"'),
+    false,
+    "Chinese locale should remove the obsolete current environment title",
+  );
+
+  const enLocale = read("src/i18n/locales/en/common.json");
+  assert.equal(
+    enLocale.includes('"info": "Read-only Info"'),
+    false,
+    "English locale should remove the obsolete settings info section label",
+  );
+  assert.equal(
+    enLocale.includes('"readonlyTitle"'),
+    false,
+    "English locale should remove the obsolete current environment title",
   );
 });
