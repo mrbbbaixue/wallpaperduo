@@ -197,9 +197,24 @@ test("settings modal uses system-settings split layout with fixed footer actions
     "ProviderSettingsPanel should remove the obsolete info section key",
   );
   assert.equal(
+    panel.includes('type SettingsSectionKey = "provider" | "prompts" | "runtime"'),
+    false,
+    "ProviderSettingsPanel should remove the obsolete runtime section key",
+  );
+  assert.equal(
     panel.includes('t("settings.sections.info")'),
     false,
     "ProviderSettingsPanel should not render the obsolete current environment section",
+  );
+  assert.equal(
+    panel.includes('t("settings.sections.runtime")'),
+    false,
+    "ProviderSettingsPanel should not render the obsolete runtime section",
+  );
+  assert.equal(
+    panel.includes('if (activeSection === "runtime")'),
+    false,
+    "ProviderSettingsPanel should remove the obsolete runtime section body",
   );
 
   const providerConfig = read("src/components/settings/ProviderConfig.tsx");
@@ -220,6 +235,21 @@ test("settings modal uses system-settings split layout with fixed footer actions
     false,
     "Chinese locale should remove the obsolete current environment title",
   );
+  assert.equal(
+    zhLocale.includes('"runtime": "运行与导出"'),
+    false,
+    "Chinese locale should remove the obsolete runtime section label",
+  );
+  assert.equal(
+    zhLocale.includes('"runtimeSummaryTitle"'),
+    false,
+    "Chinese locale should remove obsolete runtime summary copy",
+  );
+  assert.equal(
+    zhLocale.includes('"dialogSubtitle": "管理 Provider、Prompt 默认值与运行方式。"'),
+    false,
+    "Chinese locale should not describe removed runtime settings in the dialog subtitle",
+  );
 
   const enLocale = read("src/i18n/locales/en/common.json");
   assert.equal(
@@ -231,5 +261,20 @@ test("settings modal uses system-settings split layout with fixed footer actions
     enLocale.includes('"readonlyTitle"'),
     false,
     "English locale should remove the obsolete current environment title",
+  );
+  assert.equal(
+    enLocale.includes('"runtime": "Runtime & Export"'),
+    false,
+    "English locale should remove the obsolete runtime section label",
+  );
+  assert.equal(
+    enLocale.includes('"runtimeSummaryTitle"'),
+    false,
+    "English locale should remove obsolete runtime summary copy",
+  );
+  assert.equal(
+    enLocale.includes('"dialogSubtitle": "Manage provider details, prompt defaults, and runtime behavior."'),
+    false,
+    "English locale should not describe removed runtime settings in the dialog subtitle",
   );
 });
