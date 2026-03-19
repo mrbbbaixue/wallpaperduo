@@ -140,7 +140,7 @@ export const CanvasWorkspace = () => {
   };
 
   const resultControls = hasResults ? (
-    <div className="flex flex-wrap items-center gap-2 rounded-[1.35rem] border border-border/70 bg-background/65 p-2.5">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-background/65 p-2.5">
       <Button
         type="button"
         size="sm"
@@ -199,7 +199,7 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden rounded-[1.6rem] border border-border/70 bg-transparent shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_22px_48px_rgba(0,0,0,0.32)]",
+        "relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-border/70 bg-transparent shadow-[0_14px_28px_rgba(15,23,42,0.08)] dark:shadow-[0_16px_32px_rgba(0,0,0,0.28)]",
         emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
       )}

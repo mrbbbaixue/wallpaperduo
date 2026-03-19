@@ -124,7 +124,7 @@ export const GenerateControls = ({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-border/70 bg-background/70 p-3">
+      <div className="rounded-lg border border-border/70 bg-background/70 p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <p className="text-sm font-semibold">
@@ -164,7 +164,7 @@ export const GenerateControls = ({
           variant="outline"
           onClick={() => void onPreprocess()}
           disabled={!preparedImage || preprocessLoading}
-          className="h-10 w-full rounded-xl"
+          className="h-10 w-full rounded-lg"
         >
           <ScanSearch className="h-4 w-4" />
           {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
@@ -175,7 +175,7 @@ export const GenerateControls = ({
         type="button"
         onClick={() => void onGenerate()}
         disabled={!preparedImage || generating || selectedSlots.length === 0}
-        className="h-11 w-full rounded-xl"
+        className="h-11 w-full rounded-lg"
       >
         <Sparkles className="h-4 w-4" />
         {generating

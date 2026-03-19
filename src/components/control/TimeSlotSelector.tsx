@@ -67,7 +67,7 @@ export const TimeSlotSelector = ({
                 type="button"
                 onClick={() => onCurrentTimeChange(slot.key)}
                 className={cn(
-                  "rounded-xl border px-3 py-2.5 text-sm font-medium transition-all",
+                  "rounded-lg border px-3 py-2.5 text-sm font-medium transition-all",
                   active
                     ? "border-transparent text-white shadow-md"
                     : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
@@ -100,7 +100,7 @@ export const TimeSlotSelector = ({
                 type="button"
                 onClick={() => toggleSlot(slot.key)}
                 className={cn(
-                  "rounded-xl border px-3 py-2.5 text-sm font-medium transition-all",
+                  "rounded-lg border px-3 py-2.5 text-sm font-medium transition-all",
                   selected
                     ? "border-transparent text-white shadow-md"
                     : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
