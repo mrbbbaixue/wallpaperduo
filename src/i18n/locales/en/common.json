@@ -10,6 +10,7 @@
   },
   "common": {
     "save": "Save",
+    "done": "Done",
     "cancel": "Cancel",
     "upload": "Upload",
     "generate": "Generate",
@@ -77,8 +78,16 @@
   "settings": {
     "title": "Settings",
     "dialogTitle": "Model and Prompt Settings",
+    "dialogSubtitle": "Manage provider details, prompt defaults, and runtime behavior.",
     "providerSection": "Model Routing and Provider Config",
     "routingHint": "Use one BYOK provider for both analysis and image generation, and route requests through the Cloudflare Worker.",
+    "sections": {
+      "provider": "Provider & Models",
+      "prompts": "Prompt Defaults",
+      "runtime": "Runtime & Export",
+      "info": "Read-only Info"
+    },
+    "autoSaveHint": "Settings are saved automatically in this browser",
     "analysisProvider": "Analysis Provider",
     "generationProvider": "Generation Provider",
     "generationSection": "Generation Controls",
@@ -103,6 +112,18 @@
     "defaultNegativePrompt": "Default Negative Prompt",
     "runtimeTitle": "Runtime Options",
     "runtimeDesc": "Export behavior settings.",
+    "runtimeSummaryTitle": "Current runtime behavior",
+    "runtimeSummaryDesc": "These items are fixed in the current version and do not require extra configuration.",
+    "runtimeProxyLabel": "Request routing",
+    "runtimeProxyValue": "All analysis and generation requests go through the Cloudflare Worker proxy",
+    "runtimeExportLabel": "Export flow",
+    "runtimeExportValue": "PNG ZIP and DDW export workflows remain available",
+    "runtimeStorageLabel": "Settings storage",
+    "runtimeStorageValue": "Saved only in the current browser's local storage",
+    "readonlyTitle": "Current environment info",
+    "readonlyDesc": "These values help confirm the actual workspace configuration.",
+    "providerTemplate": "Provider template",
+    "deploymentNote": "Deployment note",
     "heicExperimental": "ZIP Export",
     "localFallback": "Worker Proxy",
     "securityTip": "BYOK only: API keys are stored in local browser storage as plain text."

@@ -162,3 +162,40 @@ test("canvas controls use locale-aware typography for narrow sidebar labels", ()
     "CanvasControls should use a dedicated label style for Chinese copy in the narrow sidebar",
   );
 });
+
+test("settings modal uses system-settings split layout with fixed footer actions", () => {
+  const settingsModal = read("src/components/settings/SettingsModal.tsx");
+  assert.ok(
+    settingsModal.includes("max-w-5xl"),
+    "SettingsModal should expand to a wider settings-window layout",
+  );
+  assert.ok(
+    settingsModal.includes("min-h-0 flex-1 overflow-hidden"),
+    "SettingsModal should reserve a dedicated content region without stacking extra spacing",
+  );
+
+  const panel = read("src/components/settings/ProviderSettingsPanel.tsx");
+  assert.ok(
+    panel.includes('useState<SettingsSectionKey>("provider")'),
+    "ProviderSettingsPanel should track the active settings section for the left navigation",
+  );
+  assert.ok(
+    panel.includes("md:grid-cols-[190px_minmax(0,1fr)]"),
+    "ProviderSettingsPanel should use a left-nav plus right-content split layout",
+  );
+  assert.ok(
+    panel.includes('t("common.done")'),
+    "ProviderSettingsPanel should expose a fixed footer action for closing the modal",
+  );
+  assert.ok(
+    panel.includes("handleTestConnection"),
+    "ProviderSettingsPanel should host the fixed footer connectivity action",
+  );
+
+  const providerConfig = read("src/components/settings/ProviderConfig.tsx");
+  assert.equal(
+    providerConfig.includes("handleTestConnection"),
+    false,
+    "ProviderConfig should focus on fields once footer actions move to the settings shell",
+  );
+});

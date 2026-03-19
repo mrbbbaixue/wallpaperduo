@@ -43,6 +43,7 @@ coverage
 # Tool caches
 .eslintcache
 .wrangler/
+.superpowers/
 
 # Local scaffold residue
 /app/

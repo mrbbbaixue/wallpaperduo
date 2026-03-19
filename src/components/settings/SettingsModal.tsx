@@ -21,14 +21,14 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     <Dialog open={open} onOpenChange={(nextOpen: boolean) => !nextOpen && onClose()}>
       <DialogContent
         motionPreset="center"
-        className="flex max-h-[92vh] max-w-4xl flex-col gap-0 overflow-hidden border-border/70 bg-background/95 p-0 backdrop-blur"
+        className="flex h-[min(88vh,760px)] max-h-[92vh] max-w-5xl flex-col gap-0 overflow-hidden rounded-none border-border/70 bg-background/95 p-0 backdrop-blur sm:rounded-none"
       >
         <DialogHeader className="border-b border-border/70 px-5 py-4 md:px-6">
-          <DialogTitle>{t("settings.dialogTitle")}</DialogTitle>
-          <DialogDescription>{t("settings.securityTip")}</DialogDescription>
+          <DialogTitle>{t("settings.title")}</DialogTitle>
+          <DialogDescription>{t("settings.dialogSubtitle")}</DialogDescription>
         </DialogHeader>
-        <div className="ui-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-6 md:py-6">
-          <ProviderSettingsPanel />
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <ProviderSettingsPanel onClose={onClose} />
         </div>
       </DialogContent>
     </Dialog>
