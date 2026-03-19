@@ -116,6 +116,13 @@ export function ProviderConfig() {
           onChange={(e) => setProvider({ model: e.target.value })}
           placeholder="model-name"
         />
+        {provider.templateId === "openrouter" ? (
+          <p className="text-xs leading-5 text-muted-foreground">
+            {isZh
+              ? "OpenRouter 请选择支持图像输出的模型，例如 google/gemini-2.5-flash-image-preview。"
+              : "For OpenRouter, use a model with image output support such as google/gemini-2.5-flash-image-preview."}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -127,7 +134,9 @@ export function ProviderConfig() {
         />
       </div>
 
-      {provider.templateId === "aliyun" || provider.templateId === "ark" ? (
+      {provider.templateId === "aliyun" ||
+      provider.templateId === "ark" ||
+      provider.templateId === "custom" ? (
         <div className="space-y-2">
           <Label>{isZh ? "生成接口 URL（可选）" : "Generation endpoint (optional)"}</Label>
           <Input
@@ -136,7 +145,9 @@ export function ProviderConfig() {
             placeholder={
               provider.templateId === "aliyun"
                 ? "https://dashscope.aliyuncs.com/api/v1/services/aigc/..."
-                : "https://ark.cn-beijing.volces.com/api/v3/images/generations"
+                : provider.templateId === "ark"
+                  ? "https://ark.cn-beijing.volces.com/api/v3/images/generations"
+                  : "https://api.example.com/images/generations"
             }
           />
         </div>

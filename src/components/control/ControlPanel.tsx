@@ -1,5 +1,5 @@
 import { ScanSearch, Upload } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasControls } from "@/components/canvas/CanvasControls";
@@ -9,6 +9,7 @@ import { PromptEditor } from "@/components/control/PromptEditor";
 import { TaskQueue } from "@/components/control/TaskQueue";
 import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
@@ -46,6 +47,14 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const [preprocessLoading, setPreprocessLoading] = useState(false);
   const [preprocessError, setPreprocessError] = useState("");
   const [uploadError, setUploadError] = useState("");
+
+  useEffect(() => {
+    setCurrentTimeOfDay(null);
+    setDetectedTimeOfDay(null);
+    setSelectedSlots([]);
+    setPrompts([]);
+    setPreprocessError("");
+  }, [preparedImage?.id, sourceImage?.id]);
 
   const inferTimeOfDay = (analysis: {
     lighting: string;
@@ -124,8 +133,22 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     try {
       setPreprocessLoading(true);
       setPreprocessError("");
-      const analysis = await runSceneAnalysis(provider, preparedImage, promptSettings.analysisUserPrompt);
+      const result = await runSceneAnalysis(provider, preparedImage, promptSettings.analysisUserPrompt);
+      const analysis = result.analysis;
       setSceneAnalysis(analysis);
+
+      if (result.source === "local-fallback") {
+        const fallbackMessage = result.warning
+          ? t(`errors.${result.warning}`, result.warning)
+          : isZh
+            ? "已切换到本地启发式分析。"
+            : "Switched to the local heuristic analysis.";
+        toast({
+          title: isZh ? "AI 分析不可用，已回退本地估算" : "AI analysis unavailable, using local fallback",
+          description: fallbackMessage,
+          variant: "destructive",
+        });
+      }
 
       const detected = inferTimeOfDay(analysis);
       setDetectedTimeOfDay(detected);

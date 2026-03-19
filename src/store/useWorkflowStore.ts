@@ -72,7 +72,17 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       activeResultId: undefined,
       previewMode: "single",
     })),
-  setPreparedImage: (preparedImage) => set({ preparedImage }),
+  setPreparedImage: (preparedImage) =>
+    set(() => ({
+      preparedImage,
+      sceneAnalysis: undefined,
+      promptPlan: undefined,
+      tasks: [],
+      alignmentResults: {},
+      exportMapping: defaultExportMapping,
+      activeResultId: undefined,
+      previewMode: "single",
+    })),
   setRatioId: (ratioId) => set({ ratioId }),
   setCustomRatio: (customRatio) => set({ customRatio }),
   setPrepareMode: (prepareMode) => set({ prepareMode }),

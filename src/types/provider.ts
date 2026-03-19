@@ -43,8 +43,8 @@ export const PROVIDER_TEMPLATES: ProviderTemplate[] = [
     id: "openrouter",
     name: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "google/gemini-2.0-flash-exp:free",
-    defaultVisionModel: "google/gemini-2.0-flash-exp:free",
+    defaultModel: "google/gemini-2.5-flash-image-preview",
+    defaultVisionModel: "google/gemini-2.5-flash",
   },
   {
     id: "custom",

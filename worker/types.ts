@@ -1,4 +1,5 @@
 export interface ProviderConfig {
+  templateId?: "openrouter" | "ark" | "aliyun" | "custom";
   baseUrl: string;
   apiKey: string;
   model: string;

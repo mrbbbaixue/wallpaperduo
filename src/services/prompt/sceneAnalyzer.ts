@@ -1,6 +1,7 @@
 import type { PreparedImage, SceneAnalysis } from "@/types/domain";
 import type { ProviderConfig } from "@/types/provider";
 import { analyzePreparedImage } from "@/services/api/workerClient";
+import { toUserError } from "@/utils/error";
 import { loadImageFromBlob } from "@/utils/image";
 
 const buildLocalAnalysis = async (prepared: PreparedImage): Promise<SceneAnalysis> => {
@@ -78,24 +79,40 @@ const buildLocalAnalysis = async (prepared: PreparedImage): Promise<SceneAnalysi
   };
 };
 
+export interface SceneAnalysisRunResult {
+  analysis: SceneAnalysis;
+  source: "remote" | "local-fallback";
+  warning?: string;
+}
+
 export const runSceneAnalysis = async (
   provider: ProviderConfig,
   prepared: PreparedImage,
   userPrompt: string,
-): Promise<SceneAnalysis> => {
+): Promise<SceneAnalysisRunResult> => {
   try {
     const result = await analyzePreparedImage(prepared, provider, userPrompt);
     // Ensure tone and timeOfDay are present (may be missing from provider response)
     if (!result.tone || !result.timeOfDay) {
       const localAnalysis = await buildLocalAnalysis(prepared);
       return {
-        ...result,
-        tone: result.tone ?? localAnalysis.tone,
-        timeOfDay: result.timeOfDay ?? localAnalysis.timeOfDay,
+        source: "remote",
+        analysis: {
+          ...result,
+          tone: result.tone ?? localAnalysis.tone,
+          timeOfDay: result.timeOfDay ?? localAnalysis.timeOfDay,
+        },
       };
     }
-    return result;
-  } catch {
-    return buildLocalAnalysis(prepared);
+    return {
+      source: "remote",
+      analysis: result,
+    };
+  } catch (error) {
+    return {
+      source: "local-fallback",
+      warning: toUserError(error),
+      analysis: await buildLocalAnalysis(prepared),
+    };
   }
 };

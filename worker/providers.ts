@@ -4,8 +4,121 @@ type GeneratedImagePayload =
   | { kind: "url"; value: string }
   | { kind: "data-url"; value: string };
 
+const supportedAspectRatios = [
+  "1:1",
+  "2:3",
+  "3:2",
+  "3:4",
+  "4:3",
+  "4:5",
+  "5:4",
+  "9:16",
+  "16:9",
+  "21:9",
+] as const;
+
+const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const filterStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const ensureProviderReady = (config: ProviderConfig) => {
+  if (!config.baseUrl?.trim()) {
+    throw new Error("Provider base URL is required");
+  }
+  if (!config.apiKey?.trim()) {
+    throw new Error("PASSCODE_INVALID");
+  }
+  if (!config.model?.trim()) {
+    throw new Error("Provider model is required");
+  }
+};
+
+const isOpenRouterProvider = (config: ProviderConfig) =>
+  config.templateId === "openrouter" || /(^|\.)openrouter\.ai$/i.test(new URL(config.baseUrl).hostname);
+
+const composeGenerationPrompt = (prompt: string, negativePrompt?: string) => {
+  const parts = [prompt.trim()];
+  if (negativePrompt?.trim()) {
+    parts.push(`Avoid: ${negativePrompt.trim()}`);
+  }
+  return parts.filter(Boolean).join("\n\n");
+};
+
+const extractMessageText = (content: unknown): string => {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (!Array.isArray(content)) {
+    return "";
+  }
+
+  return content
+    .map((part) => {
+      if (typeof part === "string") {
+        return part;
+      }
+      if (isRecord(part) && typeof part.text === "string") {
+        return part.text;
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n");
+};
+
+const parseJsonObject = (value: string): unknown => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    const fencedMatch = value.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fencedMatch?.[1]) {
+      return JSON.parse(fencedMatch[1]);
+    }
+
+    const objectMatch = value.match(/\{[\s\S]*\}/);
+    if (objectMatch?.[0]) {
+      return JSON.parse(objectMatch[0]);
+    }
+    throw new Error("No JSON found in response");
+  }
+};
+
+const normalizeSceneAnalysis = (value: unknown): SceneAnalysis => {
+  const raw = isRecord(value) ? value : {};
+  const normalized = {
+    summary: typeof raw.summary === "string" ? raw.summary : "",
+    subjects: filterStringArray(raw.subjects),
+    foreground: filterStringArray(raw.foreground),
+    background: filterStringArray(raw.background),
+    lighting: typeof raw.lighting === "string" ? raw.lighting : "",
+    palette: filterStringArray(raw.palette),
+    risks: filterStringArray(raw.risks),
+  };
+  if (!normalized.summary && normalized.subjects.length === 0) {
+    throw new Error("Scene analysis payload is empty");
+  }
+  return normalized;
+};
+
+const deriveAspectRatio = (width: number, height: number) => {
+  const target = width / height;
+  return supportedAspectRatios.reduce((best, current) => {
+    const [w, h] = current.split(":").map(Number);
+    const delta = Math.abs(target - w / h);
+    const [bestW, bestH] = best.split(":").map(Number);
+    const bestDelta = Math.abs(target - bestW / bestH);
+    return delta < bestDelta ? current : best;
+  }, "16:9" as (typeof supportedAspectRatios)[number]);
+};
+
 export async function testConnection(config: ProviderConfig): Promise<{ ok: boolean; message: string }> {
-  const url = `${config.baseUrl}/chat/completions`;
+  ensureProviderReady(config);
+  const url = `${normalizeBaseUrl(config.baseUrl)}/chat/completions`;
   const model = config.visionModel || config.model;
 
   try {
@@ -43,7 +156,8 @@ export async function analyzeImage(
   config: ProviderConfig,
   prompt?: string
 ): Promise<SceneAnalysis> {
-  const url = `${config.baseUrl}/chat/completions`;
+  ensureProviderReady(config);
+  const url = `${normalizeBaseUrl(config.baseUrl)}/chat/completions`;
   const model = config.visionModel || config.model;
 
   const systemPrompt =
@@ -75,14 +189,10 @@ export async function analyzeImage(
   }
 
   const data = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
+    choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }>;
   };
-  const content = data.choices?.[0]?.message?.content ?? "";
-
-  const match = content.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("No JSON found in response");
-
-  return JSON.parse(match[0]) as SceneAnalysis;
+  const content = extractMessageText(data.choices?.[0]?.message?.content ?? "");
+  return normalizeSceneAnalysis(parseJsonObject(content));
 }
 
 export async function generateImage(
@@ -93,7 +203,68 @@ export async function generateImage(
   config: ProviderConfig,
   negativePrompt?: string
 ): Promise<GeneratedImagePayload> {
-  const url = config.generateUrl || `${config.baseUrl}/images/generations`;
+  ensureProviderReady(config);
+  const baseUrl = normalizeBaseUrl(config.baseUrl);
+  const generationPrompt = composeGenerationPrompt(prompt, negativePrompt);
+
+  if (isOpenRouterProvider(config)) {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `${generationPrompt}\n\nPreserve the original composition and subject placement from the reference image.`,
+              },
+              {
+                type: "image_url",
+                image_url: { url: image },
+              },
+            ],
+          },
+        ],
+        modalities: ["image", "text"],
+        image_config: {
+          aspect_ratio: deriveAspectRatio(width, height),
+        },
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Generation failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{
+        message?: {
+          images?: Array<{
+            image_url?: { url?: string };
+            imageUrl?: { url?: string };
+          }>;
+        };
+      }>;
+    };
+
+    const imageUrl =
+      data.choices?.[0]?.message?.images?.[0]?.image_url?.url ??
+      data.choices?.[0]?.message?.images?.[0]?.imageUrl?.url;
+    if (!imageUrl) {
+      throw new Error("No generated image payload in OpenRouter response");
+    }
+
+    return { kind: "data-url", value: imageUrl };
+  }
+
+  const url = config.generateUrl || `${baseUrl}/images/generations`;
 
   // OpenAI 兼容格式（无自定义 generateUrl）
   if (!config.generateUrl) {
@@ -105,7 +276,7 @@ export async function generateImage(
       },
       body: JSON.stringify({
         model: config.model,
-        prompt,
+        prompt: generationPrompt,
         n: 1,
         size: `${width}x${height}`,
       }),
@@ -134,7 +305,7 @@ export async function generateImage(
         messages: [
           {
             role: "user",
-            content: [{ image }, { text: prompt }],
+            content: [{ image }, { text: generationPrompt }],
           },
         ],
       },
