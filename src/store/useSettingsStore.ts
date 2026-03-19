@@ -36,11 +36,41 @@ type PersistedSettingsState = Pick<
   "language" | "themeMode" | "provider" | "promptSettings"
 >;
 
-const defaultPromptSettings: PromptSettings = {
+const legacyPromptSettingsV1: PromptSettings = {
   analysisUserPrompt: "关注场景结构、关键主体、光照与时段线索，输出简洁稳定的结构化描述。",
   generationPrefix: "高质量壁纸，保留原始构图和主体位置。",
   defaultNegativePrompt: "blur, artifact, text, geometry shift, low quality",
 };
+
+const defaultPromptSettings: PromptSettings = {
+  analysisUserPrompt:
+    "分析这张参考壁纸时，优先锁定核心主体、主体轮廓、主构图、相机视角、背景主地标与天际线轮廓，并明确哪些元素只能随时间变化；输出稳定、简洁、适合做同构图时段变体的结构化描述。",
+  generationPrefix:
+    "高质量壁纸，参考图一致性优先，保持核心主体、主体轮廓、主构图、相机视角、背景主地标与天际线不变，只允许光照、天空、阴影、灯光和少量时间相关元素变化。",
+  defaultNegativePrompt:
+    "blur, artifact, text, low quality, subject replacement, composition change, camera shift, geometry drift, layout drift, skyline change, landmark deformation, building deformation, tower shape change, object removal, object addition",
+};
+
+const migratePromptSettings = (persisted?: Partial<PromptSettings>): PromptSettings => ({
+  analysisUserPrompt:
+    persisted?.analysisUserPrompt === undefined
+      ? defaultPromptSettings.analysisUserPrompt
+      : persisted.analysisUserPrompt === legacyPromptSettingsV1.analysisUserPrompt
+        ? defaultPromptSettings.analysisUserPrompt
+        : persisted.analysisUserPrompt,
+  generationPrefix:
+    persisted?.generationPrefix === undefined
+      ? defaultPromptSettings.generationPrefix
+      : persisted.generationPrefix === legacyPromptSettingsV1.generationPrefix
+        ? defaultPromptSettings.generationPrefix
+        : persisted.generationPrefix,
+  defaultNegativePrompt:
+    persisted?.defaultNegativePrompt === undefined
+      ? defaultPromptSettings.defaultNegativePrompt
+      : persisted.defaultNegativePrompt === legacyPromptSettingsV1.defaultNegativePrompt
+        ? defaultPromptSettings.defaultNegativePrompt
+        : persisted.defaultNegativePrompt,
+});
 
 // 默认使用 OpenRouter
 const defaultTemplate = PROVIDER_TEMPLATES.find((t) => t.id === "openrouter")!;
@@ -75,7 +105,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "wallpaperduo.settings.v2",
-      version: 1,
+      version: 2,
       migrate: (persistedState, version) => {
         const currentState =
           persistedState && typeof persistedState === "object"
@@ -88,10 +118,15 @@ export const useSettingsStore = create<SettingsState>()(
             language: currentState?.language ?? "zh",
             themeMode: currentState?.themeMode ?? "system",
             provider: defaultProvider,
-            promptSettings: {
-              ...defaultPromptSettings,
-              ...currentState?.promptSettings,
-            },
+            promptSettings: migratePromptSettings(currentState?.promptSettings),
+          };
+        }
+        if (version < 2) {
+          return {
+            language: currentState?.language ?? "zh",
+            themeMode: currentState?.themeMode ?? "system",
+            provider: currentState?.provider ?? defaultProvider,
+            promptSettings: migratePromptSettings(currentState?.promptSettings),
           };
         }
         return {

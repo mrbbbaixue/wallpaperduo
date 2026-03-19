@@ -125,19 +125,35 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     };
 
     const timeDesc = isZh ? timeDescZh : timeDescEn;
-    const keepComposition = isZh
-      ? "保持原有构图和主体位置"
-      : "preserve original composition and subject placement";
-    const prefixedBaseDesc = [promptSettings.generationPrefix, baseDesc].filter(Boolean).join(", ");
+    const stabilityConstraint = isZh
+      ? "保持核心主体、主体轮廓、背景主地标、天际线、相机视角和主构图不变"
+      : "keep the core subject, silhouette, background landmarks, skyline, camera angle, and main composition unchanged";
+    const allowedTemporalChanges = isZh
+      ? "只允许光照、天空颜色、阴影、灯光与少量时间相关细节变化"
+      : "only change lighting, sky tone, shadows, practical lights, and small time-dependent details";
+    const subjectAnchors =
+      analysis.subjects.length > 0
+        ? isZh
+          ? `核心主体：${analysis.subjects.join("、")}`
+          : `Core subjects: ${analysis.subjects.join(", ")}`
+        : "";
+    const prefixedBaseDesc = [promptSettings.generationPrefix, baseDesc, subjectAnchors]
+      .filter(Boolean)
+      .join(", ");
 
     return slots.map((slot) => ({
       timeOfDay: slot,
-      prompt:
-        slot === current
-          ? prefixedBaseDesc
-          : `${prefixedBaseDesc}, ${timeDesc[slot]}, ${keepComposition}`,
+      prompt: [
+        prefixedBaseDesc,
+        slot === current ? "" : timeDesc[slot],
+        stabilityConstraint,
+        allowedTemporalChanges,
+      ]
+        .filter(Boolean)
+        .join(", "),
       negativePrompt:
-        promptSettings.defaultNegativePrompt || "blur, artifact, text, geometry shift, low quality",
+        promptSettings.defaultNegativePrompt ||
+        "blur, artifact, text, low quality, subject replacement, composition change, camera shift, geometry drift, tower shape change",
     }));
   };
 

@@ -41,7 +41,12 @@ const isOpenRouterProvider = (config: ProviderConfig) =>
   config.templateId === "openrouter" || /(^|\.)openrouter\.ai$/i.test(new URL(config.baseUrl).hostname);
 
 const composeGenerationPrompt = (prompt: string, negativePrompt?: string) => {
-  const parts = [prompt.trim()];
+  const stabilityInstruction = [
+    "Reference-preserving time-of-day wallpaper variation.",
+    "Keep the core subject, silhouette, background landmarks, skyline, camera angle, and composition fixed.",
+    "Only change lighting, sky tone, shadows, practical lights, and small time-dependent details.",
+  ].join(" ");
+  const parts = [stabilityInstruction, prompt.trim()];
   if (negativePrompt?.trim()) {
     parts.push(`Avoid: ${negativePrompt.trim()}`);
   }
@@ -161,8 +166,10 @@ export async function analyzeImage(
   const model = config.visionModel || config.model;
 
   const systemPrompt =
-    "Analyze wallpaper. Return strict JSON fields: " +
-    "summary, subjects[], foreground[], background[], lighting, palette[], risks[].";
+    "Analyze this reference wallpaper for reference-preserving time-of-day wallpaper variation. " +
+    "Return strict JSON fields: summary, subjects[], foreground[], background[], lighting, palette[], risks[]. " +
+    "Use summary and risks to identify immutable anchors: core subject, silhouette, main composition, camera viewpoint, background landmarks, skyline, and spatial relationships. " +
+    "Only treat lighting, sky tone, shadows, practical lights, and small time-dependent details as allowed changes.";
 
   const response = await fetch(url, {
     method: "POST",
@@ -222,7 +229,7 @@ export async function generateImage(
             content: [
               {
                 type: "text",
-                text: `${generationPrompt}\n\nPreserve the original composition and subject placement from the reference image.`,
+                text: `${generationPrompt}\n\nReference image fidelity is more important than novelty.`,
               },
               {
                 type: "image_url",

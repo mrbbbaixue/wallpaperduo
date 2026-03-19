@@ -61,7 +61,9 @@ const buildVariants = (input: PromptPlannerInput): PromptVariant[] => {
         themeStylePrompt[theme],
         timeStylePrompt[timeOfDay],
         input.userOverlayPrompt,
-        `Must preserve composition and object positions.`,
+        `Must preserve the core subject, silhouette, composition, camera viewpoint, landmark shapes, skyline, and spatial relationships.`,
+        `Only time-of-day dependent elements may change.`,
+        `Allowed changes: lighting, sky tone, shadows, practical lights, and small temporal details.`,
         `Local temporal changes: ${input.localChanges || "none"}`,
       ]
         .filter(Boolean)
@@ -73,7 +75,7 @@ const buildVariants = (input: PromptPlannerInput): PromptVariant[] => {
         theme,
         timeOfDay,
         prompt,
-        negativePrompt: `${themeNegativePrompt[theme]}, geometry drift, object position shift, text artifacts`,
+        negativePrompt: `${themeNegativePrompt[theme]}, subject replacement, composition change, camera shift, geometry drift, layout drift, skyline change, landmark deformation, building deformation, tower shape change, object position shift, text artifacts`,
         seed,
       });
     }
