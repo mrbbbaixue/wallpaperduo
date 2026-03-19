@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { aspectRatios } from "@/data/aspectRatios";
+import { cn } from "@/lib/utils";
 import { prepareCanvasImage } from "@/services/canvas/prepareCanvas";
 import { buildPreparedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 
@@ -77,12 +78,14 @@ export const CanvasControls = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="space-y-2">
-          <Label>{t("workspace.ratio")}</Label>
+          <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {t("workspace.ratio")}
+          </Label>
           <Select value={normalizedRatioId} onValueChange={setRatioId}>
-            <SelectTrigger>
+            <SelectTrigger className="h-11 rounded-xl bg-background/65">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -96,12 +99,19 @@ export const CanvasControls = () => {
         </div>
 
         <div className="space-y-2">
-          <Label>{t("workspace.mode")}</Label>
+          <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {t("workspace.mode")}
+          </Label>
           <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant={prepareMode === "crop" ? "default" : "outline"}
               onClick={() => setPrepareMode("crop")}
+              size="sm"
+              className={cn(
+                "h-11 rounded-xl",
+                prepareMode === "crop" && "shadow-[0_10px_20px_rgba(15,23,42,0.12)]",
+              )}
             >
               {t("workspace.modeCrop")}
             </Button>
@@ -109,6 +119,11 @@ export const CanvasControls = () => {
               type="button"
               variant={prepareMode === "pad" ? "default" : "outline"}
               onClick={() => setPrepareMode("pad")}
+              size="sm"
+              className={cn(
+                "h-11 rounded-xl",
+                prepareMode === "pad" && "shadow-[0_10px_20px_rgba(15,23,42,0.12)]",
+              )}
             >
               {t("workspace.modePad")}
             </Button>
@@ -117,12 +132,18 @@ export const CanvasControls = () => {
       </div>
 
       {normalizedRatioId === "custom" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="custom-ratio-width">W</Label>
+            <Label
+              htmlFor="custom-ratio-width"
+              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+            >
+              W
+            </Label>
             <Input
               id="custom-ratio-width"
               type="number"
+              className="h-11 rounded-xl bg-background/65"
               value={customRatio.width}
               onChange={(e) =>
                 setCustomRatio({
@@ -133,10 +154,16 @@ export const CanvasControls = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="custom-ratio-height">H</Label>
+            <Label
+              htmlFor="custom-ratio-height"
+              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+            >
+              H
+            </Label>
             <Input
               id="custom-ratio-height"
               type="number"
+              className="h-11 rounded-xl bg-background/65"
               value={customRatio.height}
               onChange={(e) =>
                 setCustomRatio({
@@ -149,20 +176,27 @@ export const CanvasControls = () => {
         </div>
       ) : null}
 
-      <Button type="button" onClick={() => void onPrepare()} disabled={loading || !sourceImage}>
+      <Button
+        type="button"
+        onClick={() => void onPrepare()}
+        disabled={loading || !sourceImage}
+        className="h-11 w-full rounded-xl"
+      >
         {loading ? t("common.loading") : t("workspace.prepare")}
       </Button>
 
-      {sourceImage ? (
-        <p className="text-sm text-muted-foreground">
-          {sourceImage.name} · {sourceImage.width}x{sourceImage.height}
-        </p>
-      ) : null}
-      {preparedImage ? (
-        <p className="text-sm text-muted-foreground">
-          {t("workspace.prepared")} · {preparedImage.width}x{preparedImage.height}
-        </p>
-      ) : null}
+      <div className="flex flex-wrap gap-2 text-xs">
+        {sourceImage ? (
+          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+            {sourceImage.name} · {sourceImage.width}×{sourceImage.height}
+          </span>
+        ) : null}
+        {preparedImage ? (
+          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+            {t("workspace.prepared")} · {preparedImage.width}×{preparedImage.height}
+          </span>
+        ) : null}
+      </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );

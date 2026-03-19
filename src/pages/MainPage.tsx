@@ -6,14 +6,8 @@ import { CanvasWorkspace } from "@/components/canvas/CanvasWorkspace";
 import { ControlPanel } from "@/components/control/ControlPanel";
 import { ExportPanel } from "@/components/results/ExportPanel";
 import { ResultsRail } from "@/components/results/ResultsRail";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { desktopWorkspaceHeight } from "@/constants/layout";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 const mobileMediaQuery = "(max-width: 767px)";
@@ -62,24 +56,21 @@ export const MainPage = () => {
 
   return (
     <>
-      <div className="grid min-w-0 gap-4 px-4 py-4 md:min-h-[calc(100dvh-73px)] md:grid-cols-[minmax(0,1fr)_360px] md:items-stretch md:gap-6 md:px-6 md:pb-0">
-        <div className="min-w-0">
+      <div className="grid min-w-0 gap-4 px-4 py-4 md:h-[calc(100dvh-73px)] md:grid-cols-[minmax(0,1fr)_392px] md:items-stretch md:gap-4 md:px-4 md:pb-0 md:pt-3 md:overflow-hidden">
+        <div className="min-w-0 md:min-h-0">
           <CanvasWorkspace />
         </div>
 
-        <aside className="min-w-0 border-t border-border/70 pt-4 md:border-t-0 md:pt-0">
+        <aside className="min-w-0 border-t border-border/70 pt-4 md:min-h-0 md:border-t-0 md:pt-0">
           {isMobile ? (
             <div className="space-y-4">
               <ControlPanel />
               <ExportPanel />
             </div>
           ) : (
-            <div
-              className="overflow-hidden"
-              style={{ height: desktopWorkspaceHeight, minHeight: desktopWorkspaceHeight }}
-            >
+            <div className="h-full overflow-hidden">
               <div className="ui-scrollbar h-full overflow-y-auto pr-1">
-                <div className="space-y-4 pb-0">
+                <div className="space-y-3 pb-3">
                   <ControlPanel desktopScrollManaged />
                   <ExportPanel />
                 </div>
@@ -107,7 +98,10 @@ export const MainPage = () => {
               motionPreset="sheet"
               className="max-h-[78vh] rounded-t-[1.75rem] border border-border/70 bg-background/98 p-0 shadow-2xl sm:rounded-t-[1.75rem]"
             >
-              <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80" aria-hidden="true" />
+              <div
+                className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80"
+                aria-hidden="true"
+              />
               <div className="border-b border-border/70 px-4 pb-3 pt-4">
                 <DialogTitle className="text-sm font-semibold">
                   {isZh ? "结果胶片" : "Results Rail"}

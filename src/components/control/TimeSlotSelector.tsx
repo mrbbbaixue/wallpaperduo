@@ -40,13 +40,20 @@ export const TimeSlotSelector = ({
   const detectedSlot = timeSlots.find((slot) => slot.key === detectedTimeOfDay);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="text-sm font-semibold">
-            {isZh ? "参考图所处时段" : "Reference time of day"}
-          </h4>
-          <span className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold">
+              {isZh ? "参考图所处时段" : "Reference time of day"}
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              {isZh
+                ? "先确定参考图时段，再勾选你想生成的目标版本。"
+                : "Confirm the source time first, then choose the target variants."}
+            </p>
+          </div>
+          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
             {isZh ? "AI 判断" : "AI detected"}:{" "}
             {detectedSlot ? getLabel(detectedSlot) : isZh ? "未识别" : "N/A"}
           </span>
@@ -60,10 +67,10 @@ export const TimeSlotSelector = ({
                 type="button"
                 onClick={() => onCurrentTimeChange(slot.key)}
                 className={cn(
-                  "rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                  "rounded-xl border px-3 py-2.5 text-sm font-medium transition-all",
                   active
                     ? "border-transparent text-white shadow-md"
-                    : "border-border bg-background text-foreground hover:bg-accent",
+                    : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
                 )}
                 aria-pressed={active}
                 style={active ? { backgroundColor: slot.color } : undefined}
@@ -76,9 +83,14 @@ export const TimeSlotSelector = ({
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold">
-          {isZh ? "要生成的时段版本" : "Time variants to generate"}
-        </h4>
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-sm font-semibold">
+            {isZh ? "要生成的时段版本" : "Time variants to generate"}
+          </h4>
+          <span className="text-xs text-muted-foreground">
+            {isZh ? `已选 ${selectedSlots.length} 个版本` : `${selectedSlots.length} selected`}
+          </span>
+        </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {timeSlots.map((slot) => {
             const selected = selectedSlots.includes(slot.key);
@@ -88,10 +100,10 @@ export const TimeSlotSelector = ({
                 type="button"
                 onClick={() => toggleSlot(slot.key)}
                 className={cn(
-                  "rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                  "rounded-xl border px-3 py-2.5 text-sm font-medium transition-all",
                   selected
                     ? "border-transparent text-white shadow-md"
-                    : "border-border bg-background text-foreground hover:bg-accent",
+                    : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
                 )}
                 aria-pressed={selected}
                 style={selected ? { backgroundColor: slot.color } : undefined}

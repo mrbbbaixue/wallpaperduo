@@ -42,6 +42,13 @@ export const GenerateControls = ({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
+  const slotLabels: Record<TimeVariant, { zh: string; en: string }> = {
+    dawn: { zh: "晨光", en: "Dawn" },
+    day: { zh: "白天", en: "Day" },
+    dusk: { zh: "黄昏", en: "Dusk" },
+    night: { zh: "夜晚", en: "Night" },
+  };
+
   const onGenerate = async () => {
     if (!preparedImage) {
       setError(t("workspace.needPrepared"));
@@ -116,32 +123,67 @@ export const GenerateControls = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {showAnalyze ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void onPreprocess()}
-            disabled={!preparedImage || preprocessLoading}
-          >
-            <ScanSearch className="h-4 w-4" />
-            {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          onClick={() => void onGenerate()}
-          disabled={!preparedImage || generating || selectedSlots.length === 0}
-        >
-          <Sparkles className="h-4 w-4" />
-          {generating ? t("common.loading") : t("common.generate")}
-        </Button>
+    <div className="space-y-3">
+      <div className="rounded-xl border border-border/70 bg-background/70 p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">
+              {i18n.language === "zh" ? "本次批量生成" : "This batch"}
+            </p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              {i18n.language === "zh"
+                ? "确认时段与提示词后，再启动生成队列。"
+                : "Review the variants and prompts before starting the queue."}
+            </p>
+          </div>
+          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+            {provider.templateId}
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {selectedSlots.length > 0 ? (
+            selectedSlots.map((slot) => (
+              <span
+                key={slot}
+                className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
+              >
+                {i18n.language === "zh" ? slotLabels[slot].zh : slotLabels[slot].en}
+              </span>
+            ))
+          ) : (
+            <span className="rounded-full border border-dashed border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+              {i18n.language === "zh" ? "还未选择时段版本" : "No variants selected yet"}
+            </span>
+          )}
+        </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {t("settings.provider")}: <span className="font-medium">{provider.templateId}</span>
-      </p>
+      {showAnalyze ? (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void onPreprocess()}
+          disabled={!preparedImage || preprocessLoading}
+          className="h-10 w-full rounded-xl"
+        >
+          <ScanSearch className="h-4 w-4" />
+          {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
+        </Button>
+      ) : null}
+
+      <Button
+        type="button"
+        onClick={() => void onGenerate()}
+        disabled={!preparedImage || generating || selectedSlots.length === 0}
+        className="h-11 w-full rounded-xl"
+      >
+        <Sparkles className="h-4 w-4" />
+        {generating
+          ? t("common.loading")
+          : i18n.language === "zh"
+            ? `生成 ${selectedSlots.length} 个版本`
+            : `Generate ${selectedSlots.length} variant${selectedSlots.length === 1 ? "" : "s"}`}
+      </Button>
 
       {error ? <p className="text-sm text-destructive">{t(`errors.${error}`, error)}</p> : null}
     </div>

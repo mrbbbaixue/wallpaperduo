@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TimeVariant } from "@/types/domain";
 
 const timeLabels: Record<TimeVariant, { zh: string; en: string }> = {
@@ -18,12 +20,17 @@ interface PromptEntry {
 interface PromptEditorProps {
   selectedSlots: TimeVariant[];
   prompts: PromptEntry[];
-  onPromptChange: (timeOfDay: TimeVariant, field: "prompt" | "negativePrompt", value: string) => void;
+  onPromptChange: (
+    timeOfDay: TimeVariant,
+    field: "prompt" | "negativePrompt",
+    value: string,
+  ) => void;
 }
 
 export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptEditorProps) => {
   const { i18n } = useTranslation();
   const isZh = i18n.language === "zh";
+  const [activeSlot, setActiveSlot] = useState<TimeVariant | null>(selectedSlots[0] ?? null);
 
   if (selectedSlots.length === 0) {
     return (
@@ -33,38 +40,72 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
     );
   }
 
+  const currentSlot =
+    activeSlot && selectedSlots.includes(activeSlot) ? activeSlot : selectedSlots[0];
+
   return (
-    <div className="space-y-4">
+    <Tabs
+      value={currentSlot}
+      onValueChange={(value) => setActiveSlot(value as TimeVariant)}
+      className="space-y-3"
+    >
+      {selectedSlots.length > 1 ? (
+        <TabsList
+          className="grid h-auto w-full gap-1 rounded-xl bg-muted/60 p-1"
+          style={{ gridTemplateColumns: `repeat(${selectedSlots.length}, minmax(0, 1fr))` }}
+        >
+          {selectedSlots.map((slot) => {
+            const label = isZh ? timeLabels[slot].zh : timeLabels[slot].en;
+            return (
+              <TabsTrigger
+                key={slot}
+                value={slot}
+                className="h-9 rounded-lg px-2 text-xs data-[state=active]:shadow-none"
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      ) : null}
+
       {selectedSlots.map((slot) => {
         const entry = prompts.find((p) => p.timeOfDay === slot);
         const label = isZh ? timeLabels[slot].zh : timeLabels[slot].en;
 
         return (
-          <div key={slot} className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
-            <h4 className="text-sm font-semibold">{label}</h4>
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                {isZh ? "提示词" : "Prompt"}
-              </label>
-              <textarea
-                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                value={entry?.prompt ?? ""}
-                onChange={(e) => onPromptChange(slot, "prompt", e.target.value)}
-              />
+          <TabsContent key={slot} value={slot} className="mt-0">
+            <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold">{label}</h4>
+                <span className="text-xs text-muted-foreground">
+                  {isZh ? "建议先微调主体与光照描述" : "Tweak subjects and lighting first"}
+                </span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {isZh ? "提示词" : "Prompt"}
+                </label>
+                <textarea
+                  className="min-h-28 w-full rounded-xl border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  value={entry?.prompt ?? ""}
+                  onChange={(e) => onPromptChange(slot, "prompt", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {isZh ? "负面提示词" : "Negative prompt"}
+                </label>
+                <textarea
+                  className="min-h-20 w-full rounded-xl border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  value={entry?.negativePrompt ?? ""}
+                  onChange={(e) => onPromptChange(slot, "negativePrompt", e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                {isZh ? "负面提示词" : "Negative prompt"}
-              </label>
-              <textarea
-                className="min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                value={entry?.negativePrompt ?? ""}
-                onChange={(e) => onPromptChange(slot, "negativePrompt", e.target.value)}
-              />
-            </div>
-          </div>
+          </TabsContent>
         );
       })}
-    </div>
+    </Tabs>
   );
 };

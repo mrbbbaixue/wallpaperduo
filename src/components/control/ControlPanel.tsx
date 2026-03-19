@@ -8,6 +8,7 @@ import { GenerateControls } from "@/components/control/GenerateControls";
 import { PromptEditor } from "@/components/control/PromptEditor";
 import { TaskQueue } from "@/components/control/TaskQueue";
 import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
+import { WorkflowStepCard } from "@/components/control/WorkflowStepCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
@@ -27,6 +28,30 @@ interface ControlPanelProps {
   desktopScrollManaged?: boolean;
 }
 
+type StepKey = "baseline" | "times" | "prompts" | "generate";
+
+const stepOrder: StepKey[] = ["baseline", "times", "prompts", "generate"];
+
+const timeLabels: Record<TimeVariant, { zh: string; en: string }> = {
+  dawn: { zh: "晨光", en: "Dawn" },
+  day: { zh: "白天", en: "Day" },
+  dusk: { zh: "黄昏", en: "Dusk" },
+  night: { zh: "夜晚", en: "Night" },
+};
+
+const renderSummaryPills = (items: string[]) => (
+  <div className="flex flex-wrap gap-2">
+    {items.filter(Boolean).map((item, index) => (
+      <span
+        key={`${item}-${index}`}
+        className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
+      >
+        {item}
+      </span>
+    ))}
+  </div>
+);
+
 export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps) => {
   const { i18n, t } = useTranslation();
   const isZh = i18n.language === "zh";
@@ -34,9 +59,13 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
+  const ratioId = useWorkflowStore((s) => s.ratioId);
+  const customRatio = useWorkflowStore((s) => s.customRatio);
+  const prepareMode = useWorkflowStore((s) => s.prepareMode);
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const sceneAnalysis = useWorkflowStore((s) => s.sceneAnalysis);
   const setSceneAnalysis = useWorkflowStore((s) => s.setSceneAnalysis);
+  const tasks = useWorkflowStore((s) => s.tasks);
   const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
 
@@ -47,6 +76,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const [preprocessLoading, setPreprocessLoading] = useState(false);
   const [preprocessError, setPreprocessError] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [expandedStep, setExpandedStep] = useState<StepKey>("baseline");
 
   useEffect(() => {
     setCurrentTimeOfDay(null);
@@ -133,7 +163,11 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     try {
       setPreprocessLoading(true);
       setPreprocessError("");
-      const result = await runSceneAnalysis(provider, preparedImage, promptSettings.analysisUserPrompt);
+      const result = await runSceneAnalysis(
+        provider,
+        preparedImage,
+        promptSettings.analysisUserPrompt,
+      );
       const analysis = result.analysis;
       setSceneAnalysis(analysis);
 
@@ -144,7 +178,9 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             ? "已切换到本地启发式分析。"
             : "Switched to the local heuristic analysis.";
         toast({
-          title: isZh ? "AI 分析不可用，已回退本地估算" : "AI analysis unavailable, using local fallback",
+          title: isZh
+            ? "AI 分析不可用，已回退本地估算"
+            : "AI analysis unavailable, using local fallback",
           description: fallbackMessage,
           variant: "destructive",
         });
@@ -189,30 +225,170 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     [setSourceImage],
   );
 
+  const getTimeLabel = (time?: TimeVariant | null) =>
+    time ? (isZh ? timeLabels[time].zh : timeLabels[time].en) : isZh ? "未识别" : "N/A";
+
+  const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
+  const modeLabel = prepareMode === "crop" ? t("workspace.modeCrop") : t("workspace.modePad");
+  const promptsReady =
+    selectedSlots.length > 0 &&
+    selectedSlots.every((slot) => {
+      const entry = prompts.find((item) => item.timeOfDay === slot);
+      return Boolean(entry?.prompt.trim()) && Boolean(entry?.negativePrompt.trim());
+    });
+
+  const activeStep: StepKey = !sceneAnalysis
+    ? "baseline"
+    : !currentTimeOfDay || selectedSlots.length === 0
+      ? "times"
+      : !promptsReady
+        ? "prompts"
+        : "generate";
+
+  const activeStepIndex = stepOrder.indexOf(activeStep);
+  const completedResults = tasks.filter((task) => task.status === "succeeded").length;
+  const failedResults = tasks.filter((task) => task.status === "failed").length;
+  const tasksRunning = tasks.some((task) => task.status === "queued" || task.status === "running");
+
+  useEffect(() => {
+    setExpandedStep((current) =>
+      stepOrder.indexOf(current) > activeStepIndex ? activeStep : current,
+    );
+  }, [activeStep, activeStepIndex]);
+
+  const handleStepToggle = (step: StepKey, allowed: boolean) => {
+    if (!allowed) return;
+    setExpandedStep((current) => (current === step && step !== activeStep ? activeStep : step));
+  };
+
+  const baselineSummary = sceneAnalysis ? (
+    <div className="space-y-2">
+      <p className="text-sm leading-6 text-muted-foreground">{sceneAnalysis.summary}</p>
+      {renderSummaryPills([
+        ratioLabel,
+        modeLabel,
+        isZh ? `AI：${getTimeLabel(detectedTimeOfDay)}` : `AI: ${getTimeLabel(detectedTimeOfDay)}`,
+      ])}
+    </div>
+  ) : sourceImage ? (
+    renderSummaryPills([
+      sourceImage.name,
+      ratioLabel,
+      modeLabel,
+      isZh ? "待画面理解" : "Analysis pending",
+    ])
+  ) : (
+    renderSummaryPills([isZh ? "等待上传" : "Waiting for upload"])
+  );
+
+  const timeSummary = renderSummaryPills(
+    currentTimeOfDay
+      ? [
+          isZh
+            ? `参考：${getTimeLabel(currentTimeOfDay)}`
+            : `Source: ${getTimeLabel(currentTimeOfDay)}`,
+          isZh
+            ? `生成：${selectedSlots.map((slot) => getTimeLabel(slot)).join(" / ")}`
+            : `Generate: ${selectedSlots.map((slot) => getTimeLabel(slot)).join(" / ")}`,
+        ]
+      : [isZh ? "等待画面理解" : "Waiting for scene analysis"],
+  );
+
+  const promptSummary = renderSummaryPills(
+    promptsReady
+      ? [
+          isZh
+            ? `已就绪 ${selectedSlots.length} 组提示词`
+            : `${selectedSlots.length} prompt sets ready`,
+          ...selectedSlots.map((slot) => getTimeLabel(slot)),
+        ]
+      : [isZh ? "等待选择时段" : "Waiting for variant selection"],
+  );
+
+  const generationSummary = renderSummaryPills(
+    tasks.length === 0
+      ? [
+          isZh
+            ? `准备生成 ${selectedSlots.length} 个版本`
+            : `${selectedSlots.length} variants ready`,
+          provider.templateId,
+        ]
+      : [
+          isZh
+            ? `完成 ${completedResults}/${tasks.length}`
+            : `${completedResults}/${tasks.length} done`,
+          failedResults > 0
+            ? isZh
+              ? `失败 ${failedResults}`
+              : `${failedResults} failed`
+            : tasksRunning
+              ? isZh
+                ? "生成中"
+                : "Running"
+              : isZh
+                ? "队列完成"
+                : "Queue finished",
+        ],
+  );
+
+  const stepTone = (step: StepKey, hasError = false) => {
+    if (hasError) return "attention" as const;
+    if (activeStep === step) return "current" as const;
+    return stepOrder.indexOf(step) < activeStepIndex ? ("complete" as const) : ("pending" as const);
+  };
+
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" data-scroll-managed={desktopScrollManaged ? "true" : "false"}>
       <SectionCard
         title={isZh ? "创作流程" : "Workflow"}
         subtitle={
           isZh
-            ? `当前通过 ${provider.templateId} 执行场景分析与图像生成`
-            : `Scene analysis and image generation both run through ${provider.templateId}`
+            ? "紧凑工作台模式：完成当前步骤后，下一步会自动浮到前面。"
+            : "Compact workbench mode: complete the current step and the next one moves forward."
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+              {provider.templateId}
+            </span>
+            <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+              {isZh ? `当前 ${activeStepIndex + 1}/4` : `Step ${activeStepIndex + 1}/4`}
+            </span>
+          </div>
         }
         surface="flat"
       >
-        <div className={desktopScrollManaged ? "space-y-4" : "space-y-4 md:max-h-[inherit] md:overflow-y-auto md:pr-1"}>
-          <div className="space-y-4 rounded-xl border border-border/70 bg-background/70 p-4">
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                {isZh ? "01 基准图处理与 AI 分析" : "01 Baseline Prep & AI Analysis"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {isZh
-                  ? "先上传参考图，生成统一基准图后再做 AI 分析。"
-                  : "Upload a reference image, prepare a baseline, then run scene analysis."}
-              </p>
-            </div>
-
+        <div className="space-y-3">
+          <WorkflowStepCard
+            stepLabel="01"
+            title={isZh ? "基准图处理与 AI 分析" : "Baseline prep & AI analysis"}
+            description={
+              isZh
+                ? "上传参考图、统一比例，再完成首轮画面理解。"
+                : "Upload the reference image, normalize the baseline, then run scene analysis."
+            }
+            statusLabel={
+              !sourceImage
+                ? isZh
+                  ? "待上传参考图"
+                  : "Upload image"
+                : !preparedImage
+                  ? isZh
+                    ? "待生成基准图"
+                    : "Prepare baseline"
+                  : !sceneAnalysis
+                    ? isZh
+                      ? "待画面理解"
+                      : "Analyze scene"
+                    : isZh
+                      ? "分析完成"
+                      : "Analysis ready"
+            }
+            tone={stepTone("baseline", Boolean(uploadError || preprocessError))}
+            expanded={expandedStep === "baseline"}
+            summary={baselineSummary}
+            onToggle={() => handleStepToggle("baseline", true)}
+          >
             <input
               ref={inputRef}
               type="file"
@@ -221,64 +397,126 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
               onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
             />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button type="button" onClick={() => inputRef.current?.click()}>
-                <Upload className="h-4 w-4" />
-                {t("common.upload")}
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                {sourceImage
-                  ? isZh
-                    ? "已加载参考图，可继续设置比例并生成基准图。"
-                    : "Reference image loaded. You can now prepare the baseline image."
-                  : isZh
-                    ? "支持 PNG / JPEG / WebP。"
-                    : "Supports PNG / JPEG / WebP."}
-              </p>
-            </div>
-
-            {uploadError ? <p className="text-sm text-destructive">{t(`errors.${uploadError}`, uploadError)}</p> : null}
-
-            <div className="rounded-xl border border-border/70 bg-background/60 p-4">
-              <CanvasControls />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void onPreprocess()}
-                disabled={!preparedImage || preprocessLoading}
-              >
-                <ScanSearch className="h-4 w-4" />
-                {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {t("settings.provider")}: {provider.templateId}
-              </span>
-            </div>
-
-            {sceneAnalysis ? (
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">{sceneAnalysis.summary}</p>
-                <p>
-                  {isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ") || (isZh ? "未识别" : "N/A")}
-                </p>
-                <p>
-                  {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
-                </p>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-border/70 bg-background/70 p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
+                    className="h-11 rounded-xl px-4"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {t("common.upload")}
+                  </Button>
+                  <div className="min-w-0 space-y-1">
+                    <p className="truncate text-sm font-medium">
+                      {sourceImage
+                        ? sourceImage.name
+                        : isZh
+                          ? "先放入一张参考图，右侧流程会从这里开始。"
+                          : "Drop in one reference image to kick off the workflow."}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {sourceImage
+                        ? `${sourceImage.width} × ${sourceImage.height}`
+                        : isZh
+                          ? "支持 PNG / JPEG / WebP。"
+                          : "Supports PNG / JPEG / WebP."}
+                    </p>
+                  </div>
+                </div>
+                {uploadError ? (
+                  <p className="mt-3 text-sm text-destructive">
+                    {t(`errors.${uploadError}`, uploadError)}
+                  </p>
+                ) : null}
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {isZh ? "准备好基准图后，再执行场景分析。" : "Prepare the baseline image before scene analysis."}
-              </p>
-            )}
-          </div>
 
-          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {isZh ? "02 选择时段" : "02 Select Time Variants"}
-            </p>
+              <CanvasControls />
+
+              <div className="rounded-xl border border-border/70 bg-background/70 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {isZh
+                        ? "基准图就绪后再执行分析，识别主体、光照与参考时段。"
+                        : "Run this after preparing the baseline to detect subjects, lighting, and time of day."}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+                    {isZh ? "次动作" : "Secondary action"}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void onPreprocess()}
+                    disabled={!preparedImage || preprocessLoading}
+                    className="h-10 rounded-xl sm:w-fit"
+                  >
+                    <ScanSearch className="h-4 w-4" />
+                    {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
+                  </Button>
+
+                  {sceneAnalysis ? (
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">{sceneAnalysis.summary}</p>
+                      <p>
+                        {isZh ? "主体" : "Subjects"}:{" "}
+                        {sceneAnalysis.subjects.join(", ") || (isZh ? "未识别" : "N/A")}
+                      </p>
+                      <p>
+                        {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {isZh
+                        ? "准备好基准图后，再执行场景分析。"
+                        : "Prepare the baseline image before scene analysis."}
+                    </p>
+                  )}
+
+                  {preprocessError ? (
+                    <p className="text-sm text-destructive">
+                      {t(`errors.${preprocessError}`, preprocessError)}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </WorkflowStepCard>
+
+          <WorkflowStepCard
+            stepLabel="02"
+            title={isZh ? "选择时段" : "Choose time variants"}
+            description={
+              isZh
+                ? "确认参考图所处时段，再勾选想生成的目标版本。"
+                : "Confirm the source time, then choose the target variants."
+            }
+            statusLabel={
+              !sceneAnalysis
+                ? isZh
+                  ? "等待步骤 1"
+                  : "Waiting for step 1"
+                : currentTimeOfDay && selectedSlots.length > 0
+                  ? isZh
+                    ? `已选 ${selectedSlots.length} 个版本`
+                    : `${selectedSlots.length} selected`
+                  : isZh
+                    ? "选择时段"
+                    : "Pick variants"
+            }
+            tone={stepTone("times")}
+            expanded={expandedStep === "times"}
+            disabled={!sceneAnalysis}
+            summary={timeSummary}
+            onToggle={() => handleStepToggle("times", Boolean(sceneAnalysis))}
+          >
             <TimeSlotSelector
               currentTimeOfDay={currentTimeOfDay}
               detectedTimeOfDay={detectedTimeOfDay}
@@ -286,19 +524,75 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
               onCurrentTimeChange={setCurrentTimeOfDay}
               onSelectedSlotsChange={setSelectedSlots}
             />
-          </div>
+          </WorkflowStepCard>
 
-          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {isZh ? "03 提示词编辑" : "03 Prompt Editing"}
-            </p>
-            <PromptEditor selectedSlots={selectedSlots} prompts={prompts} onPromptChange={handlePromptChange} />
-          </div>
+          <WorkflowStepCard
+            stepLabel="03"
+            title={isZh ? "提示词编辑" : "Prompt editing"}
+            description={
+              isZh
+                ? "系统会先生成建议稿，你可以逐个版本微调。"
+                : "The app drafts prompt suggestions first, then you can refine them per variant."
+            }
+            statusLabel={
+              selectedSlots.length === 0
+                ? isZh
+                  ? "等待步骤 2"
+                  : "Waiting for step 2"
+                : promptsReady
+                  ? isZh
+                    ? `已就绪 ${selectedSlots.length} 组`
+                    : `${selectedSlots.length} ready`
+                  : isZh
+                    ? "补全提示词"
+                    : "Finish the prompts"
+            }
+            tone={stepTone("prompts")}
+            expanded={expandedStep === "prompts"}
+            disabled={!sceneAnalysis || selectedSlots.length === 0}
+            summary={promptSummary}
+            onToggle={() =>
+              handleStepToggle("prompts", Boolean(sceneAnalysis) && selectedSlots.length > 0)
+            }
+          >
+            <PromptEditor
+              selectedSlots={selectedSlots}
+              prompts={prompts}
+              onPromptChange={handlePromptChange}
+            />
+          </WorkflowStepCard>
 
-          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {isZh ? "04 批量生成" : "04 Batch Generation"}
-            </p>
+          <WorkflowStepCard
+            stepLabel="04"
+            title={isZh ? "批量生成" : "Batch generation"}
+            description={
+              isZh
+                ? "当前步骤会保留在最前面，方便你盯住任务状态。"
+                : "This step stays in focus so you can keep an eye on the queue."
+            }
+            statusLabel={
+              !promptsReady
+                ? isZh
+                  ? "等待步骤 3"
+                  : "Waiting for step 3"
+                : tasks.length === 0
+                  ? isZh
+                    ? "准备生成"
+                    : "Ready to generate"
+                  : tasksRunning
+                    ? isZh
+                      ? "生成中"
+                      : "Generating"
+                    : isZh
+                      ? "队列完成"
+                      : "Queue finished"
+            }
+            tone={stepTone("generate")}
+            expanded={expandedStep === "generate"}
+            disabled={!promptsReady}
+            summary={generationSummary}
+            onToggle={() => handleStepToggle("generate", promptsReady)}
+          >
             <GenerateControls
               selectedSlots={selectedSlots}
               prompts={prompts}
@@ -306,15 +600,34 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
               preprocessLoading={preprocessLoading}
               showAnalyze={false}
             />
-          </div>
+          </WorkflowStepCard>
 
-          {preprocessError ? <p className="text-sm text-destructive">{t(`errors.${preprocessError}`, preprocessError)}</p> : null}
+          <div className="space-y-3 rounded-[1.35rem] border border-border/70 bg-background/55 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">
+                  {isZh ? "任务与结果状态" : "Queue & results"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isZh
+                    ? "任务队列与导出区都留在流程底部，避免抢当前步骤的注意力。"
+                    : "The queue and export stay below the workflow so they do not compete with the active step."}
+                </p>
+              </div>
+              <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+                {tasks.length}
+              </span>
+            </div>
 
-          <div className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {isZh ? "05 任务队列" : "05 Task Queue"}
-            </p>
-            <TaskQueue />
+            {tasks.length > 0 ? (
+              <TaskQueue />
+            ) : (
+              <p className="text-sm leading-6 text-muted-foreground">
+                {isZh
+                  ? "开始批量生成后，这里会显示排队、进度和失败信息。"
+                  : "Start a batch to see queue progress, completion, and failures here."}
+              </p>
+            )}
           </div>
         </div>
       </SectionCard>

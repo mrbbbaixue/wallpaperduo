@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { CanvasGalleryStrip } from "@/components/canvas/CanvasGalleryStrip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { desktopWorkspaceHeight } from "@/constants/layout";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
 
@@ -141,7 +140,7 @@ export const CanvasWorkspace = () => {
   };
 
   const resultControls = hasResults ? (
-    <div className="flex flex-wrap items-center gap-2 pb-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-[1.35rem] border border-border/70 bg-background/65 p-2.5">
       <Button
         type="button"
         size="sm"
@@ -200,7 +199,7 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden border-y border-border/70 bg-transparent",
+        "relative flex w-full items-center justify-center overflow-hidden rounded-[1.6rem] border border-border/70 bg-transparent shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_22px_48px_rgba(0,0,0,0.32)]",
         emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
       )}
@@ -217,7 +216,11 @@ export const CanvasWorkspace = () => {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {isZh ? "基准图" : "Baseline"}
             </p>
-            <img src={basePreviewUrl ?? ""} alt="base preview" className="h-full w-full object-contain" />
+            <img
+              src={basePreviewUrl ?? ""}
+              alt="base preview"
+              className="h-full w-full object-contain"
+            />
           </div>
           <div className="flex min-h-0 flex-col gap-2 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -231,11 +234,17 @@ export const CanvasWorkspace = () => {
           </div>
         </div>
       ) : previewUrl ? (
-        <img src={previewUrl} alt="canvas preview" className="max-h-full max-w-full object-contain" />
+        <img
+          src={previewUrl}
+          alt="canvas preview"
+          className="max-h-full max-w-full object-contain"
+        />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
           <UploadCloud className="h-12 w-12 text-muted-foreground/70" />
-          <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("workspace.uploadHint")}</p>
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">
+            {t("workspace.uploadHint")}
+          </p>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground/80">
             {isZh ? "点击或拖拽上传" : "Click or drag to upload"}
           </p>
@@ -245,7 +254,7 @@ export const CanvasWorkspace = () => {
   );
 
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 md:h-full">
       <input
         ref={inputRef}
         type="file"
@@ -253,7 +262,7 @@ export const CanvasWorkspace = () => {
         className="hidden"
         onChange={(event) => void onFile(event.currentTarget.files?.[0])}
       />
-        <div className="space-y-4">
+      <div className="space-y-4 md:flex md:h-full md:min-h-0 md:flex-col md:space-y-3">
         {isMobile ? (
           <>
             {resultControls}
@@ -261,12 +270,8 @@ export const CanvasWorkspace = () => {
           </>
         ) : (
           <div
-            className="grid overflow-hidden"
-            style={{
-              height: desktopWorkspaceHeight,
-              minHeight: desktopWorkspaceHeight,
-              gridTemplateRows: hasResults ? "auto minmax(0, 1fr) auto" : "minmax(0, 1fr)",
-            }}
+            className="grid h-full min-h-0 overflow-hidden"
+            style={{ gridTemplateRows: hasResults ? "auto minmax(0, 1fr) auto" : "minmax(0, 1fr)" }}
           >
             {resultControls}
             {stage}
