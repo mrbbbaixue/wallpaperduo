@@ -167,7 +167,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
               <Download className="h-4 w-4" />
               {t("common.download")}
             </Button>
-            <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+            <span className="rounded-none border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
               {isZh ? `${succeeded.length} 张结果` : `${succeeded.length} results`}
             </span>
           </>
@@ -179,7 +179,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
           aria-activedescendant={activeResultId ? `result-option-${activeResultId}` : undefined}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          className="flex gap-3 overflow-x-auto pb-1 outline-none"
+          className="flex gap-0 overflow-x-auto pb-1 outline-none"
         >
           {succeeded.map((task) => {
             const selected = task.id === activeResultId;
@@ -195,9 +195,9 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
                 aria-selected={selected}
                 onClick={() => setActiveResultId(task.id)}
                 className={cn(
-                  "w-52 flex-shrink-0 rounded-lg border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "w-52 flex-shrink-0 rounded-none border-b-0 border-l-0 border-t-0 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
-                    ? "border-primary bg-accent/40 shadow-[0_8px_18px_rgba(15,23,42,0.08)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.22)]"
+                    ? "border-primary bg-accent/40"
                     : "border-border/70 bg-background hover:bg-accent/40",
                 )}
               >
@@ -205,12 +205,12 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
                   <img
                     src={task.result?.objectUrl}
                     alt={task.label}
-                    className="aspect-[4/3] w-full rounded-lg border border-border/70 object-cover"
+                    className="aspect-[4/3] w-full rounded-none border border-border/70 object-cover"
                   />
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-semibold">{task.label}</p>
                     {selected ? (
-                      <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                      <span className="rounded-none border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
                         {isZh ? "当前" : "Selected"}
                       </span>
                     ) : null}

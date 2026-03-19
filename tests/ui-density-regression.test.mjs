@@ -63,3 +63,81 @@ test("desktop workbench uses tighter radius and lighter shadows", () => {
     `Global radius should be tightened for desktop workbench, got ${radiusMatch?.[1]}rem`,
   );
 });
+
+test("desktop editor layout stays seamless and lower steps remain expandable", () => {
+  const mainPage = read("src/pages/MainPage.tsx");
+  assert.ok(
+    mainPage.includes("md:gap-0"),
+    "MainPage should remove desktop gutter between canvas and sidebar",
+  );
+  assert.ok(
+    mainPage.includes("md:px-0"),
+    "MainPage should remove desktop outer padding for the editor layout",
+  );
+  assert.ok(
+    mainPage.includes("md:border-l"),
+    "MainPage should use a hard split between canvas and the right sidebar",
+  );
+
+  const controlPanel = read("src/components/control/ControlPanel.tsx");
+  assert.ok(
+    controlPanel.includes("useState<StepKey | null>(null)"),
+    "ControlPanel should default workflow cards to collapsed state",
+  );
+  assert.equal(
+    controlPanel.includes("handleStepToggle = (step: StepKey, allowed: boolean)"),
+    false,
+    "ControlPanel should not block opening later steps behind prerequisite gates",
+  );
+  assert.equal(
+    controlPanel.includes("disabled={!sceneAnalysis}"),
+    false,
+    "Later workflow cards should stay viewable even before analysis completes",
+  );
+  assert.equal(
+    controlPanel.includes("disabled={!promptsReady}"),
+    false,
+    "Generate step card should stay expandable before prompts are ready",
+  );
+
+  const workflowCard = read("src/components/control/WorkflowStepCard.tsx");
+  assert.equal(
+    workflowCard.includes("disabled={!onToggle || disabled}"),
+    false,
+    "WorkflowStepCard header toggle should stay clickable for collapsed pending steps",
+  );
+  assert.equal(
+    workflowCard.includes("rounded-lg"),
+    false,
+    "WorkflowStepCard should drop rounded corners for the editor-style sidebar",
+  );
+  assert.ok(
+    workflowCard.includes("expanded ? ("),
+    "WorkflowStepCard should only show the full description while expanded",
+  );
+
+  const canvasWorkspace = read("src/components/canvas/CanvasWorkspace.tsx");
+  assert.equal(
+    canvasWorkspace.includes("rounded-lg"),
+    false,
+    "Canvas workspace desktop surfaces should drop rounded corners for the editor layout",
+  );
+});
+
+test("app shell uses a compact fixed header height for desktop viewport math", () => {
+  const appShell = read("src/components/layout/AppShell.tsx");
+  assert.ok(
+    appShell.includes("--app-header-height"),
+    "AppShell should expose a shared header-height token",
+  );
+  assert.ok(
+    appShell.includes("h-14"),
+    "AppShell should use a shorter fixed header height",
+  );
+
+  const mainPage = read("src/pages/MainPage.tsx");
+  assert.ok(
+    mainPage.includes("md:h-[calc(100dvh-var(--app-header-height))]"),
+    "MainPage should size the desktop workbench from the shared header height token",
+  );
+});

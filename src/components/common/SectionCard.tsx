@@ -40,14 +40,16 @@ export const SectionCard = ({
         <CardHeader
           className={cn(
             "gap-3 p-5 pb-0 md:p-6 md:pb-0",
-            surface === "flat" && "px-0 pt-0",
+            surface === "flat" && "px-4 pb-3 pt-3 md:px-4 md:pb-3 md:pt-3",
           )}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               {title ? (
                 typeof title === "string" ? (
-                  <CardTitle className="text-xl leading-tight">{title}</CardTitle>
+                  <CardTitle className={cn("leading-tight", surface === "flat" ? "text-lg" : "text-xl")}>
+                    {title}
+                  </CardTitle>
                 ) : (
                   title
                 )
@@ -69,10 +71,10 @@ export const SectionCard = ({
       <CardContent
         className={cn(
           "p-5 md:p-6",
-          surface === "flat" && (showHeader ? "px-0 pb-0" : "px-0 py-0"),
+          surface === "flat" && (showHeader ? "px-0 pb-0 pt-0" : "px-0 py-0"),
         )}
       >
-        <div className="space-y-4">{children}</div>
+        <div className={cn(surface === "flat" ? "space-y-0" : "space-y-4")}>{children}</div>
       </CardContent>
     </Card>
   );

@@ -140,7 +140,7 @@ export const CanvasWorkspace = () => {
   };
 
   const resultControls = hasResults ? (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-background/65 p-2.5">
+    <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-background/72 px-4 py-3">
       <Button
         type="button"
         size="sm"
@@ -199,7 +199,7 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-border/70 bg-transparent shadow-[0_10px_22px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_24px_rgba(0,0,0,0.22)]",
+        "relative flex w-full items-center justify-center overflow-hidden rounded-none bg-transparent",
         emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
       )}
@@ -254,7 +254,7 @@ export const CanvasWorkspace = () => {
   );
 
   return (
-    <div className="min-w-0 md:h-full">
+    <div className="min-w-0 md:h-full md:bg-background">
       <input
         ref={inputRef}
         type="file"
@@ -262,7 +262,7 @@ export const CanvasWorkspace = () => {
         className="hidden"
         onChange={(event) => void onFile(event.currentTarget.files?.[0])}
       />
-      <div className="space-y-4 md:flex md:h-full md:min-h-0 md:flex-col md:space-y-3">
+      <div className="space-y-4 md:flex md:h-full md:min-h-0 md:flex-col md:space-y-0">
         {isMobile ? (
           <>
             {resultControls}

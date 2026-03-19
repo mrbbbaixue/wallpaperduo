@@ -12,17 +12,15 @@ interface WorkflowStepCardProps {
   statusLabel: string;
   tone: WorkflowStepTone;
   expanded: boolean;
-  disabled?: boolean;
   summary?: ReactNode;
   children?: ReactNode;
   onToggle?: () => void;
 }
 
 const toneStyle: Record<WorkflowStepTone, string> = {
-  current:
-    "border-primary/35 bg-card/95 shadow-[0_10px_24px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_26px_rgba(0,0,0,0.22)]",
-  complete: "border-border/70 bg-background/70",
-  pending: "border-border/60 bg-background/40",
+  current: "border-primary/45 bg-card/95",
+  complete: "border-border/70 bg-background/72",
+  pending: "border-border/60 bg-background/38",
   attention: "border-amber-300/60 bg-amber-50/70 dark:border-amber-800/70 dark:bg-amber-950/20",
 };
 
@@ -49,7 +47,6 @@ export const WorkflowStepCard = ({
   statusLabel,
   tone,
   expanded,
-  disabled = false,
   summary,
   children,
   onToggle,
@@ -59,24 +56,22 @@ export const WorkflowStepCard = ({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border transition-all",
+        "overflow-hidden rounded-none border border-b border-l-0 border-r-0 border-t-0 transition-colors",
         toneStyle[tone],
-        disabled && !expanded && "opacity-75",
       )}
     >
       <button
         type="button"
         onClick={onToggle}
-        disabled={!onToggle || disabled}
         className={cn(
-          "flex w-full items-start gap-3 p-4 text-left transition-colors",
-          onToggle && !disabled && "hover:bg-foreground/[0.03]",
+          "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors",
+          onToggle && "hover:bg-foreground/[0.03]",
         )}
         aria-expanded={expanded}
       >
         <div
           className={cn(
-            "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold tracking-[0.16em]",
+            "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border text-xs font-semibold tracking-[0.16em]",
             tone === "current"
               ? "border-primary/20 bg-primary/10 text-foreground"
               : "border-border/70 bg-background/70 text-muted-foreground",
@@ -92,13 +87,15 @@ export const WorkflowStepCard = ({
                 <ToneIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <h3 className="truncate text-sm font-semibold leading-6">{title}</h3>
               </div>
-              <p className="text-xs leading-5 text-muted-foreground">{description}</p>
+              {expanded ? (
+                <p className="text-xs leading-5 text-muted-foreground">{description}</p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-2 self-start">
               <span
                 className={cn(
-                  "inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                  "inline-flex items-center whitespace-nowrap rounded-none border px-2.5 py-1 text-[11px] font-medium",
                   badgeStyle[tone],
                 )}
               >

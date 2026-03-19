@@ -1,5 +1,5 @@
 import { Settings, Globe, Sun, Moon, Monitor } from "lucide-react";
-import { useEffect, useState, type PropsWithChildren } from "react";
+import { useEffect, useState, type CSSProperties, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,10 @@ export const AppShell = ({ children }: PropsWithChildren) => {
   }[themeMode];
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div
+      className="relative min-h-screen overflow-hidden"
+      style={{ "--app-header-height": "56px" } as CSSProperties}
+    >
       {/* Background gradient */}
       <div
         className="absolute inset-0 pointer-events-none z-0"
@@ -56,13 +59,13 @@ export const AppShell = ({ children }: PropsWithChildren) => {
       />
 
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-transparent">
-        <div className="flex items-center justify-between px-4 py-3 md:px-6">
+      <header className="sticky top-0 z-10 h-14 border-b border-border/40 bg-transparent">
+        <div className="flex h-full items-center justify-between px-4 md:px-5">
           <div className="min-w-0 flex-1">
-            <span className="text-xs text-muted-foreground uppercase tracking-wide">
+            <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               WallpaperDuo Studio
             </span>
-            <h1 className="text-xl font-semibold leading-tight">{t("appName")}</h1>
+            <h1 className="text-lg font-semibold leading-tight md:text-[1.15rem]">{t("appName")}</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -72,7 +75,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
               onClick={toggleLanguage}
               aria-label="language"
               title={language === "zh" ? "切换到 English" : "Switch to 中文"}
-              className="h-8 w-8"
+              className="h-7 w-7 md:h-8 md:w-8"
             >
               <Globe className="h-4 w-4" />
             </Button>
@@ -94,7 +97,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
                       ? "深色模式"
                       : "Dark mode"
               }
-              className="h-8 w-8"
+              className="h-7 w-7 md:h-8 md:w-8"
             >
               <ThemeIcon className="h-4 w-4" />
             </Button>
@@ -104,7 +107,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
               onClick={() => setSettingsOpen(true)}
               aria-label="settings"
               title={t("settings.title")}
-              className="h-8 w-8"
+              className="h-7 w-7 md:h-8 md:w-8"
             >
               <Settings className="h-4 w-4" />
             </Button>
@@ -113,7 +116,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
       </header>
 
       {/* Main content */}
-      <main className="relative z-[1]">{children}</main>
+      <main className="relative z-[1] min-h-0">{children}</main>
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>

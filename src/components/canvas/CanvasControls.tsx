@@ -85,7 +85,7 @@ export const CanvasControls = () => {
             {t("workspace.ratio")}
           </Label>
           <Select value={normalizedRatioId} onValueChange={setRatioId}>
-            <SelectTrigger className="h-11 rounded-lg bg-background/65">
+            <SelectTrigger className="h-11 rounded-none bg-background/65">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -109,8 +109,7 @@ export const CanvasControls = () => {
               onClick={() => setPrepareMode("crop")}
               size="sm"
               className={cn(
-                "h-11 rounded-lg",
-                prepareMode === "crop" && "shadow-[0_10px_20px_rgba(15,23,42,0.12)]",
+                "h-11 rounded-none",
               )}
             >
               {t("workspace.modeCrop")}
@@ -121,8 +120,7 @@ export const CanvasControls = () => {
               onClick={() => setPrepareMode("pad")}
               size="sm"
               className={cn(
-                "h-11 rounded-lg",
-                prepareMode === "pad" && "shadow-[0_10px_20px_rgba(15,23,42,0.12)]",
+                "h-11 rounded-none",
               )}
             >
               {t("workspace.modePad")}
@@ -143,7 +141,7 @@ export const CanvasControls = () => {
             <Input
               id="custom-ratio-width"
               type="number"
-              className="h-11 rounded-lg bg-background/65"
+              className="h-11 rounded-none bg-background/65"
               value={customRatio.width}
               onChange={(e) =>
                 setCustomRatio({
@@ -163,7 +161,7 @@ export const CanvasControls = () => {
             <Input
               id="custom-ratio-height"
               type="number"
-              className="h-11 rounded-lg bg-background/65"
+              className="h-11 rounded-none bg-background/65"
               value={customRatio.height}
               onChange={(e) =>
                 setCustomRatio({
@@ -180,19 +178,19 @@ export const CanvasControls = () => {
         type="button"
         onClick={() => void onPrepare()}
         disabled={loading || !sourceImage}
-        className="h-11 w-full rounded-lg"
+        className="h-11 w-full rounded-none"
       >
         {loading ? t("common.loading") : t("workspace.prepare")}
       </Button>
 
       <div className="flex flex-wrap gap-2 text-xs">
         {sourceImage ? (
-          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+          <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
             {sourceImage.name} · {sourceImage.width}×{sourceImage.height}
           </span>
         ) : null}
         {preparedImage ? (
-          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+          <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
             {t("workspace.prepared")} · {preparedImage.width}×{preparedImage.height}
           </span>
         ) : null}

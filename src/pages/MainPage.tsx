@@ -56,12 +56,12 @@ export const MainPage = () => {
 
   return (
     <>
-      <div className="grid min-w-0 gap-4 px-4 py-4 md:h-[calc(100dvh-73px)] md:grid-cols-[minmax(0,1fr)_392px] md:items-stretch md:gap-4 md:px-4 md:pb-0 md:pt-3 md:overflow-hidden">
+      <div className="grid min-w-0 gap-4 px-4 py-4 md:h-[calc(100dvh-var(--app-header-height))] md:grid-cols-[minmax(0,1fr)_392px] md:items-stretch md:gap-0 md:px-0 md:py-0 md:overflow-hidden">
         <div className="min-w-0 md:min-h-0">
           <CanvasWorkspace />
         </div>
 
-        <aside className="min-w-0 border-t border-border/70 pt-4 md:min-h-0 md:border-t-0 md:pt-0">
+        <aside className="min-w-0 border-t border-border/70 pt-4 md:min-h-0 md:border-l md:border-t-0 md:bg-card md:pt-0">
           {isMobile ? (
             <div className="space-y-4">
               <ControlPanel />
@@ -69,8 +69,8 @@ export const MainPage = () => {
             </div>
           ) : (
             <div className="h-full overflow-hidden">
-              <div className="ui-scrollbar h-full overflow-y-auto pr-1">
-                <div className="space-y-3 pb-3">
+              <div className="ui-scrollbar h-full overflow-y-auto">
+                <div className="divide-y divide-border/70">
                   <ControlPanel desktopScrollManaged />
                   <ExportPanel />
                 </div>

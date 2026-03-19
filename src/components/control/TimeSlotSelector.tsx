@@ -16,6 +16,7 @@ interface TimeSlotSelectorProps {
   selectedSlots: TimeVariant[];
   onCurrentTimeChange: (time: TimeVariant) => void;
   onSelectedSlotsChange: (slots: TimeVariant[]) => void;
+  locked?: boolean;
 }
 
 export const TimeSlotSelector = ({
@@ -24,6 +25,7 @@ export const TimeSlotSelector = ({
   selectedSlots,
   onCurrentTimeChange,
   onSelectedSlotsChange,
+  locked = false,
 }: TimeSlotSelectorProps) => {
   const { i18n } = useTranslation();
   const isZh = i18n.language === "zh";
@@ -53,11 +55,18 @@ export const TimeSlotSelector = ({
                 : "Confirm the source time first, then choose the target variants."}
             </p>
           </div>
-          <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+          <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
             {isZh ? "AI 判断" : "AI detected"}:{" "}
             {detectedSlot ? getLabel(detectedSlot) : isZh ? "未识别" : "N/A"}
           </span>
         </div>
+        {locked ? (
+          <p className="text-xs text-muted-foreground">
+            {isZh
+              ? "先完成步骤 1 的分析，这里会自动带入推荐时段；当前仅预览控件。"
+              : "Finish step 1 analysis first. The recommended time setup will appear here; for now this panel is preview-only."}
+          </p>
+        ) : null}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {timeSlots.map((slot) => {
             const active = currentTimeOfDay === slot.key;
@@ -65,11 +74,12 @@ export const TimeSlotSelector = ({
               <button
                 key={slot.key}
                 type="button"
+                disabled={locked}
                 onClick={() => onCurrentTimeChange(slot.key)}
                 className={cn(
-                  "rounded-lg border px-3 py-2.5 text-sm font-medium transition-all",
+                  "rounded-none border px-3 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-55",
                   active
-                    ? "border-transparent text-white shadow-md"
+                    ? "border-transparent text-white"
                     : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
                 )}
                 aria-pressed={active}
@@ -98,11 +108,12 @@ export const TimeSlotSelector = ({
               <button
                 key={slot.key}
                 type="button"
+                disabled={locked}
                 onClick={() => toggleSlot(slot.key)}
                 className={cn(
-                  "rounded-lg border px-3 py-2.5 text-sm font-medium transition-all",
+                  "rounded-none border px-3 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-55",
                   selected
-                    ? "border-transparent text-white shadow-md"
+                    ? "border-transparent text-white"
                     : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70",
                 )}
                 aria-pressed={selected}

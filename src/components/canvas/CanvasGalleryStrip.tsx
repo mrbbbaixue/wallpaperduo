@@ -115,7 +115,7 @@ export const CanvasGalleryStrip = ({
           <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {isZh ? "结果画廊" : "Result Gallery"}
           </span>
-          <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+          <span className="rounded-none border border-border/70 bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
             {isZh ? `${succeeded.length} 张` : `${succeeded.length} items`}
           </span>
         </div>
@@ -134,7 +134,7 @@ export const CanvasGalleryStrip = ({
             type="button"
             onClick={onToggleExpanded}
             aria-label={expanded ? (isZh ? "收起画廊" : "Collapse gallery") : isZh ? "展开画廊" : "Expand gallery"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-background transition-colors hover:bg-accent"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-border/70 bg-background transition-colors hover:bg-accent"
           >
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
@@ -148,7 +148,7 @@ export const CanvasGalleryStrip = ({
           aria-activedescendant={activeResultId ? `gallery-option-${activeResultId}` : undefined}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          className="flex gap-3 overflow-x-auto py-3 outline-none"
+          className="flex gap-0 overflow-x-auto py-0 outline-none"
         >
           {succeeded.map((task) => {
             const selected = task.id === activeResultId;
@@ -164,9 +164,9 @@ export const CanvasGalleryStrip = ({
                 aria-selected={selected}
                 onClick={() => setActiveResultId(task.id)}
                 className={cn(
-                  "w-44 flex-shrink-0 rounded-lg border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "w-44 flex-shrink-0 rounded-none border-b-0 border-l-0 border-t-0 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
-                    ? "border-primary bg-accent/40 shadow-[0_8px_18px_rgba(15,23,42,0.08)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.22)]"
+                    ? "border-primary bg-accent/40"
                     : "border-border/70 bg-background hover:bg-accent/40",
                 )}
               >
@@ -175,7 +175,7 @@ export const CanvasGalleryStrip = ({
                     src={task.result?.objectUrl}
                     alt={task.label}
                     loading="lazy"
-                    className="aspect-[4/3] w-full rounded-lg border border-border/70 object-cover"
+                    className="aspect-[4/3] w-full rounded-none border border-border/70 object-cover"
                   />
                   <p className="truncate text-sm font-semibold">{task.label}</p>
                 </div>

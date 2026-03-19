@@ -44,7 +44,7 @@ const renderSummaryPills = (items: string[]) => (
     {items.filter(Boolean).map((item, index) => (
       <span
         key={`${item}-${index}`}
-        className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
+        className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
       >
         {item}
       </span>
@@ -76,7 +76,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const [preprocessLoading, setPreprocessLoading] = useState(false);
   const [preprocessError, setPreprocessError] = useState("");
   const [uploadError, setUploadError] = useState("");
-  const [expandedStep, setExpandedStep] = useState<StepKey>("baseline");
+  const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   useEffect(() => {
     setCurrentTimeOfDay(null);
@@ -250,15 +250,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const failedResults = tasks.filter((task) => task.status === "failed").length;
   const tasksRunning = tasks.some((task) => task.status === "queued" || task.status === "running");
 
-  useEffect(() => {
-    setExpandedStep((current) =>
-      stepOrder.indexOf(current) > activeStepIndex ? activeStep : current,
-    );
-  }, [activeStep, activeStepIndex]);
-
-  const handleStepToggle = (step: StepKey, allowed: boolean) => {
-    if (!allowed) return;
-    setExpandedStep((current) => (current === step && step !== activeStep ? activeStep : step));
+  const handleStepToggle = (step: StepKey) => {
+    setExpandedStep((current) => (current === step ? null : step));
   };
 
   const baselineSummary = sceneAnalysis ? (
@@ -348,17 +341,17 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
         }
         actions={
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+            <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
               {provider.templateId}
             </span>
-            <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
+            <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
               {isZh ? `当前 ${activeStepIndex + 1}/4` : `Step ${activeStepIndex + 1}/4`}
             </span>
           </div>
         }
         surface="flat"
       >
-        <div className="space-y-3">
+        <div className="overflow-hidden border-t border-border/70">
           <WorkflowStepCard
             stepLabel="01"
             title={isZh ? "基准图处理与 AI 分析" : "Baseline prep & AI analysis"}
@@ -387,7 +380,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             tone={stepTone("baseline", Boolean(uploadError || preprocessError))}
             expanded={expandedStep === "baseline"}
             summary={baselineSummary}
-            onToggle={() => handleStepToggle("baseline", true)}
+            onToggle={() => handleStepToggle("baseline")}
           >
             <input
               ref={inputRef}
@@ -398,12 +391,12 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             />
 
             <div className="space-y-3">
-              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <div className="rounded-none border border-border/70 bg-background/70 p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button
                     type="button"
                     onClick={() => inputRef.current?.click()}
-                    className="h-11 rounded-lg px-4"
+                    className="h-11 rounded-none px-4"
                   >
                     <Upload className="h-4 w-4" />
                     {t("common.upload")}
@@ -434,7 +427,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
               <CanvasControls />
 
-              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <div className="rounded-none border border-border/70 bg-background/70 p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
@@ -444,7 +437,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                         : "Run this after preparing the baseline to detect subjects, lighting, and time of day."}
                     </p>
                   </div>
-                  <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+                  <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
                     {isZh ? "次动作" : "Secondary action"}
                   </span>
                 </div>
@@ -455,7 +448,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     variant="outline"
                     onClick={() => void onPreprocess()}
                     disabled={!preparedImage || preprocessLoading}
-                    className="h-10 rounded-lg sm:w-fit"
+                    className="h-10 rounded-none sm:w-fit"
                   >
                     <ScanSearch className="h-4 w-4" />
                     {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
@@ -513,9 +506,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             }
             tone={stepTone("times")}
             expanded={expandedStep === "times"}
-            disabled={!sceneAnalysis}
             summary={timeSummary}
-            onToggle={() => handleStepToggle("times", Boolean(sceneAnalysis))}
+            onToggle={() => handleStepToggle("times")}
           >
             <TimeSlotSelector
               currentTimeOfDay={currentTimeOfDay}
@@ -523,6 +515,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
               selectedSlots={selectedSlots}
               onCurrentTimeChange={setCurrentTimeOfDay}
               onSelectedSlotsChange={setSelectedSlots}
+              locked={!sceneAnalysis}
             />
           </WorkflowStepCard>
 
@@ -549,11 +542,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             }
             tone={stepTone("prompts")}
             expanded={expandedStep === "prompts"}
-            disabled={!sceneAnalysis || selectedSlots.length === 0}
             summary={promptSummary}
-            onToggle={() =>
-              handleStepToggle("prompts", Boolean(sceneAnalysis) && selectedSlots.length > 0)
-            }
+            onToggle={() => handleStepToggle("prompts")}
           >
             <PromptEditor
               selectedSlots={selectedSlots}
@@ -589,9 +579,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             }
             tone={stepTone("generate")}
             expanded={expandedStep === "generate"}
-            disabled={!promptsReady}
             summary={generationSummary}
-            onToggle={() => handleStepToggle("generate", promptsReady)}
+            onToggle={() => handleStepToggle("generate")}
           >
             <GenerateControls
               selectedSlots={selectedSlots}
@@ -602,7 +591,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             />
           </WorkflowStepCard>
 
-          <div className="space-y-3 rounded-lg border border-border/70 bg-background/55 p-4">
+          <div className="space-y-3 border-b border-border/70 bg-background/55 p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">
@@ -614,7 +603,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     : "The queue and export stay below the workflow so they do not compete with the active step."}
                 </p>
               </div>
-              <span className="rounded-full border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+              <span className="rounded-none border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
                 {tasks.length}
               </span>
             </div>

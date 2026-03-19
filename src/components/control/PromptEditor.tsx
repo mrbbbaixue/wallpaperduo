@@ -51,7 +51,7 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
     >
       {selectedSlots.length > 1 ? (
         <TabsList
-          className="grid h-auto w-full gap-1 rounded-lg bg-muted/60 p-1"
+          className="grid h-auto w-full gap-px rounded-none bg-border/70 p-px"
           style={{ gridTemplateColumns: `repeat(${selectedSlots.length}, minmax(0, 1fr))` }}
         >
           {selectedSlots.map((slot) => {
@@ -60,7 +60,7 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
               <TabsTrigger
                 key={slot}
                 value={slot}
-                className="h-9 rounded-md px-2 text-xs data-[state=active]:shadow-none"
+                className="h-9 rounded-none bg-background px-2 text-xs data-[state=active]:shadow-none"
               >
                 {label}
               </TabsTrigger>
@@ -75,7 +75,7 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
 
         return (
           <TabsContent key={slot} value={slot} className="mt-0">
-            <div className="space-y-3 rounded-lg border border-border/70 bg-background/70 p-3">
+            <div className="space-y-3 rounded-none border border-border/70 bg-background/70 p-3">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold">{label}</h4>
                 <span className="text-xs text-muted-foreground">
@@ -87,7 +87,7 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
                   {isZh ? "提示词" : "Prompt"}
                 </label>
                 <textarea
-                  className="min-h-28 w-full rounded-lg border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  className="min-h-28 w-full rounded-none border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   value={entry?.prompt ?? ""}
                   onChange={(e) => onPromptChange(slot, "prompt", e.target.value)}
                 />
@@ -97,7 +97,7 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
                   {isZh ? "负面提示词" : "Negative prompt"}
                 </label>
                 <textarea
-                  className="min-h-20 w-full rounded-lg border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  className="min-h-20 w-full rounded-none border border-input bg-background/75 px-3 py-2.5 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   value={entry?.negativePrompt ?? ""}
                   onChange={(e) => onPromptChange(slot, "negativePrompt", e.target.value)}
                 />
