@@ -103,6 +103,33 @@
   }
 }
 
+@layer utilities {
+  .ui-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .ui-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .ui-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ui-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    background-color: color-mix(in srgb, hsl(var(--muted-foreground)) 28%, transparent);
+  }
+
+  .ui-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, hsl(var(--foreground)) 22%, transparent);
+  }
+}
+
 @keyframes shellIn {
   from {
     opacity: 0;

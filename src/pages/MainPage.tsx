@@ -78,7 +78,7 @@ export const MainPage = () => {
               className="overflow-hidden"
               style={{ height: desktopWorkspaceHeight, minHeight: desktopWorkspaceHeight }}
             >
-              <div className="h-full overflow-y-auto pr-1">
+              <div className="ui-scrollbar h-full overflow-y-auto pr-1">
                 <div className="space-y-4 pb-0">
                   <ControlPanel desktopScrollManaged />
                   <ExportPanel />
@@ -103,7 +103,10 @@ export const MainPage = () => {
           </Button>
 
           <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
-            <DialogContent className="top-auto left-0 right-0 bottom-0 max-h-[78vh] w-full max-w-none translate-x-0 translate-y-0 rounded-t-[1.75rem] border border-border/70 bg-background/98 p-0 shadow-2xl sm:max-w-none sm:rounded-t-[1.75rem]">
+            <DialogContent
+              motionPreset="sheet"
+              className="max-h-[78vh] rounded-t-[1.75rem] border border-border/70 bg-background/98 p-0 shadow-2xl sm:rounded-t-[1.75rem]"
+            >
               <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80" aria-hidden="true" />
               <div className="border-b border-border/70 px-4 pb-3 pt-4">
                 <DialogTitle className="text-sm font-semibold">
@@ -115,7 +118,7 @@ export const MainPage = () => {
                     : "Browse generated results, switch the preview, and download the selected image."}
                 </DialogDescription>
               </div>
-              <div className="max-h-[calc(78vh-5.5rem)] overflow-y-auto px-4 pb-4 pt-3">
+              <div className="ui-scrollbar max-h-[calc(78vh-5.5rem)] overflow-y-auto px-4 pb-4 pt-3">
                 <ResultsRail inSheet />
               </div>
             </DialogContent>
