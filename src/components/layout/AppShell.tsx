@@ -8,6 +8,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 
 export const AppShell = ({ children }: PropsWithChildren) => {
   const { t, i18n } = useTranslation();
+  const isZh = i18n.language === "zh";
   const language = useSettingsStore((state) => state.language);
   const setLanguage = useSettingsStore((state) => state.setLanguage);
   const themeMode = useSettingsStore((state) => state.themeMode);
@@ -70,6 +71,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
               size="icon"
               onClick={toggleLanguage}
               aria-label="language"
+              title={language === "zh" ? "切换到 English" : "Switch to 中文"}
               className="h-8 w-8"
             >
               <Globe className="h-4 w-4" />
@@ -79,6 +81,19 @@ export const AppShell = ({ children }: PropsWithChildren) => {
               size="icon"
               onClick={cycleThemeMode}
               aria-label="theme-mode"
+              title={
+                themeMode === "system"
+                  ? isZh
+                    ? "跟随系统"
+                    : "Follow system"
+                  : themeMode === "light"
+                    ? isZh
+                      ? "浅色模式"
+                      : "Light mode"
+                    : isZh
+                      ? "深色模式"
+                      : "Dark mode"
+              }
               className="h-8 w-8"
             >
               <ThemeIcon className="h-4 w-4" />
@@ -88,6 +103,7 @@ export const AppShell = ({ children }: PropsWithChildren) => {
               size="icon"
               onClick={() => setSettingsOpen(true)}
               aria-label="settings"
+              title={t("settings.title")}
               className="h-8 w-8"
             >
               <Settings className="h-4 w-4" />

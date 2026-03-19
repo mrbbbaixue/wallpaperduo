@@ -34,6 +34,7 @@ export const CanvasWorkspace = () => {
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia(mobileMediaQuery).matches : false,
   );
@@ -133,6 +134,11 @@ export const CanvasWorkspace = () => {
   const resultPreviewUrl = activeTask?.result?.objectUrl ?? null;
   const previewUrl = resultPreviewUrl ?? basePreviewUrl;
   const compareReady = previewMode === "compare" && !!basePreviewUrl && !!resultPreviewUrl;
+  const emptyUploadState = !previewUrl;
+
+  const triggerUpload = () => {
+    inputRef.current?.click();
+  };
 
   const resultControls = hasResults ? (
     <div className="flex flex-wrap items-center gap-2 pb-2">
@@ -179,8 +185,23 @@ export const CanvasWorkspace = () => {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
+      onClick={emptyUploadState ? triggerUpload : undefined}
+      onKeyDown={
+        emptyUploadState
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                triggerUpload();
+              }
+            }
+          : undefined
+      }
+      role={emptyUploadState ? "button" : undefined}
+      tabIndex={emptyUploadState ? 0 : undefined}
+      aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
         "relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-background/60",
+        emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
       )}
       style={{
@@ -215,6 +236,9 @@ export const CanvasWorkspace = () => {
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
           <UploadCloud className="h-12 w-12 text-muted-foreground/70" />
           <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("workspace.uploadHint")}</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground/80">
+            {isZh ? "点击或拖拽上传" : "Click or drag to upload"}
+          </p>
         </div>
       )}
     </div>
@@ -222,6 +246,13 @@ export const CanvasWorkspace = () => {
 
   return (
     <div className="min-w-0">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(event) => void onFile(event.currentTarget.files?.[0])}
+      />
       <div className="space-y-4">
         {isMobile ? (
           <>

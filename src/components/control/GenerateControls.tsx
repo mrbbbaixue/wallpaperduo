@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { runGenerationQueue } from "@/services/generation/generationQueue";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
@@ -31,7 +32,7 @@ export const GenerateControls = ({
   preprocessLoading,
   showAnalyze = true,
 }: GenerateControlsProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const setTasks = useWorkflowStore((s) => s.setTasks);
   const updateTask = useWorkflowStore((s) => s.updateTask);
@@ -71,6 +72,13 @@ export const GenerateControls = ({
       setError("");
       const existingTasks = useWorkflowStore.getState().tasks;
       setTasks([...existingTasks, ...newTasks]);
+      toast({
+        title: t("common.generate"),
+        description:
+          i18n.language === "zh"
+            ? `已加入 ${newTasks.length} 个生成任务。`
+            : `${newTasks.length} generation task(s) queued.`,
+      });
 
       const completed = await runGenerationQueue({
         provider,
@@ -84,8 +92,24 @@ export const GenerateControls = ({
       const completedById = new Map(completed.map((task) => [task.id, task]));
       const latestTasks = useWorkflowStore.getState().tasks;
       setTasks(latestTasks.map((task) => completedById.get(task.id) ?? task));
+      const succeededCount = completed.filter((task) => task.status === "succeeded").length;
+      const failedCount = completed.filter((task) => task.status === "failed").length;
+      toast({
+        title: i18n.language === "zh" ? "生成完成" : "Generation finished",
+        description:
+          i18n.language === "zh"
+            ? `成功 ${succeededCount} 个，失败 ${failedCount} 个。`
+            : `${succeededCount} succeeded, ${failedCount} failed.`,
+        variant: failedCount > 0 ? "destructive" : "default",
+      });
     } catch (exception) {
-      setError(toUserError(exception));
+      const message = toUserError(exception);
+      setError(message);
+      toast({
+        title: i18n.language === "zh" ? "生成失败" : "Generation failed",
+        description: t(`errors.${message}`, message),
+        variant: "destructive",
+      });
     } finally {
       setGenerating(false);
     }

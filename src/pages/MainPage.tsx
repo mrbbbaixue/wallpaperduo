@@ -1,4 +1,4 @@
-import { Images, X } from "lucide-react";
+import { Images } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -6,6 +6,12 @@ import { CanvasWorkspace } from "@/components/canvas/CanvasWorkspace";
 import { ControlPanel } from "@/components/control/ControlPanel";
 import { ExportPanel } from "@/components/results/ExportPanel";
 import { ResultsRail } from "@/components/results/ResultsRail";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { desktopWorkspaceHeight } from "@/constants/layout";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
@@ -89,30 +95,31 @@ export const MainPage = () => {
             type="button"
             onClick={() => setSheetOpen(true)}
             className="fixed bottom-4 right-4 z-40 shadow-lg"
+            aria-haspopup="dialog"
+            aria-expanded={sheetOpen}
           >
             <Images className="h-4 w-4" />
             {isZh ? `结果 ${succeeded.length}` : `Results ${succeeded.length}`}
           </Button>
 
-          {sheetOpen ? (
-            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm">
-              <div className="absolute inset-x-0 bottom-0 max-h-[78vh] rounded-t-3xl border border-border/70 bg-background p-4 shadow-2xl">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold">{isZh ? "结果胶片" : "Results Rail"}</h2>
-                  <button
-                    type="button"
-                    onClick={() => setSheetOpen(false)}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="max-h-[calc(78vh-4rem)] overflow-y-auto pb-2">
-                  <ResultsRail inSheet />
-                </div>
+          <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+            <DialogContent className="top-auto left-0 right-0 bottom-0 max-h-[78vh] w-full max-w-none translate-x-0 translate-y-0 rounded-t-[1.75rem] border border-border/70 bg-background/98 p-0 shadow-2xl sm:max-w-none sm:rounded-t-[1.75rem]">
+              <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80" aria-hidden="true" />
+              <div className="border-b border-border/70 px-4 pb-3 pt-4">
+                <DialogTitle className="text-sm font-semibold">
+                  {isZh ? "结果胶片" : "Results Rail"}
+                </DialogTitle>
+                <DialogDescription className="mt-1 text-xs leading-5">
+                  {isZh
+                    ? "查看生成结果、切换预览，并快速下载单张图片。"
+                    : "Browse generated results, switch the preview, and download the selected image."}
+                </DialogDescription>
               </div>
-            </div>
-          ) : null}
+              <div className="max-h-[calc(78vh-5.5rem)] overflow-y-auto px-4 pb-4 pt-3">
+                <ResultsRail inSheet />
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       ) : null}
     </>

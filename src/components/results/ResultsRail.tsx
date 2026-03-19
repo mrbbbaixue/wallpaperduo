@@ -129,6 +129,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
               size="sm"
               variant={activeResultId ? "outline" : "default"}
               onClick={() => setActiveResultId(undefined)}
+              aria-pressed={!activeResultId}
             >
               <RotateCcw className="h-4 w-4" />
               {t("results.baseSelect")}
@@ -139,6 +140,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
               variant={previewMode === "single" ? "default" : "outline"}
               onClick={() => setPreviewMode("single")}
               disabled={!activeResultId}
+              aria-pressed={previewMode === "single"}
             >
               <ImageIcon className="h-4 w-4" />
               {t("results.singleMode")}
@@ -149,6 +151,7 @@ export const ResultsRail = ({ inSheet = false }: ResultsRailProps) => {
               variant={previewMode === "compare" ? "default" : "outline"}
               onClick={() => setPreviewMode("compare")}
               disabled={!activeResultId}
+              aria-pressed={previewMode === "compare"}
             >
               <ArrowLeftRight className="h-4 w-4" />
               {t("results.compareMode")}

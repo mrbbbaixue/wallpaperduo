@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { SectionCard } from "@/components/common/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { alignToReference } from "@/services/alignment/alignmentService";
 import { validateDdwThemeShape } from "@/services/export/ddwCompatibility";
 import { downloadDdw } from "@/services/export/ddwExporter";
@@ -112,8 +113,21 @@ export const ExportPanel = () => {
           ? `对齐完成：${successCount} / ${succeeded.length}`
           : `Alignment finished: ${successCount} / ${succeeded.length}`,
       );
+      toast({
+        title: isZh ? "图像对齐完成" : "Alignment finished",
+        description: isZh
+          ? `成功 ${successCount} 张，共 ${succeeded.length} 张。`
+          : `${successCount} of ${succeeded.length} image(s) aligned.`,
+        variant: successCount === succeeded.length ? "default" : "destructive",
+      });
     } catch (exception) {
-      setError(toUserError(exception));
+      const message = toUserError(exception);
+      setError(message);
+      toast({
+        title: isZh ? "图像对齐失败" : "Alignment failed",
+        description: t(`errors.${message}`, message),
+        variant: "destructive",
+      });
     } finally {
       setBusy("");
     }
@@ -140,8 +154,18 @@ export const ExportPanel = () => {
         fileStem,
       });
       setMessage(t("export.compat"));
+      toast({
+        title: isZh ? "DDW 导出完成" : "DDW export completed",
+        description: t("export.compat"),
+      });
     } catch (exception) {
-      setError(toUserError(exception));
+      const message = toUserError(exception);
+      setError(message);
+      toast({
+        title: isZh ? "DDW 导出失败" : "DDW export failed",
+        description: t(`errors.${message}`, message),
+        variant: "destructive",
+      });
     } finally {
       setBusy("");
     }
@@ -158,8 +182,20 @@ export const ExportPanel = () => {
         fileStem,
       });
       setMessage(isZh ? "ZIP 导出完成" : "ZIP export completed");
+      toast({
+        title: isZh ? "ZIP 导出完成" : "ZIP export completed",
+        description: isZh
+          ? "生成结果已打包为 ZIP。"
+          : "Generated results were bundled into a ZIP archive.",
+      });
     } catch (exception) {
-      setError(toUserError(exception));
+      const message = toUserError(exception);
+      setError(message);
+      toast({
+        title: isZh ? "ZIP 导出失败" : "ZIP export failed",
+        description: t(`errors.${message}`, message),
+        variant: "destructive",
+      });
     } finally {
       setBusy("");
     }

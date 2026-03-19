@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testConnectionWithWorker } from "@/services/api/workerClient";
+import { toast } from "@/hooks/use-toast";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import type { ProviderKind } from "@/types/domain";
 import { PROVIDER_TEMPLATES } from "@/types/provider";
@@ -44,10 +45,27 @@ export function ProviderConfig() {
     try {
       const result = await testConnectionWithWorker(provider);
       setTestResult(result);
+      toast({
+        title: isZh ? "连通性测试完成" : "Connectivity test finished",
+        description: result.ok
+          ? isZh
+            ? `连接成功：${result.message}`
+            : `Connected: ${result.message}`
+          : isZh
+            ? `连接失败：${result.message}`
+            : `Connection failed: ${result.message}`,
+        variant: result.ok ? "default" : "destructive",
+      });
     } catch (error) {
+      const message = t(`errors.${toUserError(error)}`, toUserError(error));
       setTestResult({
         ok: false,
-        message: t(`errors.${toUserError(error)}`, toUserError(error)),
+        message,
+      });
+      toast({
+        title: isZh ? "连通性测试失败" : "Connectivity test failed",
+        description: message,
+        variant: "destructive",
       });
     } finally {
       setTesting(false);

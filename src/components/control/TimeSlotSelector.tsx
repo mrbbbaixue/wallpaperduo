@@ -65,6 +65,7 @@ export const TimeSlotSelector = ({
                     ? "border-transparent text-white shadow-md"
                     : "border-border bg-background text-foreground hover:bg-accent",
                 )}
+                aria-pressed={active}
                 style={active ? { backgroundColor: slot.color } : undefined}
               >
                 {getLabel(slot)}
@@ -92,6 +93,7 @@ export const TimeSlotSelector = ({
                     ? "border-transparent text-white shadow-md"
                     : "border-border bg-background text-foreground hover:bg-accent",
                 )}
+                aria-pressed={selected}
                 style={selected ? { backgroundColor: slot.color } : undefined}
               >
                 {getLabel(slot)}
