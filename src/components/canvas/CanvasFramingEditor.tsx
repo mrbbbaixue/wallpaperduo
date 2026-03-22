@@ -1,10 +1,15 @@
 import Cropper from "react-easy-crop";
 import type { Area, Point, Size } from "react-easy-crop";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { clampEditorZoom, getAspectRatio, getEditorMinZoom } from "@/services/canvas/framing";
+import {
+  clampEditorZoom,
+  fitFrameBoxWithinBounds,
+  getAspectRatio,
+  getEditorMinZoom,
+} from "@/services/canvas/framing";
 import type {
   CanvasCropArea,
   CanvasFraming,
@@ -23,7 +28,7 @@ interface CanvasFramingEditorProps {
   onReset: () => void;
 }
 
-const defaultFrameSize: Size = { width: 1, height: 1 };
+const defaultViewportSize: Size = { width: 1, height: 1 };
 
 export const CanvasFramingEditor = ({
   sourceImage,
@@ -35,16 +40,17 @@ export const CanvasFramingEditor = ({
   onReset,
 }: CanvasFramingEditorProps) => {
   const { t } = useTranslation();
-  const [frameSize, setFrameSize] = useState<Size>(defaultFrameSize);
+  const viewportHostRef = useRef<HTMLDivElement | null>(null);
+  const [frameViewportSize, setFrameViewportSize] = useState<Size>(defaultViewportSize);
   const aspect = useMemo(() => getAspectRatio(ratio), [ratio]);
   const minZoom = getEditorMinZoom(prepareMode);
   const zoom = clampEditorZoom(framing.viewport.zoom, prepareMode);
   const crop = useMemo<Point>(
     () => ({
-      x: framing.viewport.x * frameSize.width,
-      y: framing.viewport.y * frameSize.height,
+      x: framing.viewport.x * frameViewportSize.width,
+      y: framing.viewport.y * frameViewportSize.height,
     }),
-    [frameSize.height, frameSize.width, framing.viewport.x, framing.viewport.y],
+    [frameViewportSize.height, frameViewportSize.width, framing.viewport.x, framing.viewport.y],
   );
 
   useEffect(() => {
@@ -56,15 +62,46 @@ export const CanvasFramingEditor = ({
     }
   }, [framing.viewport, onViewportChange, zoom]);
 
+  useEffect(() => {
+    const node = viewportHostRef.current;
+    if (!node) {
+      return;
+    }
+
+    const syncViewportSize = () => {
+      setFrameViewportSize(
+        fitFrameBoxWithinBounds(
+          {
+            width: node.clientWidth,
+            height: node.clientHeight,
+          },
+          ratio,
+        ),
+      );
+    };
+
+    syncViewportSize();
+
+    if (typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      syncViewportSize();
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ratio]);
+
   const handleCropChange = useCallback(
     (nextCrop: Point) => {
       onViewportChange({
-        x: frameSize.width > 0 ? nextCrop.x / frameSize.width : 0,
-        y: frameSize.height > 0 ? nextCrop.y / frameSize.height : 0,
+        x: frameViewportSize.width > 0 ? nextCrop.x / frameViewportSize.width : 0,
+        y: frameViewportSize.height > 0 ? nextCrop.y / frameViewportSize.height : 0,
         zoom,
       });
     },
-    [frameSize.height, frameSize.width, onViewportChange, zoom],
+    [frameViewportSize.height, frameViewportSize.width, onViewportChange, zoom],
   );
 
   const handleZoomChange = useCallback(
@@ -83,10 +120,6 @@ export const CanvasFramingEditor = ({
     },
     [onCropAreaChange],
   );
-
-  const handleCropSizeChange = useCallback((nextSize: Size) => {
-    setFrameSize(nextSize);
-  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -109,40 +142,51 @@ export const CanvasFramingEditor = ({
         </Button>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(0,0,0,0))]">
-        <Cropper
-          image={sourceImage.objectUrl}
-          crop={crop}
-          zoom={zoom}
-          rotation={0}
-          aspect={aspect}
-          minZoom={minZoom}
-          maxZoom={4}
-          cropShape="rect"
-          objectFit={prepareMode === "crop" ? "cover" : "contain"}
-          showGrid
-          restrictPosition
-          zoomWithScroll
-          onCropChange={handleCropChange}
-          onZoomChange={handleZoomChange}
-          onCropComplete={handleCropComplete}
-          onCropSizeChange={handleCropSizeChange}
+      <div
+        ref={viewportHostRef}
+        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(0,0,0,0))] px-4 py-4"
+      >
+        <div
+          className="relative overflow-hidden border border-border/50 bg-background/25"
           style={{
-            containerStyle: {
-              background: "transparent",
-            },
-            cropAreaStyle: {
-              border: "1px solid rgba(255,255,255,0.92)",
-              boxShadow: "0 0 0 9999px rgba(10, 14, 21, 0.56)",
-            },
-            mediaStyle: {
-              filter: "drop-shadow(0 18px 48px rgba(15, 23, 42, 0.35))",
-            },
+            width: frameViewportSize.width,
+            height: frameViewportSize.height,
           }}
-          cropperProps={{
-            "aria-label": t("workspace.framingTitle"),
-          }}
-        />
+        >
+          <Cropper
+            image={sourceImage.objectUrl}
+            crop={crop}
+            zoom={zoom}
+            rotation={0}
+            aspect={aspect}
+            minZoom={minZoom}
+            maxZoom={4}
+            cropShape="rect"
+            cropSize={frameViewportSize}
+            objectFit={prepareMode === "crop" ? "cover" : "contain"}
+            showGrid
+            restrictPosition
+            zoomWithScroll
+            onCropChange={handleCropChange}
+            onZoomChange={handleZoomChange}
+            onCropComplete={handleCropComplete}
+            style={{
+              containerStyle: {
+                background: "transparent",
+              },
+              cropAreaStyle: {
+                border: "1px solid rgba(255,255,255,0.92)",
+                boxShadow: "0 0 0 9999px rgba(10, 14, 21, 0.56)",
+              },
+              mediaStyle: {
+                filter: "drop-shadow(0 18px 48px rgba(15, 23, 42, 0.35))",
+              },
+            }}
+            cropperProps={{
+              "aria-label": t("workspace.framingTitle"),
+            }}
+          />
+        </div>
       </div>
 
       <div className="border-t border-border/70 bg-background/78 px-4 py-3">

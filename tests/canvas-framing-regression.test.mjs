@@ -60,3 +60,21 @@ test("workspace locale files define framing editor copy", () => {
   assert.ok(zh.includes('"resetFraming"'), "Chinese locale should include reset framing copy");
   assert.ok(en.includes('"resetFraming"'), "English locale should include reset framing copy");
 });
+
+test("framing editor fits the visible cropper viewport to the selected ratio", () => {
+  const editor = read("src/components/canvas/CanvasFramingEditor.tsx");
+  const framing = read("src/services/canvas/framing.ts");
+
+  assert.ok(
+    framing.includes("fitFrameBoxWithinBounds"),
+    "framing helpers should expose a fit-to-bounds ratio helper for the editor viewport",
+  );
+  assert.ok(
+    editor.includes("cropSize={frameViewportSize}"),
+    "framing editor should force the cropper viewport to the fitted ratio box",
+  );
+  assert.ok(
+    editor.includes("width: frameViewportSize.width"),
+    "framing editor should render inside a measured ratio-constrained viewport",
+  );
+});

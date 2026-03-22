@@ -20,6 +20,25 @@ const EPSILON = 0.5;
 
 export const getAspectRatio = (ratio: SizeLike) => ratio.width / ratio.height;
 
+export const fitFrameBoxWithinBounds = (bounds: SizeLike, ratio: SizeLike): SizeLike => {
+  const boundedWidth = Math.max(1, bounds.width);
+  const boundedHeight = Math.max(1, bounds.height);
+  const targetAspect = getAspectRatio(ratio);
+  const boundsAspect = boundedWidth / boundedHeight;
+
+  if (boundsAspect > targetAspect) {
+    return {
+      width: Math.max(1, Math.round(boundedHeight * targetAspect)),
+      height: boundedHeight,
+    };
+  }
+
+  return {
+    width: boundedWidth,
+    height: Math.max(1, Math.round(boundedWidth / targetAspect)),
+  };
+};
+
 export const getEditorMinZoom = (mode: PrepareMode) => (mode === "crop" ? 1 : MIN_PAD_ZOOM);
 
 export const clampEditorZoom = (zoom: number, mode: PrepareMode) =>
