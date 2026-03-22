@@ -118,10 +118,6 @@ test("framing editor fits the visible cropper viewport to the selected ratio", (
     "framing helpers should expose a fit-to-bounds ratio helper for the editor viewport",
   );
   assert.ok(
-    editor.includes("cropSize={frameViewportSize}"),
-    "framing editor should force the cropper viewport to the fitted ratio box",
-  );
-  assert.ok(
     editor.includes("width: frameViewportSize.width"),
     "framing editor should render inside a measured ratio-constrained viewport",
   );
@@ -131,24 +127,26 @@ test("framing editor fits the visible cropper viewport to the selected ratio", (
     "framing editor should remove the old standalone zoom slider",
   );
   assert.ok(
+    editor.includes('from "react-moveable"'),
+    "framing editor should use react-moveable for PPT-style direct manipulation",
+  );
+  assert.ok(
+    editor.includes("renderDirections"),
+    "framing editor should render explicit moveable handle directions around the image",
+  );
+  assert.ok(
+    editor.includes("keepRatio"),
+    "framing editor should preserve aspect ratio while resizing from any handle",
+  );
+  assert.equal(
+    editor.includes("Cropper"),
+    false,
+    "framing editor should stop using react-easy-crop as the interaction layer",
+  );
+  assert.equal(
     editor.includes("handleZoomHandlePointerDown"),
-    "framing editor should expose an on-image zoom handle interaction",
-  );
-  assert.ok(
-    editor.includes('restrictPosition={false}'),
-    "expansion composition should not hard-lock the media position inside the frame",
-  );
-  assert.ok(
-    editor.includes('objectFit="contain"'),
-    "expansion composition should render from a contain base and rely on zoom for fill/expansion edits",
-  );
-  assert.ok(
-    framing.includes("resolveZoomHandlePosition"),
-    "framing helpers should expose a bounded zoom-handle position helper",
-  );
-  assert.ok(
-    editor.includes("resolveZoomHandlePosition"),
-    "framing editor should position the zoom handle through the bounded helper",
+    false,
+    "framing editor should remove the legacy single-corner zoom handle",
   );
   assert.equal(
     controls.includes("setPrepareMode"),

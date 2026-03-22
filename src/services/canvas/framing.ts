@@ -161,6 +161,34 @@ export const resolveEditorImageBox = ({
   };
 };
 
+export const resolveViewportFromImageBox = ({
+  imageBox,
+  source,
+  frame,
+}: {
+  imageBox: EditorImageBox;
+  source: SizeLike;
+  frame: SizeLike;
+}): CanvasFraming["viewport"] => {
+  const baseScale = Math.min(frame.width / source.width, frame.height / source.height);
+  const safeBaseWidth = Math.max(1, source.width * baseScale);
+  const safeBaseHeight = Math.max(1, source.height * baseScale);
+
+  return {
+    x:
+      frame.width > 0
+        ? (imageBox.x - (frame.width - imageBox.width) / 2) / frame.width
+        : 0,
+    y:
+      frame.height > 0
+        ? (imageBox.y - (frame.height - imageBox.height) / 2) / frame.height
+        : 0,
+    zoom: clampEditorZoom(
+      Math.max(imageBox.width / safeBaseWidth, imageBox.height / safeBaseHeight),
+    ),
+  };
+};
+
 export const resolveZoomHandlePosition = ({
   visibleBox,
   frame,

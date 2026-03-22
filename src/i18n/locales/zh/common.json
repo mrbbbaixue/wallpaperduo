@@ -33,7 +33,7 @@
     "modeCrop": "裁剪",
     "modePad": "填充",
     "framingTitle": "目标画布",
-    "framingHint": "画布内就是实际送给 AI 的最终构图。默认会居中铺满，你可以继续拖拽和缩放做扩充构图。",
+    "framingHint": "画布内就是实际送给 AI 的最终构图。默认会居中铺满，拖拽图片可移动，拖动四周手柄可缩放做扩充构图。",
     "expansionCompose": "扩充构图",
     "modeCropHint": "拖拽并放大图片，让主体完整铺满这块 AI 画布。",
     "modePadHint": "可缩小图片，在固定 AI 画布中预留扩充区域。",

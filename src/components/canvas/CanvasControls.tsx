@@ -104,8 +104,8 @@ export const CanvasControls = () => {
           <p className="text-xs leading-5 text-muted-foreground">
             {sourceImage
               ? isZh
-                ? "图片会默认居中铺满目标画布；你也可以继续缩小留出扩充空间。"
-                : "The image starts centered and filling the target canvas, and you can still zoom out to reserve expansion space."
+                ? "图片会默认居中铺满目标画布；拖拽图片可移动，拖动四周手柄可继续缩放，留出扩充空间。"
+                : "The image starts centered and filling the target canvas. Drag it to reposition, then use any side or corner handle to scale and reserve expansion space."
               : isZh
                 ? "先在左侧导入参考图，再设置目标比例。"
                 : "Import a reference image on the left, then choose a target ratio."}

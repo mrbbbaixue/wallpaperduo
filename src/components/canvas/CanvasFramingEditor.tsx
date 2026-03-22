@@ -1,17 +1,16 @@
 import { Upload } from "lucide-react";
-import Cropper from "react-easy-crop";
-import type { Area, Point, Size } from "react-easy-crop";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import Moveable, { type OnDrag, type OnDragStart, type OnResize, type OnResizeStart } from "react-moveable";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
   clampEditorZoom,
   fitFrameBoxWithinBounds,
-  getAspectRatio,
   getEditorMinZoom,
   resolveEditorImageBox,
-  resolveZoomHandlePosition,
+  resolveViewportFromImageBox,
 } from "@/services/canvas/framing";
 import type {
   CanvasCropArea,
@@ -29,9 +28,9 @@ interface CanvasFramingEditorProps {
   onRequestUpload: () => void;
 }
 
-const defaultViewportSize: Size = { width: 1, height: 1 };
-const minimumDragDistance = 18;
-const zoomHandleSize = 32;
+const defaultViewportSize = { width: 1, height: 1 };
+const maxEditorZoom = 4;
+const moveableHandleDirections = ["nw", "n", "ne", "w", "e", "sw", "s", "se"] as const;
 
 export const CanvasFramingEditor = ({
   sourceImage,
@@ -44,19 +43,16 @@ export const CanvasFramingEditor = ({
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
   const viewportHostRef = useRef<HTMLDivElement | null>(null);
-  const frameViewportRef = useRef<HTMLDivElement | null>(null);
-  const cleanupZoomHandleDragRef = useRef<(() => void) | null>(null);
-  const [frameViewportSize, setFrameViewportSize] = useState<Size>(defaultViewportSize);
-  const aspect = useMemo(() => getAspectRatio(ratio), [ratio]);
+  const frameShellRef = useRef<HTMLDivElement | null>(null);
+  const imageTargetRef = useRef<HTMLDivElement | null>(null);
+  const moveableRef = useRef<Moveable | null>(null);
+  const dragStartBoxRef = useRef<ReturnType<typeof resolveEditorImageBox> | null>(null);
+  const resizeStartBoxRef = useRef<ReturnType<typeof resolveEditorImageBox> | null>(null);
+  const [frameViewportSize, setFrameViewportSize] = useState(defaultViewportSize);
+  const [frameShellElement, setFrameShellElement] = useState<HTMLDivElement | null>(null);
   const minZoom = getEditorMinZoom();
   const zoom = clampEditorZoom(framing.viewport.zoom);
-  const crop = useMemo<Point>(
-    () => ({
-      x: framing.viewport.x * frameViewportSize.width,
-      y: framing.viewport.y * frameViewportSize.height,
-    }),
-    [frameViewportSize.height, frameViewportSize.width, framing.viewport.x, framing.viewport.y],
-  );
+  const frameReady = frameViewportSize.width > 1 && frameViewportSize.height > 1;
   const imageBox = useMemo(
     () =>
       resolveEditorImageBox({
@@ -69,28 +65,17 @@ export const CanvasFramingEditor = ({
       }),
     [frameViewportSize, framing, sourceImage.height, sourceImage.width],
   );
-  const visibleImageBox = useMemo(() => {
-    const left = Math.max(0, imageBox.x);
-    const top = Math.max(0, imageBox.y);
-    const right = Math.min(frameViewportSize.width, imageBox.x + imageBox.width);
-    const bottom = Math.min(frameViewportSize.height, imageBox.y + imageBox.height);
+  const baseImageSize = useMemo(() => {
+    const baseScale = Math.min(
+      frameViewportSize.width / sourceImage.width,
+      frameViewportSize.height / sourceImage.height,
+    );
 
     return {
-      x: left,
-      y: top,
-      width: Math.max(0, right - left),
-      height: Math.max(0, bottom - top),
+      width: Math.max(1, sourceImage.width * baseScale),
+      height: Math.max(1, sourceImage.height * baseScale),
     };
-  }, [frameViewportSize.height, frameViewportSize.width, imageBox]);
-  const zoomHandlePosition = useMemo(
-    () =>
-      resolveZoomHandlePosition({
-        visibleBox: visibleImageBox,
-        frame: frameViewportSize,
-        handleSize: zoomHandleSize,
-      }),
-    [frameViewportSize, visibleImageBox],
-  );
+  }, [frameViewportSize.height, frameViewportSize.width, sourceImage.height, sourceImage.width]);
 
   useEffect(() => {
     if (zoom !== framing.viewport.zoom) {
@@ -132,88 +117,93 @@ export const CanvasFramingEditor = ({
     return () => observer.disconnect();
   }, [ratio]);
 
-  useEffect(
-    () => () => {
-      cleanupZoomHandleDragRef.current?.();
-    },
-    [],
-  );
+  useEffect(() => {
+    moveableRef.current?.updateRect();
+  }, [frameViewportSize.height, frameViewportSize.width, imageBox.height, imageBox.width, imageBox.x, imageBox.y]);
 
-  const handleCropChange = useCallback(
-    (nextCrop: Point) => {
-      onViewportChange({
-        x: frameViewportSize.width > 0 ? nextCrop.x / frameViewportSize.width : 0,
-        y: frameViewportSize.height > 0 ? nextCrop.y / frameViewportSize.height : 0,
-        zoom,
-      });
-    },
-    [frameViewportSize.height, frameViewportSize.width, onViewportChange, zoom],
-  );
-
-  const handleZoomChange = useCallback(
-    (nextZoom: number) => {
-      onViewportChange({
-        ...framing.viewport,
-        zoom: clampEditorZoom(nextZoom),
-      });
-    },
-    [framing.viewport, onViewportChange],
-  );
-
-  const handleCropComplete = useCallback(
-    (_: Area, cropAreaPixels: Area) => {
-      onCropAreaChange(cropAreaPixels);
-    },
-    [onCropAreaChange],
-  );
-
-  const handleZoomHandlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const frameRect = frameViewportRef.current?.getBoundingClientRect();
-      if (!frameRect) {
+  const commitViewportFromBox = useCallback(
+    (nextBox: ReturnType<typeof resolveEditorImageBox>) => {
+      if (!frameReady) {
         return;
       }
 
-      cleanupZoomHandleDragRef.current?.();
-
-      const imageCenterX = frameRect.left + imageBox.x + imageBox.width / 2;
-      const imageCenterY = frameRect.top + imageBox.y + imageBox.height / 2;
-      const startDistance = Math.max(
-        minimumDragDistance,
-        Math.hypot(event.clientX - imageCenterX, event.clientY - imageCenterY),
+      onViewportChange(
+        resolveViewportFromImageBox({
+          imageBox: nextBox,
+          source: {
+            width: sourceImage.width,
+            height: sourceImage.height,
+          },
+          frame: frameViewportSize,
+        }),
       );
-      const startZoom = zoom;
-
-      const teardown = () => {
-        window.removeEventListener("pointermove", handlePointerMove);
-        window.removeEventListener("pointerup", handlePointerUp);
-        window.removeEventListener("pointercancel", handlePointerUp);
-        document.body.style.cursor = "";
-        cleanupZoomHandleDragRef.current = null;
-      };
-
-      const handlePointerMove = (moveEvent: PointerEvent) => {
-        const nextDistance = Math.max(
-          minimumDragDistance,
-          Math.hypot(moveEvent.clientX - imageCenterX, moveEvent.clientY - imageCenterY),
-        );
-        handleZoomChange(startZoom * (nextDistance / startDistance));
-      };
-
-      const handlePointerUp = () => {
-        teardown();
-      };
-
-      cleanupZoomHandleDragRef.current = teardown;
-      document.body.style.cursor = "nwse-resize";
-      window.addEventListener("pointermove", handlePointerMove);
-      window.addEventListener("pointerup", handlePointerUp);
-      window.addEventListener("pointercancel", handlePointerUp);
     },
-    [handleZoomChange, imageBox.height, imageBox.width, imageBox.x, imageBox.y, zoom],
+    [frameReady, frameViewportSize, onViewportChange, sourceImage.height, sourceImage.width],
+  );
+
+  const clearLegacyCropArea = useCallback(() => {
+    dragStartBoxRef.current = null;
+    resizeStartBoxRef.current = null;
+    onCropAreaChange(undefined);
+  }, [onCropAreaChange]);
+
+  const handleFrameShellRef = useCallback((node: HTMLDivElement | null) => {
+    frameShellRef.current = node;
+    setFrameShellElement(node);
+  }, []);
+
+  const handleDragStart = useCallback(
+    (event: OnDragStart) => {
+      dragStartBoxRef.current = imageBox;
+      event.set([0, 0]);
+    },
+    [imageBox],
+  );
+
+  const handleDrag = useCallback(
+    (event: OnDrag) => {
+      const startBox = dragStartBoxRef.current ?? imageBox;
+      commitViewportFromBox({
+        ...startBox,
+        x: startBox.x + event.beforeTranslate[0],
+        y: startBox.y + event.beforeTranslate[1],
+      });
+    },
+    [commitViewportFromBox, imageBox],
+  );
+
+  const handleResizeStart = useCallback(
+    (event: OnResizeStart) => {
+      resizeStartBoxRef.current = imageBox;
+      event.set([imageBox.width, imageBox.height]);
+      event.setRatio(sourceImage.width / sourceImage.height);
+      event.setMin([baseImageSize.width * minZoom, baseImageSize.height * minZoom]);
+      event.setMax([baseImageSize.width * maxEditorZoom, baseImageSize.height * maxEditorZoom]);
+      if (event.dragStart) {
+        event.dragStart.set([0, 0]);
+      }
+    },
+    [
+      baseImageSize.height,
+      baseImageSize.width,
+      imageBox,
+      minZoom,
+      sourceImage.height,
+      sourceImage.width,
+    ],
+  );
+
+  const handleResize = useCallback(
+    (event: OnResize) => {
+      const startBox = resizeStartBoxRef.current ?? imageBox;
+      commitViewportFromBox({
+        x: startBox.x + event.drag.beforeTranslate[0],
+        y: startBox.y + event.drag.beforeTranslate[1],
+        width: event.boundingWidth,
+        height: event.boundingHeight,
+      });
+    },
+    [commitViewportFromBox, imageBox],
   );
 
   return (
@@ -238,72 +228,73 @@ export const CanvasFramingEditor = ({
       </div>
 
       <div
-        ref={frameViewportRef}
-        className="relative overflow-hidden border border-white/85 bg-background/25 shadow-[0_18px_60px_rgba(5,10,18,0.35)]"
+        ref={handleFrameShellRef}
+        className="relative"
         style={{
           width: frameViewportSize.width,
           height: frameViewportSize.height,
         }}
       >
-        <Cropper
-          image={sourceImage.objectUrl}
-          crop={crop}
-          zoom={zoom}
-          rotation={0}
-          aspect={aspect}
-          minZoom={minZoom}
-          maxZoom={4}
-          cropShape="rect"
-          cropSize={frameViewportSize}
-          objectFit="contain"
-          showGrid
-          restrictPosition={false}
-          zoomWithScroll
-          onCropChange={handleCropChange}
-          onZoomChange={handleZoomChange}
-          onCropComplete={handleCropComplete}
-          style={{
-            containerStyle: {
-              background: "transparent",
-            },
-            cropAreaStyle: {
-              border: "1px solid rgba(255,255,255,0.92)",
-              boxShadow: "0 0 0 9999px rgba(10, 14, 21, 0.56)",
-            },
-            mediaStyle: {
-              filter: "drop-shadow(0 18px 48px rgba(15, 23, 42, 0.35))",
-            },
-          }}
-          cropperProps={{
-            "aria-label": t("workspace.framingTitle"),
-          }}
-        />
+        <div className="relative h-full w-full overflow-hidden border border-white/85 bg-background/25 shadow-[0_18px_60px_rgba(5,10,18,0.35)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),rgba(0,0,0,0))]" />
 
-        <div className="pointer-events-none absolute inset-0 border border-white/65" />
-
-        {visibleImageBox.width > 0 && visibleImageBox.height > 0 ? (
-          <button
-            type="button"
-            onPointerDown={handleZoomHandlePointerDown}
-            aria-label={t("workspace.zoom")}
-            className="absolute z-10 flex items-center justify-center rounded-full border border-white/80 bg-background/88 text-foreground shadow-lg backdrop-blur transition-transform hover:scale-105"
+          <div
+            ref={imageTargetRef}
+            className="absolute touch-none select-none cursor-move"
             style={{
-              left: zoomHandlePosition.left,
-              top: zoomHandlePosition.top,
-              width: zoomHandleSize,
-              height: zoomHandleSize,
-              cursor: "nwse-resize",
+              left: imageBox.x,
+              top: imageBox.y,
+              width: imageBox.width,
+              height: imageBox.height,
             }}
+            aria-label={t("workspace.framingTitle")}
           >
-            <span className="pointer-events-none block h-3 w-3 rounded-sm border-r-2 border-t-2 border-current" />
-          </button>
+            <img
+              src={sourceImage.objectUrl}
+              alt={sourceImage.name}
+              draggable={false}
+              className="pointer-events-none h-full w-full select-none object-fill drop-shadow-[0_18px_48px_rgba(15,23,42,0.35)]"
+            />
+          </div>
+
+          <div className="pointer-events-none absolute inset-0 border border-white/65" />
+        </div>
+
+        {frameReady ? (
+          <Moveable
+            ref={moveableRef}
+            target={imageTargetRef}
+            container={frameShellElement}
+            rootContainer={frameShellElement}
+            viewContainer={frameShellElement}
+            flushSync={flushSync}
+            draggable
+            resizable
+            keepRatio
+            origin={false}
+            edge={false}
+            linePadding={10}
+            controlPadding={18}
+            renderDirections={moveableHandleDirections as unknown as string[]}
+            useResizeObserver
+            useMutationObserver
+            className="framing-moveable"
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragEnd={clearLegacyCropArea}
+            onResizeStart={handleResizeStart}
+            onResize={handleResize}
+            onResizeEnd={clearLegacyCropArea}
+          />
         ) : null}
       </div>
 
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-background/76 px-3 py-1 text-[11px] text-muted-foreground backdrop-blur">
-        {isZh
-          ? "默认居中铺满；拖拽移动图片，滚轮或右下角手柄缩放"
-          : "Starts centered and filled; drag to move, use wheel or the corner handle to zoom"}
+        {t("workspace.framingHint")}
+      </div>
+
+      <div className="pointer-events-none absolute bottom-11 right-4 z-10 rounded-md border border-border/70 bg-background/76 px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur">
+        {isZh ? `缩放范围 ${minZoom.toFixed(2)}x - ${maxEditorZoom.toFixed(0)}x` : `Scale ${minZoom.toFixed(2)}x - ${maxEditorZoom.toFixed(0)}x`}
       </div>
     </div>
   );

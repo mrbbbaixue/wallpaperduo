@@ -33,7 +33,7 @@
     "modeCrop": "Crop",
     "modePad": "Pad",
     "framingTitle": "Target Canvas",
-    "framingHint": "Everything inside the canvas becomes the final composition sent to the AI. It starts centered and filled, and you can keep dragging or zooming out to compose expansion space.",
+    "framingHint": "Everything inside the canvas becomes the final composition sent to the AI. It starts centered and filled, then you can drag the image to reposition it and pull any side or corner handle to scale for expansion composition.",
     "expansionCompose": "Expansion Composition",
     "modeCropHint": "Drag and zoom until the subject fully covers the AI canvas.",
     "modePadHint": "Zoom out to reserve expansion space inside the fixed AI canvas.",

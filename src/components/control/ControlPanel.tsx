@@ -398,8 +398,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             title={isZh ? "构图设置与 AI 分析" : "Framing & AI analysis"}
             description={
               isZh
-                ? "在左侧导入、移动、缩放图片，并在这里设置目标画布比例与分析当前扩充构图。"
-                : "Import, move, and scale the image on the left canvas, then set the target canvas ratio and analyze the current expansion composition."
+                ? "在左侧导入图片，拖拽移动并用四周手柄缩放，再在这里设置目标画布比例并分析当前扩充构图。"
+                : "Import the image on the left canvas, drag to reposition it, resize it with the surrounding handles, then set the target ratio and analyze the current expansion composition."
             }
             statusLabel={
               !sourceImage
@@ -433,8 +433,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     {sourceImage
                       ? `${sourceImage.width} × ${sourceImage.height}`
                       : isZh
-                        ? "上传、拖拽、缩放和目标画布预览都在左侧完成。"
-                        : "Upload, reposition, zoom, and compose on the left target canvas."}
+                        ? "上传、拖拽移动、四周手柄缩放和目标画布预览都在左侧完成。"
+                        : "Upload, reposition, resize with surrounding handles, and compose on the left target canvas."}
                   </p>
                 </div>
               </div>

@@ -109,6 +109,32 @@
     scrollbar-color: hsl(var(--border)) transparent;
   }
 
+  .framing-moveable {
+    --moveable-color: rgba(255, 255, 255, 0.82);
+  }
+
+  .framing-moveable.moveable-control-box {
+    z-index: 35;
+  }
+
+  .framing-moveable .moveable-line {
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .framing-moveable .moveable-control {
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    margin-left: -6px;
+    border-radius: 3px;
+    border-width: 1.5px;
+    border-color: rgba(255, 255, 255, 0.95);
+    background: color-mix(in srgb, hsl(var(--background)) 90%, white 10%);
+    box-shadow:
+      0 0 0 1px rgba(10, 14, 21, 0.12),
+      0 10px 18px rgba(10, 14, 21, 0.16);
+  }
+
   .ui-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
