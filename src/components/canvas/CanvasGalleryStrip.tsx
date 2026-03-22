@@ -1,9 +1,7 @@
-import { ChevronDown, ChevronUp, Download } from "lucide-react";
-import { saveAs } from "file-saver";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 
@@ -16,7 +14,7 @@ export const CanvasGalleryStrip = ({
   expanded,
   onToggleExpanded,
 }: CanvasGalleryStripProps) => {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const isZh = i18n.language === "zh";
 
   const tasks = useWorkflowStore((s) => s.tasks);
@@ -30,10 +28,6 @@ export const CanvasGalleryStrip = ({
 
   const activeIndex = useMemo(
     () => succeeded.findIndex((task) => task.id === activeResultId),
-    [activeResultId, succeeded],
-  );
-  const activeTask = useMemo(
-    () => (activeResultId ? succeeded.find((task) => task.id === activeResultId) : undefined),
     [activeResultId, succeeded],
   );
 
@@ -96,13 +90,6 @@ export const CanvasGalleryStrip = ({
     }
   };
 
-  const handleDownloadSingle = () => {
-    if (!activeTask?.result?.blob) return;
-    const safeLabel = activeTask.label.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
-    const filename = safeLabel ? `${safeLabel}.png` : `result_${activeTask.id}.png`;
-    saveAs(activeTask.result.blob, filename);
-  };
-
   return (
     <div className="border-t border-border/70">
       <div
@@ -120,16 +107,6 @@ export const CanvasGalleryStrip = ({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={handleDownloadSingle}
-            disabled={!activeTask?.result?.blob}
-          >
-            <Download className="h-4 w-4" />
-            {t("common.download")}
-          </Button>
           <button
             type="button"
             onClick={onToggleExpanded}

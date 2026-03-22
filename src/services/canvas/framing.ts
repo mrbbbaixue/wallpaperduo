@@ -14,6 +14,13 @@ export interface ResolvedFramingRender {
   drawHeight: number;
 }
 
+export interface EditorImageBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const MIN_PAD_ZOOM = 0.35;
 const MAX_OUTPUT_EDGE = 2480;
 const EPSILON = 0.5;
@@ -108,6 +115,35 @@ export const resolveFramingRender = ({
     drawY: (output.height - drawHeight) / 2 + offsetY * output.height,
     drawWidth,
     drawHeight,
+  };
+};
+
+export const resolveEditorImageBox = ({
+  source,
+  frame,
+  mode,
+  framing,
+}: {
+  source: SizeLike;
+  frame: SizeLike;
+  mode: PrepareMode;
+  framing?: CanvasFraming;
+}): EditorImageBox => {
+  const baseScale =
+    mode === "crop"
+      ? Math.max(frame.width / source.width, frame.height / source.height)
+      : Math.min(frame.width / source.width, frame.height / source.height);
+  const zoom = clampEditorZoom(framing?.viewport.zoom ?? 1, mode);
+  const offsetX = framing?.viewport.x ?? 0;
+  const offsetY = framing?.viewport.y ?? 0;
+  const width = source.width * baseScale * zoom;
+  const height = source.height * baseScale * zoom;
+
+  return {
+    x: (frame.width - width) / 2 + offsetX * frame.width,
+    y: (frame.height - height) / 2 + offsetY * frame.height,
+    width,
+    height,
   };
 };
 

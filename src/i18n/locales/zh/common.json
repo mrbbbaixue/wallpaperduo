@@ -25,8 +25,8 @@
     "preview": "预览"
   },
   "workspace": {
-    "uploadTitle": "上传与画布准备",
-    "uploadHint": "支持 PNG/JPEG/WebP，先生成统一基准图再进入批量生成。",
+    "uploadTitle": "上传与构图画布",
+    "uploadHint": "支持 PNG/JPEG/WebP，导入后直接在左侧裁剪框中构图。",
     "ratio": "目标比例",
     "customRatio": "自定义比例",
     "mode": "比例处理",
@@ -40,11 +40,11 @@
     "resetFraming": "重置构图",
     "framingLocked": "构图已锁定",
     "expansionArea": "包含扩充留白",
-    "prepare": "生成基准图",
-    "prepared": "基准图已准备",
+    "prepare": "分析当前构图",
+    "prepared": "当前构图已分析",
     "singleDark": "单次生成深色版",
     "singleLight": "单次生成浅色版",
-    "needPrepared": "请先上传并生成基准图"
+    "needPrepared": "请先完成当前构图并执行分析"
   },
   "prompts": {
     "title": "Prompt 编辑器",
@@ -64,7 +64,7 @@
     "alignDesc": "使用 ORB + RANSAC + Warp 对输出图进行对齐",
     "aligned": "已对齐",
     "manualNudge": "手动微调（基础）",
-    "baseSelect": "基准图",
+    "baseSelect": "裁剪框画布",
     "singleMode": "单图预览",
     "compareMode": "前后对比",
     "status": {

@@ -25,8 +25,8 @@
     "preview": "Preview"
   },
   "workspace": {
-    "uploadTitle": "Upload and Canvas Prep",
-    "uploadHint": "Upload PNG/JPEG/WebP, then produce a normalized baseline image.",
+    "uploadTitle": "Upload and Framing Canvas",
+    "uploadHint": "Upload PNG/JPEG/WebP and compose directly inside the left crop frame.",
     "ratio": "Target Ratio",
     "customRatio": "Custom Ratio",
     "mode": "Mismatch Handling",
@@ -40,11 +40,11 @@
     "resetFraming": "Reset Framing",
     "framingLocked": "Framing locked",
     "expansionArea": "Includes expansion area",
-    "prepare": "Prepare Baseline",
-    "prepared": "Baseline prepared",
+    "prepare": "Analyze Current Frame",
+    "prepared": "Current frame analyzed",
     "singleDark": "Generate Dark Once",
     "singleLight": "Generate Light Once",
-    "needPrepared": "Upload and prepare an image first"
+    "needPrepared": "Analyze the current frame first"
   },
   "prompts": {
     "title": "Prompt Editor",
@@ -64,7 +64,7 @@
     "alignDesc": "Use ORB + RANSAC + Warp on generated outputs",
     "aligned": "Aligned",
     "manualNudge": "Manual nudge (basic)",
-    "baseSelect": "Reference Image",
+    "baseSelect": "Framed Canvas",
     "singleMode": "Single View",
     "compareMode": "Before/After",
     "status": {

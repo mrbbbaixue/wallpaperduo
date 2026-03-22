@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -13,25 +14,20 @@ import {
 } from "@/components/ui/select";
 import { aspectRatios } from "@/data/aspectRatios";
 import { cn } from "@/lib/utils";
-import { prepareCanvasImage } from "@/services/canvas/prepareCanvas";
-import { buildPreparedImage, useWorkflowStore } from "@/store/useWorkflowStore";
+import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 export const CanvasControls = () => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
-  const preparedImage = useWorkflowStore((s) => s.preparedImage);
-  const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const prepareMode = useWorkflowStore((s) => s.prepareMode);
   const setRatioId = useWorkflowStore((s) => s.setRatioId);
   const setCustomRatio = useWorkflowStore((s) => s.setCustomRatio);
   const setPrepareMode = useWorkflowStore((s) => s.setPrepareMode);
-  const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
+  const resetCanvasFraming = useWorkflowStore((s) => s.resetCanvasFraming);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const fieldLabelClassName = isZh
     ? "text-xs font-medium text-muted-foreground"
     : "text-[11px] uppercase tracking-[0.18em] text-muted-foreground";
@@ -44,53 +40,11 @@ export const CanvasControls = () => {
     }
   }, [normalizedRatioId, ratioId, setRatioId]);
 
-  const ratio =
-    normalizedRatioId === "custom"
-      ? customRatio
-      : (() => {
-          const preset = aspectRatios.find((item) => item.id === normalizedRatioId);
-          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
-        })();
-
-  const onPrepare = async () => {
-    if (!sourceImage) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-      const output = await prepareCanvasImage({
-        source: sourceImage.blob,
-        ratio,
-        mode: prepareMode,
-        framing: canvasFraming,
-      });
-      const prepared = buildPreparedImage({
-        sourceImageId: sourceImage.id,
-        blob: output.blob,
-        width: output.width,
-        height: output.height,
-        objectUrl: URL.createObjectURL(output.blob),
-        ratioId: normalizedRatioId,
-        mode: prepareMode,
-        framing: canvasFraming,
-      });
-      setPreparedImage(prepared);
-    } catch (exception) {
-      setError(String(exception));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="space-y-2">
-          <Label className={fieldLabelClassName}>
-            {t("workspace.ratio")}
-          </Label>
+          <Label className={fieldLabelClassName}>{t("workspace.ratio")}</Label>
           <Select value={normalizedRatioId} onValueChange={setRatioId}>
             <SelectTrigger className="h-11 rounded-md bg-background/65">
               <SelectValue />
@@ -106,18 +60,14 @@ export const CanvasControls = () => {
         </div>
 
         <div className="space-y-2">
-          <Label className={fieldLabelClassName}>
-            {t("workspace.mode")}
-          </Label>
+          <Label className={fieldLabelClassName}>{t("workspace.mode")}</Label>
           <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant={prepareMode === "crop" ? "default" : "outline"}
               onClick={() => setPrepareMode("crop")}
               size="sm"
-              className={cn(
-                "h-11 rounded-md",
-              )}
+              className={cn("h-11 rounded-md")}
             >
               {t("workspace.modeCrop")}
             </Button>
@@ -126,9 +76,7 @@ export const CanvasControls = () => {
               variant={prepareMode === "pad" ? "default" : "outline"}
               onClick={() => setPrepareMode("pad")}
               size="sm"
-              className={cn(
-                "h-11 rounded-md",
-              )}
+              className={cn("h-11 rounded-md")}
             >
               {t("workspace.modePad")}
             </Button>
@@ -139,10 +87,7 @@ export const CanvasControls = () => {
       {normalizedRatioId === "custom" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label
-              htmlFor="custom-ratio-width"
-              className={fieldLabelClassName}
-            >
+            <Label htmlFor="custom-ratio-width" className={fieldLabelClassName}>
               W
             </Label>
             <Input
@@ -159,10 +104,7 @@ export const CanvasControls = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label
-              htmlFor="custom-ratio-height"
-              className={fieldLabelClassName}
-            >
+            <Label htmlFor="custom-ratio-height" className={fieldLabelClassName}>
               H
             </Label>
             <Input
@@ -181,28 +123,33 @@ export const CanvasControls = () => {
         </div>
       ) : null}
 
-      <Button
-        type="button"
-        onClick={() => void onPrepare()}
-        disabled={loading || !sourceImage}
-        className="h-11 w-full rounded-md"
-      >
-        {loading ? t("common.loading") : t("workspace.prepare")}
-      </Button>
-
-      <div className="flex flex-wrap gap-2 text-xs">
-        {sourceImage ? (
-          <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
-            {sourceImage.name} · {sourceImage.width}×{sourceImage.height}
-          </span>
-        ) : null}
-        {preparedImage ? (
-          <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
-            {t("workspace.prepared")} · {preparedImage.width}×{preparedImage.height}
-          </span>
-        ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/70 p-3">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">
+            {isZh ? "左侧裁剪框就是最终分析画布" : "The left crop frame is the analysis canvas"}
+          </p>
+          <p className="text-xs leading-5 text-muted-foreground">
+            {sourceImage
+              ? isZh
+                ? "调整图片位置和缩放后，直接在右侧点击分析。"
+                : "Adjust the image on the left, then click Analyze on the right."
+              : isZh
+                ? "先在左侧导入参考图，再设置目标比例。"
+                : "Import a reference image on the left, then choose a target ratio."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={resetCanvasFraming}
+          disabled={!sourceImage}
+          className="h-10 rounded-md"
+        >
+          <RotateCcw className="h-4 w-4" />
+          {t("workspace.resetFraming")}
+        </Button>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 };

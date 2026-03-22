@@ -1,10 +1,9 @@
-import { ArrowLeftRight, Image as ImageIcon, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasFramingEditor } from "@/components/canvas/CanvasFramingEditor";
 import { CanvasGalleryStrip } from "@/components/canvas/CanvasGalleryStrip";
-import { Button } from "@/components/ui/button";
 import { aspectRatios } from "@/data/aspectRatios";
 import { cn } from "@/lib/utils";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
@@ -32,7 +31,6 @@ export const CanvasWorkspace = () => {
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const setCanvasViewport = useWorkflowStore((s) => s.setCanvasViewport);
   const setCanvasCropArea = useWorkflowStore((s) => s.setCanvasCropArea);
-  const resetCanvasFraming = useWorkflowStore((s) => s.resetCanvasFraming);
   const tasks = useWorkflowStore((s) => s.tasks);
   const activeResultId = useWorkflowStore((s) => s.activeResultId);
   const setActiveResultId = useWorkflowStore((s) => s.setActiveResultId);
@@ -157,46 +155,6 @@ export const CanvasWorkspace = () => {
     inputRef.current?.click();
   };
 
-  const resultControls = hasResults ? (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-background/72 px-4 py-3">
-      <Button
-        type="button"
-        size="sm"
-        variant={activeResultId ? "outline" : "default"}
-        onClick={() => setActiveResultId(undefined)}
-      >
-        {t("results.baseSelect")}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant={previewMode === "single" ? "default" : "outline"}
-        onClick={() => setPreviewMode("single")}
-      >
-        <ImageIcon className="h-4 w-4" />
-        {t("results.singleMode")}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant={previewMode === "compare" ? "default" : "outline"}
-        onClick={() => setPreviewMode("compare")}
-      >
-        <ArrowLeftRight className="h-4 w-4" />
-        {t("results.compareMode")}
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        {activeTask
-          ? isZh
-            ? `当前结果：${activeTask.label}`
-            : `Current result: ${activeTask.label}`
-          : isZh
-            ? "当前预览：基准图"
-            : "Current preview: baseline"}
-      </span>
-    </div>
-  ) : null;
-
   const stage = (
     <div
       onDrop={handleDrop}
@@ -232,7 +190,7 @@ export const CanvasWorkspace = () => {
         <div className="grid h-full w-full grid-cols-2">
           <div className="flex min-h-0 flex-col gap-2 border-r border-border/70 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {isZh ? "基准图" : "Baseline"}
+              {t("results.baseSelect")}
             </p>
             <img
               src={basePreviewUrl ?? ""}
@@ -265,7 +223,7 @@ export const CanvasWorkspace = () => {
           framing={canvasFraming}
           onViewportChange={setCanvasViewport}
           onCropAreaChange={setCanvasCropArea}
-          onReset={resetCanvasFraming}
+          onRequestUpload={triggerUpload}
         />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
@@ -292,16 +250,12 @@ export const CanvasWorkspace = () => {
       />
       <div className="space-y-4 md:flex md:h-full md:min-h-0 md:flex-col md:space-y-0">
         {isMobile ? (
-          <>
-            {resultControls}
-            {stage}
-          </>
+          stage
         ) : (
           <div
             className="grid h-full min-h-0 overflow-hidden"
-            style={{ gridTemplateRows: hasResults ? "auto minmax(0, 1fr) auto" : "minmax(0, 1fr)" }}
+            style={{ gridTemplateRows: hasResults ? "minmax(0, 1fr) auto" : "minmax(0, 1fr)" }}
           >
-            {resultControls}
             {stage}
             {hasResults ? (
               <CanvasGalleryStrip

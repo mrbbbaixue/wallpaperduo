@@ -29,6 +29,17 @@ const defaultCanvasFraming: CanvasFraming = {
   },
 };
 
+const clearDerivedState = {
+  preparedImage: undefined,
+  sceneAnalysis: undefined,
+  promptPlan: undefined,
+  tasks: [],
+  alignmentResults: {},
+  exportMapping: defaultExportMapping,
+  activeResultId: undefined,
+  previewMode: "single" as const,
+};
+
 interface WorkflowState {
   sourceImage?: LoadedImage;
   preparedImage?: PreparedImage;
@@ -79,15 +90,8 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   setSourceImage: (sourceImage) =>
     set(() => ({
       sourceImage,
-      preparedImage: undefined,
       canvasFraming: defaultCanvasFraming,
-      sceneAnalysis: undefined,
-      promptPlan: undefined,
-      tasks: [],
-      alignmentResults: {},
-      exportMapping: defaultExportMapping,
-      activeResultId: undefined,
-      previewMode: "single",
+      ...clearDerivedState,
     })),
   setPreparedImage: (preparedImage) =>
     set(() => ({
@@ -102,6 +106,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
     })),
   setCanvasViewport: (viewport) =>
     set((state) => ({
+      ...clearDerivedState,
       canvasFraming: {
         ...state.canvasFraming,
         viewport,
@@ -109,15 +114,44 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
     })),
   setCanvasCropArea: (cropAreaPixels) =>
     set((state) => ({
+      ...clearDerivedState,
       canvasFraming: {
         ...state.canvasFraming,
         cropAreaPixels,
       },
     })),
-  resetCanvasFraming: () => set({ canvasFraming: defaultCanvasFraming }),
-  setRatioId: (ratioId) => set({ ratioId }),
-  setCustomRatio: (customRatio) => set({ customRatio }),
-  setPrepareMode: (prepareMode) => set({ prepareMode }),
+  resetCanvasFraming: () =>
+    set({
+      ...clearDerivedState,
+      canvasFraming: defaultCanvasFraming,
+    }),
+  setRatioId: (ratioId) =>
+    set((state) => ({
+      ...clearDerivedState,
+      ratioId,
+      canvasFraming: {
+        ...state.canvasFraming,
+        cropAreaPixels: undefined,
+      },
+    })),
+  setCustomRatio: (customRatio) =>
+    set((state) => ({
+      ...clearDerivedState,
+      customRatio,
+      canvasFraming: {
+        ...state.canvasFraming,
+        cropAreaPixels: undefined,
+      },
+    })),
+  setPrepareMode: (prepareMode) =>
+    set((state) => ({
+      ...clearDerivedState,
+      prepareMode,
+      canvasFraming: {
+        ...state.canvasFraming,
+        cropAreaPixels: undefined,
+      },
+    })),
   setActiveResultId: (activeResultId) => set({ activeResultId }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   setSceneAnalysis: (sceneAnalysis) => set({ sceneAnalysis }),
@@ -166,13 +200,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   setExportMapping: (exportMapping) => set({ exportMapping }),
   resetRun: () =>
     set(() => ({
-      sceneAnalysis: undefined,
-      promptPlan: undefined,
-      tasks: [],
-      alignmentResults: {},
-      exportMapping: defaultExportMapping,
-      activeResultId: undefined,
-      previewMode: "single",
+      ...clearDerivedState,
     })),
 }));
 
