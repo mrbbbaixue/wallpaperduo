@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { aspectRatios } from "@/data/aspectRatios";
-import { cn } from "@/lib/utils";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 export const CanvasControls = () => {
@@ -22,10 +21,8 @@ export const CanvasControls = () => {
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
-  const prepareMode = useWorkflowStore((s) => s.prepareMode);
   const setRatioId = useWorkflowStore((s) => s.setRatioId);
   const setCustomRatio = useWorkflowStore((s) => s.setCustomRatio);
-  const setPrepareMode = useWorkflowStore((s) => s.setPrepareMode);
   const resetCanvasFraming = useWorkflowStore((s) => s.resetCanvasFraming);
 
   const fieldLabelClassName = isZh
@@ -42,7 +39,7 @@ export const CanvasControls = () => {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <div className="grid gap-3">
         <div className="space-y-2">
           <Label className={fieldLabelClassName}>{t("workspace.ratio")}</Label>
           <Select value={normalizedRatioId} onValueChange={setRatioId}>
@@ -57,30 +54,6 @@ export const CanvasControls = () => {
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label className={fieldLabelClassName}>{t("workspace.mode")}</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant={prepareMode === "crop" ? "default" : "outline"}
-              onClick={() => setPrepareMode("crop")}
-              size="sm"
-              className={cn("h-11 rounded-md")}
-            >
-              {t("workspace.modeCrop")}
-            </Button>
-            <Button
-              type="button"
-              variant={prepareMode === "pad" ? "default" : "outline"}
-              onClick={() => setPrepareMode("pad")}
-              size="sm"
-              className={cn("h-11 rounded-md")}
-            >
-              {t("workspace.modePad")}
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -126,13 +99,13 @@ export const CanvasControls = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/70 p-3">
         <div className="space-y-1">
           <p className="text-sm font-semibold">
-            {isZh ? "左侧裁剪框就是最终分析画布" : "The left crop frame is the analysis canvas"}
+            {t("workspace.expansionCompose")}
           </p>
           <p className="text-xs leading-5 text-muted-foreground">
             {sourceImage
               ? isZh
-                ? "调整图片位置和缩放后，直接在右侧点击分析。"
-                : "Adjust the image on the left, then click Analyze on the right."
+                ? "图片会默认居中铺满目标画布；你也可以继续缩小留出扩充空间。"
+                : "The image starts centered and filling the target canvas, and you can still zoom out to reserve expansion space."
               : isZh
                 ? "先在左侧导入参考图，再设置目标比例。"
                 : "Import a reference image on the left, then choose a target ratio."}

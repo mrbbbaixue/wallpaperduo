@@ -27,7 +27,6 @@ export const CanvasWorkspace = () => {
   const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
-  const prepareMode = useWorkflowStore((s) => s.prepareMode);
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const setCanvasViewport = useWorkflowStore((s) => s.setCanvasViewport);
   const setCanvasCropArea = useWorkflowStore((s) => s.setCanvasCropArea);
@@ -219,7 +218,6 @@ export const CanvasWorkspace = () => {
         <CanvasFramingEditor
           sourceImage={sourceImage}
           ratio={ratio}
-          prepareMode={prepareMode}
           framing={canvasFraming}
           onViewportChange={setCanvasViewport}
           onCropAreaChange={setCanvasCropArea}

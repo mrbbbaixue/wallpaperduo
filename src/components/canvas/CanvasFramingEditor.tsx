@@ -11,19 +11,18 @@ import {
   getAspectRatio,
   getEditorMinZoom,
   resolveEditorImageBox,
+  resolveZoomHandlePosition,
 } from "@/services/canvas/framing";
 import type {
   CanvasCropArea,
   CanvasFraming,
   CanvasViewport,
   LoadedImage,
-  PrepareMode,
 } from "@/types/domain";
 
 interface CanvasFramingEditorProps {
   sourceImage: LoadedImage;
   ratio: { width: number; height: number };
-  prepareMode: PrepareMode;
   framing: CanvasFraming;
   onViewportChange: (viewport: CanvasViewport) => void;
   onCropAreaChange: (cropAreaPixels?: CanvasCropArea) => void;
@@ -32,11 +31,11 @@ interface CanvasFramingEditorProps {
 
 const defaultViewportSize: Size = { width: 1, height: 1 };
 const minimumDragDistance = 18;
+const zoomHandleSize = 32;
 
 export const CanvasFramingEditor = ({
   sourceImage,
   ratio,
-  prepareMode,
   framing,
   onViewportChange,
   onCropAreaChange,
@@ -49,8 +48,8 @@ export const CanvasFramingEditor = ({
   const cleanupZoomHandleDragRef = useRef<(() => void) | null>(null);
   const [frameViewportSize, setFrameViewportSize] = useState<Size>(defaultViewportSize);
   const aspect = useMemo(() => getAspectRatio(ratio), [ratio]);
-  const minZoom = getEditorMinZoom(prepareMode);
-  const zoom = clampEditorZoom(framing.viewport.zoom, prepareMode);
+  const minZoom = getEditorMinZoom();
+  const zoom = clampEditorZoom(framing.viewport.zoom);
   const crop = useMemo<Point>(
     () => ({
       x: framing.viewport.x * frameViewportSize.width,
@@ -66,10 +65,9 @@ export const CanvasFramingEditor = ({
           height: sourceImage.height,
         },
         frame: frameViewportSize,
-        mode: prepareMode,
         framing,
       }),
-    [frameViewportSize, framing, prepareMode, sourceImage.height, sourceImage.width],
+    [frameViewportSize, framing, sourceImage.height, sourceImage.width],
   );
   const visibleImageBox = useMemo(() => {
     const left = Math.max(0, imageBox.x);
@@ -84,6 +82,15 @@ export const CanvasFramingEditor = ({
       height: Math.max(0, bottom - top),
     };
   }, [frameViewportSize.height, frameViewportSize.width, imageBox]);
+  const zoomHandlePosition = useMemo(
+    () =>
+      resolveZoomHandlePosition({
+        visibleBox: visibleImageBox,
+        frame: frameViewportSize,
+        handleSize: zoomHandleSize,
+      }),
+    [frameViewportSize, visibleImageBox],
+  );
 
   useEffect(() => {
     if (zoom !== framing.viewport.zoom) {
@@ -147,10 +154,10 @@ export const CanvasFramingEditor = ({
     (nextZoom: number) => {
       onViewportChange({
         ...framing.viewport,
-        zoom: clampEditorZoom(nextZoom, prepareMode),
+        zoom: clampEditorZoom(nextZoom),
       });
     },
-    [framing.viewport, onViewportChange, prepareMode],
+    [framing.viewport, onViewportChange],
   );
 
   const handleCropComplete = useCallback(
@@ -248,9 +255,9 @@ export const CanvasFramingEditor = ({
           maxZoom={4}
           cropShape="rect"
           cropSize={frameViewportSize}
-          objectFit={prepareMode === "crop" ? "cover" : "contain"}
+          objectFit="contain"
           showGrid
-          restrictPosition
+          restrictPosition={false}
           zoomWithScroll
           onCropChange={handleCropChange}
           onZoomChange={handleZoomChange}
@@ -279,10 +286,12 @@ export const CanvasFramingEditor = ({
             type="button"
             onPointerDown={handleZoomHandlePointerDown}
             aria-label={t("workspace.zoom")}
-            className="absolute z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-background/88 text-foreground shadow-lg backdrop-blur transition-transform hover:scale-105"
+            className="absolute z-10 flex items-center justify-center rounded-full border border-white/80 bg-background/88 text-foreground shadow-lg backdrop-blur transition-transform hover:scale-105"
             style={{
-              left: visibleImageBox.x + visibleImageBox.width - 16,
-              top: visibleImageBox.y + visibleImageBox.height - 16,
+              left: zoomHandlePosition.left,
+              top: zoomHandlePosition.top,
+              width: zoomHandleSize,
+              height: zoomHandleSize,
               cursor: "nwse-resize",
             }}
           >
@@ -292,7 +301,9 @@ export const CanvasFramingEditor = ({
       </div>
 
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-background/76 px-3 py-1 text-[11px] text-muted-foreground backdrop-blur">
-        {isZh ? "拖拽移动图片，滚轮或右下角手柄缩放" : "Drag to move, use wheel or the corner handle to zoom"}
+        {isZh
+          ? "默认居中铺满；拖拽移动图片，滚轮或右下角手柄缩放"
+          : "Starts centered and filled; drag to move, use wheel or the corner handle to zoom"}
       </div>
     </div>
   );

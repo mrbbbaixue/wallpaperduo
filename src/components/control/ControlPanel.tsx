@@ -64,7 +64,6 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
-  const prepareMode = useWorkflowStore((s) => s.prepareMode);
   const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
   const activeResultId = useWorkflowStore((s) => s.activeResultId);
   const previewMode = useWorkflowStore((s) => s.previewMode);
@@ -188,7 +187,6 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       const output = await prepareCanvasImage({
         source: sourceImage.blob,
         ratio,
-        mode: prepareMode,
         framing: canvasFraming,
       });
       const prepared = buildPreparedImage({
@@ -198,7 +196,6 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
         height: output.height,
         objectUrl: URL.createObjectURL(output.blob),
         ratioId: ratioLabel,
-        mode: prepareMode,
         framing: canvasFraming,
       });
       setPreparedImage(prepared);
@@ -252,13 +249,11 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
           return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
         })();
   const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
-  const modeLabel = prepareMode === "crop" ? t("workspace.modeCrop") : t("workspace.modePad");
   const includesExpansionArea =
     !!sourceImage &&
     hasExpansionArea({
       source: { width: sourceImage.width, height: sourceImage.height },
       ratio,
-      mode: prepareMode,
       framing: canvasFraming,
     });
   const promptsReady =
@@ -301,7 +296,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       <p className="text-sm leading-6 text-muted-foreground">{sceneAnalysis.summary}</p>
       {renderSummaryPills([
         ratioLabel,
-        modeLabel,
+        t("workspace.expansionCompose"),
         t("workspace.framingLocked"),
         includesExpansionArea ? t("workspace.expansionArea") : "",
         isZh ? `AI：${getTimeLabel(detectedTimeOfDay)}` : `AI: ${getTimeLabel(detectedTimeOfDay)}`,
@@ -311,7 +306,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     renderSummaryPills([
       sourceImage.name,
       ratioLabel,
-      modeLabel,
+      t("workspace.expansionCompose"),
       t("workspace.framingLocked"),
       includesExpansionArea ? t("workspace.expansionArea") : "",
       isZh ? "待画面理解" : "Analysis pending",
@@ -403,8 +398,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
             title={isZh ? "构图设置与 AI 分析" : "Framing & AI analysis"}
             description={
               isZh
-                ? "在左侧导入、移动、缩放图片，并在这里设置目标比例与分析当前裁剪框。"
-                : "Import, move, and scale the image on the left canvas, then set the target ratio and analyze the current frame."
+                ? "在左侧导入、移动、缩放图片，并在这里设置目标画布比例与分析当前扩充构图。"
+                : "Import, move, and scale the image on the left canvas, then set the target canvas ratio and analyze the current expansion composition."
             }
             statusLabel={
               !sourceImage
@@ -414,7 +409,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                 : !sceneAnalysis
                   ? isZh
                     ? "待分析当前构图"
-                    : "Analyze current frame"
+                    : "Analyze current composition"
                   : isZh
                     ? "分析完成"
                     : "Analysis ready"
@@ -438,8 +433,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     {sourceImage
                       ? `${sourceImage.width} × ${sourceImage.height}`
                       : isZh
-                        ? "上传、拖拽、缩放和裁剪框预览都在左侧完成。"
-                        : "Upload, reposition, zoom, and frame the image on the left canvas."}
+                        ? "上传、拖拽、缩放和目标画布预览都在左侧完成。"
+                        : "Upload, reposition, zoom, and compose on the left target canvas."}
                   </p>
                 </div>
               </div>
@@ -452,8 +447,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
                     <p className="text-xs leading-5 text-muted-foreground">
                       {isZh
-                        ? "会先按当前裁剪框裁掉框外内容，再识别主体、光照与参考时段。"
-                        : "This first crops to the visible frame, then analyzes subjects, lighting, and time of day."}
+                        ? "会按当前目标画布输出扩充构图，再识别主体、光照与参考时段。"
+                        : "This renders the current target canvas composition, then analyzes subjects, lighting, and time of day."}
                     </p>
                   </div>
                   <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
@@ -635,8 +630,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     </p>
                     <p className="text-xs leading-5 text-muted-foreground">
                       {isZh
-                        ? "左侧缩略图只负责切换结果；这里控制裁剪框画布、单图查看、前后对比与单张下载。"
-                        : "The left thumbnails only switch results. Use these controls for the framed canvas, single-result preview, before/after compare, and single-image download."}
+                        ? "左侧缩略图只负责切换结果；这里控制目标画布、单图查看、前后对比与单张下载。"
+                        : "The left thumbnails only switch results. Use these controls for the target canvas, single-result preview, before/after compare, and single-image download."}
                     </p>
                   </div>
                   <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
@@ -698,8 +693,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                       ? `当前选中：${activeTask.label}`
                       : `Selected result: ${activeTask.label}`
                     : isZh
-                      ? "当前显示裁剪框画布。点击左侧缩略图可切换到某张生成结果。"
-                      : "The main canvas is showing the framed canvas. Pick a thumbnail on the left to switch to a generated result."}
+                      ? "当前显示目标画布。点击左侧缩略图可切换到某张生成结果。"
+                      : "The main canvas is showing the target canvas. Pick a thumbnail on the left to switch to a generated result."}
                 </p>
               </div>
             ) : null}

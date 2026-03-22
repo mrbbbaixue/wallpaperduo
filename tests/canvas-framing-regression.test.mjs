@@ -46,9 +46,14 @@ test("analysis flow prepares the current framing on demand", () => {
     panel.includes("buildPreparedImage"),
     "analysis flow should persist the cropped frame before scene analysis",
   );
+  assert.equal(
+    panel.includes("mode: prepareMode"),
+    false,
+    "analysis flow should stop threading legacy crop/pad mode through prepared images",
+  );
 });
 
-test("control panel surfaces framing and expansion summary pills", () => {
+test("control panel surfaces expansion-composition framing summary pills", () => {
   const panel = read("src/components/control/ControlPanel.tsx");
 
   assert.ok(
@@ -57,7 +62,11 @@ test("control panel surfaces framing and expansion summary pills", () => {
   );
   assert.ok(
     panel.includes('t("workspace.expansionArea")'),
-    "control panel should surface pad-mode expansion space when relevant",
+    "control panel should surface expansion space when relevant",
+  );
+  assert.ok(
+    panel.includes('t("workspace.expansionCompose")'),
+    "control panel should describe the single expansion-composition workflow",
   );
 });
 
@@ -88,11 +97,21 @@ test("workspace locale files define framing editor copy", () => {
   assert.ok(en.includes('"framingHint"'), "English locale should include framing copy");
   assert.ok(zh.includes('"resetFraming"'), "Chinese locale should include reset framing copy");
   assert.ok(en.includes('"resetFraming"'), "English locale should include reset framing copy");
+  assert.ok(
+    zh.includes('"expansionCompose"'),
+    "Chinese locale should include single-mode expansion composition copy",
+  );
+  assert.ok(
+    en.includes('"expansionCompose"'),
+    "English locale should include single-mode expansion composition copy",
+  );
 });
 
 test("framing editor fits the visible cropper viewport to the selected ratio", () => {
   const editor = read("src/components/canvas/CanvasFramingEditor.tsx");
   const framing = read("src/services/canvas/framing.ts");
+  const controls = read("src/components/canvas/CanvasControls.tsx");
+  const store = read("src/store/useWorkflowStore.ts");
 
   assert.ok(
     framing.includes("fitFrameBoxWithinBounds"),
@@ -114,6 +133,31 @@ test("framing editor fits the visible cropper viewport to the selected ratio", (
   assert.ok(
     editor.includes("handleZoomHandlePointerDown"),
     "framing editor should expose an on-image zoom handle interaction",
+  );
+  assert.ok(
+    editor.includes('restrictPosition={false}'),
+    "expansion composition should not hard-lock the media position inside the frame",
+  );
+  assert.ok(
+    editor.includes('objectFit="contain"'),
+    "expansion composition should render from a contain base and rely on zoom for fill/expansion edits",
+  );
+  assert.ok(
+    framing.includes("resolveZoomHandlePosition"),
+    "framing helpers should expose a bounded zoom-handle position helper",
+  );
+  assert.ok(
+    editor.includes("resolveZoomHandlePosition"),
+    "framing editor should position the zoom handle through the bounded helper",
+  );
+  assert.equal(
+    controls.includes("setPrepareMode"),
+    false,
+    "canvas controls should stop exposing a crop/pad mode toggle",
+  );
+  assert.ok(
+    store.includes("resolveDefaultCanvasFraming"),
+    "workflow store should initialize framing from a ratio-aware cover-centered expansion default",
   );
 });
 

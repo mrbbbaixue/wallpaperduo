@@ -2,7 +2,6 @@ export type ProviderKind = "openrouter" | "ark" | "aliyun" | "custom";
 
 export type ThemeVariant = "dark" | "light";
 export type TimeVariant = "dawn" | "day" | "dusk" | "night";
-export type PrepareMode = "crop" | "pad";
 
 export interface AspectRatioPreset {
   id: string;
@@ -47,7 +46,6 @@ export interface PreparedImage {
   width: number;
   height: number;
   objectUrl: string;
-  mode: PrepareMode;
   ratioId: string;
   framing?: CanvasFraming;
 }
