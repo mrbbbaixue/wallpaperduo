@@ -21,6 +21,7 @@ export const CanvasControls = () => {
   const isZh = i18n.language === "zh";
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
+  const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const prepareMode = useWorkflowStore((s) => s.prepareMode);
@@ -63,6 +64,7 @@ export const CanvasControls = () => {
         source: sourceImage.blob,
         ratio,
         mode: prepareMode,
+        framing: canvasFraming,
       });
       const prepared = buildPreparedImage({
         sourceImageId: sourceImage.id,
@@ -72,6 +74,7 @@ export const CanvasControls = () => {
         objectUrl: URL.createObjectURL(output.blob),
         ratioId: normalizedRatioId,
         mode: prepareMode,
+        framing: canvasFraming,
       });
       setPreparedImage(prepared);
     } catch (exception) {

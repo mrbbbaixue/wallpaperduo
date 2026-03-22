@@ -2,8 +2,10 @@ import { ArrowLeftRight, Image as ImageIcon, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { CanvasFramingEditor } from "@/components/canvas/CanvasFramingEditor";
 import { CanvasGalleryStrip } from "@/components/canvas/CanvasGalleryStrip";
 import { Button } from "@/components/ui/button";
+import { aspectRatios } from "@/data/aspectRatios";
 import { cn } from "@/lib/utils";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import { getImageSize, readFileAsBlob } from "@/utils/image";
@@ -23,7 +25,14 @@ export const CanvasWorkspace = () => {
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
+  const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
+  const ratioId = useWorkflowStore((s) => s.ratioId);
+  const customRatio = useWorkflowStore((s) => s.customRatio);
+  const prepareMode = useWorkflowStore((s) => s.prepareMode);
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
+  const setCanvasViewport = useWorkflowStore((s) => s.setCanvasViewport);
+  const setCanvasCropArea = useWorkflowStore((s) => s.setCanvasCropArea);
+  const resetCanvasFraming = useWorkflowStore((s) => s.resetCanvasFraming);
   const tasks = useWorkflowStore((s) => s.tasks);
   const activeResultId = useWorkflowStore((s) => s.activeResultId);
   const setActiveResultId = useWorkflowStore((s) => s.setActiveResultId);
@@ -59,6 +68,14 @@ export const CanvasWorkspace = () => {
   const activeTask = activeResultId
     ? succeededTasks.find((task) => task.id === activeResultId)
     : undefined;
+  const normalizedRatioId = aspectRatios.some((item) => item.id === ratioId) ? ratioId : "16:9";
+  const ratio =
+    normalizedRatioId === "custom"
+      ? customRatio
+      : (() => {
+          const preset = aspectRatios.find((item) => item.id === normalizedRatioId);
+          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
+        })();
 
   useEffect(() => {
     if (succeededTasks.length === 0) {
@@ -131,9 +148,10 @@ export const CanvasWorkspace = () => {
 
   const basePreviewUrl = preparedImage?.objectUrl ?? sourceImage?.objectUrl ?? null;
   const resultPreviewUrl = activeTask?.result?.objectUrl ?? null;
-  const previewUrl = resultPreviewUrl ?? basePreviewUrl;
   const compareReady = previewMode === "compare" && !!basePreviewUrl && !!resultPreviewUrl;
-  const emptyUploadState = !previewUrl;
+  const showResultPreview = !compareReady && !!resultPreviewUrl;
+  const showFramingEditor = !compareReady && !showResultPreview && !!sourceImage;
+  const emptyUploadState = !showFramingEditor && !compareReady && !showResultPreview;
 
   const triggerUpload = () => {
     inputRef.current?.click();
@@ -233,11 +251,21 @@ export const CanvasWorkspace = () => {
             />
           </div>
         </div>
-      ) : previewUrl ? (
+      ) : showResultPreview ? (
         <img
-          src={previewUrl}
+          src={resultPreviewUrl ?? ""}
           alt="canvas preview"
           className="max-h-full max-w-full object-contain"
+        />
+      ) : showFramingEditor ? (
+        <CanvasFramingEditor
+          sourceImage={sourceImage}
+          ratio={ratio}
+          prepareMode={prepareMode}
+          framing={canvasFraming}
+          onViewportChange={setCanvasViewport}
+          onCropAreaChange={setCanvasCropArea}
+          onReset={resetCanvasFraming}
         />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">

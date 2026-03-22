@@ -21,6 +21,25 @@ export interface LoadedImage {
   objectUrl: string;
 }
 
+export interface CanvasViewport {
+  // x/y are normalized against the visible frame size so the composition survives responsive resizes.
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export interface CanvasCropArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface CanvasFraming {
+  viewport: CanvasViewport;
+  cropAreaPixels?: CanvasCropArea;
+}
+
 export interface PreparedImage {
   id: string;
   sourceImageId: string;
@@ -30,6 +49,7 @@ export interface PreparedImage {
   objectUrl: string;
   mode: PrepareMode;
   ratioId: string;
+  framing?: CanvasFraming;
 }
 
 export interface SceneAnalysis {

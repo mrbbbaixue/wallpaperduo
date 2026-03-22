@@ -2,6 +2,9 @@ import { create } from "zustand";
 
 import type {
   AlignmentResult,
+  CanvasCropArea,
+  CanvasFraming,
+  CanvasViewport,
   ExportMapping,
   GenerationTask,
   LoadedImage,
@@ -18,9 +21,18 @@ const defaultExportMapping: ExportMapping = {
   night: [],
 };
 
+const defaultCanvasFraming: CanvasFraming = {
+  viewport: {
+    x: 0,
+    y: 0,
+    zoom: 1,
+  },
+};
+
 interface WorkflowState {
   sourceImage?: LoadedImage;
   preparedImage?: PreparedImage;
+  canvasFraming: CanvasFraming;
   ratioId: string;
   customRatio: { width: number; height: number };
   prepareMode: "crop" | "pad";
@@ -33,6 +45,9 @@ interface WorkflowState {
   exportMapping: ExportMapping;
   setSourceImage: (image: LoadedImage) => void;
   setPreparedImage: (image: PreparedImage) => void;
+  setCanvasViewport: (viewport: CanvasViewport) => void;
+  setCanvasCropArea: (cropAreaPixels?: CanvasCropArea) => void;
+  resetCanvasFraming: () => void;
   setRatioId: (ratioId: string) => void;
   setCustomRatio: (ratio: { width: number; height: number }) => void;
   setPrepareMode: (mode: "crop" | "pad") => void;
@@ -53,6 +68,7 @@ interface WorkflowState {
 }
 
 export const useWorkflowStore = create<WorkflowState>((set) => ({
+  canvasFraming: defaultCanvasFraming,
   ratioId: "16:9",
   customRatio: { width: 16, height: 9 },
   prepareMode: "crop",
@@ -64,6 +80,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
     set(() => ({
       sourceImage,
       preparedImage: undefined,
+      canvasFraming: defaultCanvasFraming,
       sceneAnalysis: undefined,
       promptPlan: undefined,
       tasks: [],
@@ -83,6 +100,21 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       activeResultId: undefined,
       previewMode: "single",
     })),
+  setCanvasViewport: (viewport) =>
+    set((state) => ({
+      canvasFraming: {
+        ...state.canvasFraming,
+        viewport,
+      },
+    })),
+  setCanvasCropArea: (cropAreaPixels) =>
+    set((state) => ({
+      canvasFraming: {
+        ...state.canvasFraming,
+        cropAreaPixels,
+      },
+    })),
+  resetCanvasFraming: () => set({ canvasFraming: defaultCanvasFraming }),
   setRatioId: (ratioId) => set({ ratioId }),
   setCustomRatio: (customRatio) => set({ customRatio }),
   setPrepareMode: (prepareMode) => set({ prepareMode }),

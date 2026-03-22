@@ -10,7 +10,9 @@ import { TaskQueue } from "@/components/control/TaskQueue";
 import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
 import { WorkflowStepCard } from "@/components/control/WorkflowStepCard";
 import { Button } from "@/components/ui/button";
+import { aspectRatios } from "@/data/aspectRatios";
 import { toast } from "@/hooks/use-toast";
+import { hasExpansionArea } from "@/services/canvas/framing";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
@@ -59,6 +61,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
+  const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const prepareMode = useWorkflowStore((s) => s.prepareMode);
@@ -244,8 +247,23 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const getTimeLabel = (time?: TimeVariant | null) =>
     time ? (isZh ? timeLabels[time].zh : timeLabels[time].en) : isZh ? "未识别" : "N/A";
 
+  const ratio =
+    ratioId === "custom"
+      ? customRatio
+      : (() => {
+          const preset = aspectRatios.find((item) => item.id === ratioId);
+          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
+        })();
   const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
   const modeLabel = prepareMode === "crop" ? t("workspace.modeCrop") : t("workspace.modePad");
+  const includesExpansionArea =
+    !!sourceImage &&
+    hasExpansionArea({
+      source: { width: sourceImage.width, height: sourceImage.height },
+      ratio,
+      mode: prepareMode,
+      framing: canvasFraming,
+    });
   const promptsReady =
     selectedSlots.length > 0 &&
     selectedSlots.every((slot) => {
@@ -276,6 +294,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       {renderSummaryPills([
         ratioLabel,
         modeLabel,
+        t("workspace.framingLocked"),
+        includesExpansionArea ? t("workspace.expansionArea") : "",
         isZh ? `AI：${getTimeLabel(detectedTimeOfDay)}` : `AI: ${getTimeLabel(detectedTimeOfDay)}`,
       ])}
     </div>
@@ -284,6 +304,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       sourceImage.name,
       ratioLabel,
       modeLabel,
+      t("workspace.framingLocked"),
+      includesExpansionArea ? t("workspace.expansionArea") : "",
       isZh ? "待画面理解" : "Analysis pending",
     ])
   ) : (
