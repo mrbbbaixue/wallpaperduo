@@ -23,8 +23,9 @@ body,
 body {
   margin: 0;
   font-family:
-    "Berkeley Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+    "MiSans", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, "Berkeley Mono",
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
