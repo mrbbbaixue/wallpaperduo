@@ -1,15 +1,15 @@
 import Pica from "pica";
 
-import type { PrepareMode } from "@/types/domain";
+import { resolveFramingRender, scaleCanvasToMaxEdge } from "@/services/canvas/framing";
+import type { CanvasFraming } from "@/types/domain";
 import { canvasToBlob, loadImageFromBlob } from "@/utils/image";
 
 const pica = new Pica();
-const MAX_EDGE = 2480;
 
 export interface PrepareCanvasInput {
   source: Blob;
   ratio: { width: number; height: number };
-  mode: PrepareMode;
+  framing?: CanvasFraming;
 }
 
 export interface PrepareCanvasOutput {
@@ -19,15 +19,14 @@ export interface PrepareCanvasOutput {
 }
 
 const resizeIfNeeded = async (canvas: HTMLCanvasElement): Promise<HTMLCanvasElement> => {
-  const maxEdge = Math.max(canvas.width, canvas.height);
-  if (maxEdge <= MAX_EDGE) {
+  const resizedSize = scaleCanvasToMaxEdge(canvas);
+  if (resizedSize.width === canvas.width && resizedSize.height === canvas.height) {
     return canvas;
   }
 
-  const scale = MAX_EDGE / maxEdge;
   const target = document.createElement("canvas");
-  target.width = Math.round(canvas.width * scale);
-  target.height = Math.round(canvas.height * scale);
+  target.width = resizedSize.width;
+  target.height = resizedSize.height;
   await pica.resize(canvas, target);
   return target;
 };
@@ -35,11 +34,9 @@ const resizeIfNeeded = async (canvas: HTMLCanvasElement): Promise<HTMLCanvasElem
 export const prepareCanvasImage = async ({
   source,
   ratio,
-  mode,
+  framing,
 }: PrepareCanvasInput): Promise<PrepareCanvasOutput> => {
   const image = await loadImageFromBlob(source);
-  const targetRatio = ratio.width / ratio.height;
-  const sourceRatio = image.width / image.height;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
@@ -47,51 +44,31 @@ export const prepareCanvasImage = async ({
     throw new Error("CANVAS_CONTEXT_UNAVAILABLE");
   }
 
-  if (mode === "crop") {
-    let sx = 0;
-    let sy = 0;
-    let sw = image.width;
-    let sh = image.height;
+  const render = resolveFramingRender({
+    source: {
+      width: image.width,
+      height: image.height,
+    },
+    ratio,
+    framing,
+  });
 
-    if (sourceRatio > targetRatio) {
-      sw = Math.round(image.height * targetRatio);
-      sx = Math.round((image.width - sw) / 2);
-    } else {
-      sh = Math.round(image.width / targetRatio);
-      sy = Math.round((image.height - sh) / 2);
-    }
+  canvas.width = render.outputWidth;
+  canvas.height = render.outputHeight;
 
-    canvas.width = sw;
-    canvas.height = sh;
-    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
-  } else {
-    if (sourceRatio > targetRatio) {
-      canvas.width = image.width;
-      canvas.height = Math.round(image.width / targetRatio);
-    } else {
-      canvas.width = Math.round(image.height * targetRatio);
-      canvas.height = image.height;
-    }
+  const scaleBg = Math.max(canvas.width / image.width, canvas.height / image.height);
+  const bgWidth = image.width * scaleBg;
+  const bgHeight = image.height * scaleBg;
+  const bgX = (canvas.width - bgWidth) / 2;
+  const bgY = (canvas.height - bgHeight) / 2;
 
-    const scaleBg = Math.max(canvas.width / image.width, canvas.height / image.height);
-    const bgWidth = image.width * scaleBg;
-    const bgHeight = image.height * scaleBg;
-    const bgX = (canvas.width - bgWidth) / 2;
-    const bgY = (canvas.height - bgHeight) / 2;
+  ctx.filter = "blur(36px) brightness(0.82)";
+  ctx.drawImage(image, bgX, bgY, bgWidth, bgHeight);
+  ctx.filter = "none";
+  ctx.fillStyle = "rgba(12,16,20,0.28)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.filter = "blur(36px) brightness(0.82)";
-    ctx.drawImage(image, bgX, bgY, bgWidth, bgHeight);
-    ctx.filter = "none";
-    ctx.fillStyle = "rgba(12,16,20,0.28)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const scaleFit = Math.min(canvas.width / image.width, canvas.height / image.height);
-    const fitWidth = image.width * scaleFit;
-    const fitHeight = image.height * scaleFit;
-    const fitX = (canvas.width - fitWidth) / 2;
-    const fitY = (canvas.height - fitHeight) / 2;
-    ctx.drawImage(image, fitX, fitY, fitWidth, fitHeight);
-  }
+  ctx.drawImage(image, render.drawX, render.drawY, render.drawWidth, render.drawHeight);
 
   const resized = await resizeIfNeeded(canvas);
   const blob = await canvasToBlob(resized, "image/png");

@@ -1,52 +1,55 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Berkeley+Mono:wght@400;500;700&display=swap");
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
 @layer base {
   :root {
-    --background: 34 35% 97%;
-    --foreground: 210 18% 13%;
+    --background: 0 0% 100%;
+    --foreground: 32 29% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 210 18% 13%;
+    --card-foreground: 32 29% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 18% 13%;
-    --primary: 202 30% 20%;
-    --primary-foreground: 40 30% 96%;
-    --secondary: 36 30% 92%;
-    --secondary-foreground: 210 18% 18%;
-    --muted: 35 28% 92%;
-    --muted-foreground: 210 10% 42%;
-    --accent: 37 45% 88%;
-    --accent-foreground: 210 18% 18%;
-    --destructive: 0 72% 52%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 32 20% 84%;
-    --input: 32 20% 84%;
-    --ring: 202 30% 20%;
-    --radius: 0.375rem;
+    --popover-foreground: 32 29% 13%;
+    --primary: 32 29% 13%;
+    --primary-foreground: 0 0% 99%;
+    --secondary: 30 6% 92%;
+    --secondary-foreground: 32 29% 13%;
+    --muted: 30 6% 92%;
+    --muted-foreground: 0 0% 43%;
+    --accent: 30 6% 92%;
+    --accent-foreground: 32 29% 13%;
+    --destructive: 4 100% 59%;
+    --destructive-foreground: 0 0% 99%;
+    --border: 0 0% 92%;
+    --input: 0 0% 92%;
+    --ring: 32 29% 13%;
+    --radius: 0.25rem;
+    --border-warm: rgba(15, 0, 0, 0.12);
     color-scheme: light;
   }
 
   .dark {
-    --background: 216 20% 8%;
-    --foreground: 40 25% 96%;
-    --card: 218 18% 12%;
-    --card-foreground: 40 25% 96%;
-    --popover: 218 18% 12%;
-    --popover-foreground: 40 25% 96%;
-    --primary: 39 30% 90%;
-    --primary-foreground: 214 22% 14%;
-    --secondary: 219 16% 18%;
-    --secondary-foreground: 40 25% 96%;
-    --muted: 219 16% 18%;
-    --muted-foreground: 40 12% 72%;
-    --accent: 219 16% 18%;
-    --accent-foreground: 40 25% 96%;
-    --destructive: 0 62% 40%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 218 14% 23%;
-    --input: 218 14% 23%;
-    --ring: 39 30% 90%;
+    --background: 0 0% 13%;
+    --foreground: 0 0% 99%;
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 99%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 99%;
+    --primary: 0 0% 99%;
+    --primary-foreground: 0 0% 13%;
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 0 0% 99%;
+    --muted: 0 0% 17%;
+    --muted-foreground: 0 0% 62%;
+    --accent: 0 0% 17%;
+    --accent-foreground: 0 0% 99%;
+    --destructive: 4 100% 59%;
+    --destructive-foreground: 0 0% 99%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 0% 99%;
+    --radius: 0.25rem;
+    --border-warm: rgba(15, 0, 0, 0.12);
     color-scheme: dark;
   }
 
@@ -71,23 +74,12 @@
     background: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family:
-      "Source Serif 4",
-      "Noto Serif SC",
-      Georgia,
-      serif;
+      "MiSans", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, "Berkeley Mono",
+      "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image:
-      radial-gradient(circle at top left, rgba(196, 170, 133, 0.12), transparent 28%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 40%);
-    background-attachment: fixed;
-  }
-
-  .dark body {
-    background-image:
-      radial-gradient(circle at top left, rgba(145, 118, 80, 0.18), transparent 30%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 36%);
   }
 
   button,
@@ -99,7 +91,6 @@
 
   #root {
     isolation: isolate;
-    animation: shellIn 460ms cubic-bezier(0.2, 0.6, 0.1, 1) both;
   }
 }
 
@@ -107,6 +98,29 @@
   .ui-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .framing-moveable {
+    --moveable-color: rgba(255, 255, 255, 0.82);
+  }
+
+  .framing-moveable.moveable-control-box {
+    z-index: 35;
+  }
+
+  .framing-moveable .moveable-line {
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .framing-moveable .moveable-control {
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    margin-left: -6px;
+    border-radius: 3px;
+    border-width: 1.5px;
+    border-color: rgba(255, 255, 255, 0.95);
+    background: hsl(var(--background));
   }
 
   .ui-scrollbar::-webkit-scrollbar {
@@ -127,17 +141,5 @@
 
   .ui-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in srgb, hsl(var(--foreground)) 22%, transparent);
-  }
-}
-
-@keyframes shellIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }

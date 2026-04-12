@@ -1,5 +1,6 @@
-import { ScanSearch, Upload } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { saveAs } from "file-saver";
+import { ArrowLeftRight, Download, Image as ImageIcon, RotateCcw, ScanSearch } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasControls } from "@/components/canvas/CanvasControls";
@@ -10,13 +11,15 @@ import { TaskQueue } from "@/components/control/TaskQueue";
 import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
 import { WorkflowStepCard } from "@/components/control/WorkflowStepCard";
 import { Button } from "@/components/ui/button";
+import { aspectRatios } from "@/data/aspectRatios";
 import { toast } from "@/hooks/use-toast";
+import { hasExpansionArea } from "@/services/canvas/framing";
+import { prepareCanvasImage } from "@/services/canvas/prepareCanvas";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
+import { buildPreparedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import type { TimeVariant } from "@/types/domain";
 import { toUserError } from "@/utils/error";
-import { getImageSize, readFileAsBlob } from "@/utils/image";
 
 interface PromptEntry {
   timeOfDay: TimeVariant;
@@ -55,17 +58,20 @@ const renderSummaryPills = (items: string[]) => (
 export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps) => {
   const { i18n, t } = useTranslation();
   const isZh = i18n.language === "zh";
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
+  const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
-  const prepareMode = useWorkflowStore((s) => s.prepareMode);
-  const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
+  const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
+  const activeResultId = useWorkflowStore((s) => s.activeResultId);
+  const previewMode = useWorkflowStore((s) => s.previewMode);
   const sceneAnalysis = useWorkflowStore((s) => s.sceneAnalysis);
   const setSceneAnalysis = useWorkflowStore((s) => s.setSceneAnalysis);
   const tasks = useWorkflowStore((s) => s.tasks);
+  const setActiveResultId = useWorkflowStore((s) => s.setActiveResultId);
+  const setPreviewMode = useWorkflowStore((s) => s.setPreviewMode);
   const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
 
@@ -75,7 +81,6 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const [prompts, setPrompts] = useState<PromptEntry[]>([]);
   const [preprocessLoading, setPreprocessLoading] = useState(false);
   const [preprocessError, setPreprocessError] = useState("");
-  const [uploadError, setUploadError] = useState("");
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   useEffect(() => {
@@ -174,14 +179,29 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   };
 
   const onPreprocess = async () => {
-    if (!preparedImage) return;
+    if (!sourceImage) return;
 
     try {
       setPreprocessLoading(true);
       setPreprocessError("");
+      const output = await prepareCanvasImage({
+        source: sourceImage.blob,
+        ratio,
+        framing: canvasFraming,
+      });
+      const prepared = buildPreparedImage({
+        sourceImageId: sourceImage.id,
+        blob: output.blob,
+        width: output.width,
+        height: output.height,
+        objectUrl: URL.createObjectURL(output.blob),
+        ratioId: ratioLabel,
+        framing: canvasFraming,
+      });
+      setPreparedImage(prepared);
       const result = await runSceneAnalysis(
         provider,
-        preparedImage,
+        prepared,
         promptSettings.analysisUserPrompt,
       );
       const analysis = result.analysis;
@@ -218,34 +238,24 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     }
   };
 
-  const onUploadFile = useCallback(
-    async (file?: File) => {
-      if (!file) return;
-      try {
-        const blob = await readFileAsBlob(file);
-        const size = await getImageSize(blob);
-        const loaded = buildLoadedImage({
-          name: file.name,
-          mimeType: blob.type || "image/png",
-          blob,
-          width: size.width,
-          height: size.height,
-          objectUrl: URL.createObjectURL(blob),
-        });
-        setUploadError("");
-        setSourceImage(loaded);
-      } catch {
-        setUploadError("INVALID_IMAGE");
-      }
-    },
-    [setSourceImage],
-  );
-
   const getTimeLabel = (time?: TimeVariant | null) =>
     time ? (isZh ? timeLabels[time].zh : timeLabels[time].en) : isZh ? "未识别" : "N/A";
 
+  const ratio =
+    ratioId === "custom"
+      ? customRatio
+      : (() => {
+          const preset = aspectRatios.find((item) => item.id === ratioId);
+          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
+        })();
   const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
-  const modeLabel = prepareMode === "crop" ? t("workspace.modeCrop") : t("workspace.modePad");
+  const includesExpansionArea =
+    !!sourceImage &&
+    hasExpansionArea({
+      source: { width: sourceImage.width, height: sourceImage.height },
+      ratio,
+      framing: canvasFraming,
+    });
   const promptsReady =
     selectedSlots.length > 0 &&
     selectedSlots.every((slot) => {
@@ -265,9 +275,20 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const completedResults = tasks.filter((task) => task.status === "succeeded").length;
   const failedResults = tasks.filter((task) => task.status === "failed").length;
   const tasksRunning = tasks.some((task) => task.status === "queued" || task.status === "running");
+  const succeededTasks = tasks.filter((task) => task.status === "succeeded" && task.result?.blob);
+  const activeTask = activeResultId
+    ? succeededTasks.find((task) => task.id === activeResultId)
+    : undefined;
 
   const handleStepToggle = (step: StepKey) => {
     setExpandedStep((current) => (current === step ? null : step));
+  };
+
+  const handleDownloadSingle = () => {
+    if (!activeTask?.result?.blob) return;
+    const safeLabel = activeTask.label.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
+    const filename = safeLabel ? `${safeLabel}.png` : `result_${activeTask.id}.png`;
+    saveAs(activeTask.result.blob, filename);
   };
 
   const baselineSummary = sceneAnalysis ? (
@@ -275,7 +296,9 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       <p className="text-sm leading-6 text-muted-foreground">{sceneAnalysis.summary}</p>
       {renderSummaryPills([
         ratioLabel,
-        modeLabel,
+        t("workspace.expansionCompose"),
+        t("workspace.framingLocked"),
+        includesExpansionArea ? t("workspace.expansionArea") : "",
         isZh ? `AI：${getTimeLabel(detectedTimeOfDay)}` : `AI: ${getTimeLabel(detectedTimeOfDay)}`,
       ])}
     </div>
@@ -283,7 +306,9 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     renderSummaryPills([
       sourceImage.name,
       ratioLabel,
-      modeLabel,
+      t("workspace.expansionCompose"),
+      t("workspace.framingLocked"),
+      includesExpansionArea ? t("workspace.expansionArea") : "",
       isZh ? "待画面理解" : "Analysis pending",
     ])
   ) : (
@@ -370,75 +395,48 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
         <div className="overflow-hidden border-t border-border/70">
           <WorkflowStepCard
             stepLabel="01"
-            title={isZh ? "基准图处理与 AI 分析" : "Baseline prep & AI analysis"}
+            title={isZh ? "构图设置与 AI 分析" : "Framing & AI analysis"}
             description={
               isZh
-                ? "上传参考图、统一比例，再完成首轮画面理解。"
-                : "Upload the reference image, normalize the baseline, then run scene analysis."
+                ? "在左侧导入图片，拖拽移动并用四周手柄缩放，再在这里设置目标画布比例并分析当前扩充构图。"
+                : "Import the image on the left canvas, drag to reposition it, resize it with the surrounding handles, then set the target ratio and analyze the current expansion composition."
             }
             statusLabel={
               !sourceImage
                 ? isZh
-                  ? "待上传参考图"
-                  : "Upload image"
-                : !preparedImage
+                  ? "待左侧导入"
+                  : "Import on canvas"
+                : !sceneAnalysis
                   ? isZh
-                    ? "待生成基准图"
-                    : "Prepare baseline"
-                  : !sceneAnalysis
-                    ? isZh
-                      ? "待画面理解"
-                      : "Analyze scene"
-                    : isZh
-                      ? "分析完成"
-                      : "Analysis ready"
+                    ? "待分析当前构图"
+                    : "Analyze current composition"
+                  : isZh
+                    ? "分析完成"
+                    : "Analysis ready"
             }
-            tone={stepTone("baseline", Boolean(uploadError || preprocessError))}
+            tone={stepTone("baseline", Boolean(preprocessError))}
             expanded={expandedStep === "baseline"}
             summary={baselineSummary}
             onToggle={() => handleStepToggle("baseline")}
           >
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={(event) => void onUploadFile(event.currentTarget.files?.[0])}
-            />
-
             <div className="space-y-3">
               <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <Button
-                    type="button"
-                    onClick={() => inputRef.current?.click()}
-                    className="h-11 rounded-md px-4"
-                  >
-                    <Upload className="h-4 w-4" />
-                    {t("common.upload")}
-                  </Button>
-                  <div className="min-w-0 space-y-1">
-                    <p className="truncate text-sm font-medium">
-                      {sourceImage
-                        ? sourceImage.name
-                        : isZh
-                          ? "先放入一张参考图，右侧流程会从这里开始。"
-                          : "Drop in one reference image to kick off the workflow."}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {sourceImage
-                        ? `${sourceImage.width} × ${sourceImage.height}`
-                        : isZh
-                          ? "支持 PNG / JPEG / WebP。"
-                          : "Supports PNG / JPEG / WebP."}
-                    </p>
-                  </div>
-                </div>
-                {uploadError ? (
-                  <p className="mt-3 text-sm text-destructive">
-                    {t(`errors.${uploadError}`, uploadError)}
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">
+                    {sourceImage
+                      ? sourceImage.name
+                      : isZh
+                        ? "请在左侧画布中导入参考图"
+                        : "Import a reference image on the left canvas"}
                   </p>
-                ) : null}
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {sourceImage
+                      ? `${sourceImage.width} × ${sourceImage.height}`
+                      : isZh
+                        ? "上传、拖拽移动、四周手柄缩放和目标画布预览都在左侧完成。"
+                        : "Upload, reposition, resize with surrounding handles, and compose on the left target canvas."}
+                  </p>
+                </div>
               </div>
 
               <CanvasControls />
@@ -449,22 +447,21 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                     <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
                     <p className="text-xs leading-5 text-muted-foreground">
                       {isZh
-                        ? "基准图就绪后再执行分析，识别主体、光照与参考时段。"
-                        : "Run this after preparing the baseline to detect subjects, lighting, and time of day."}
+                        ? "会按当前目标画布输出扩充构图，再识别主体、光照与参考时段。"
+                        : "This renders the current target canvas composition, then analyzes subjects, lighting, and time of day."}
                     </p>
                   </div>
                   <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
-                    {isZh ? "次动作" : "Secondary action"}
+                    {isZh ? "主动作" : "Primary action"}
                   </span>
                 </div>
 
                 <div className="mt-3 flex flex-col gap-3">
                   <Button
                     type="button"
-                    variant="outline"
                     onClick={() => void onPreprocess()}
-                    disabled={!preparedImage || preprocessLoading}
-                    className="h-10 rounded-md sm:w-fit"
+                    disabled={!sourceImage || preprocessLoading}
+                    className="h-11 rounded-md sm:w-fit"
                   >
                     <ScanSearch className="h-4 w-4" />
                     {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
@@ -484,8 +481,8 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       {isZh
-                        ? "准备好基准图后，再执行场景分析。"
-                        : "Prepare the baseline image before scene analysis."}
+                        ? "先在左侧调整构图，再执行分析。构图变动后需要重新分析。"
+                        : "Adjust the framing on the left before analysis. Re-run analysis after any composition change."}
                     </p>
                   )}
 
@@ -623,6 +620,84 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
                 {tasks.length}
               </span>
             </div>
+
+            {succeededTasks.length > 0 ? (
+              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold">
+                      {isZh ? "主画布预览模式" : "Main canvas preview"}
+                    </p>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {isZh
+                        ? "左侧缩略图只负责切换结果；这里控制目标画布、单图查看、前后对比与单张下载。"
+                        : "The left thumbnails only switch results. Use these controls for the target canvas, single-result preview, before/after compare, and single-image download."}
+                    </p>
+                  </div>
+                  <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+                    {isZh ? `${succeededTasks.length} 张结果` : `${succeededTasks.length} results`}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={!activeResultId ? "default" : "outline"}
+                    onClick={() => {
+                      setPreviewMode("single");
+                      setActiveResultId(undefined);
+                    }}
+                    aria-pressed={!activeResultId}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t("results.baseSelect")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={previewMode === "single" ? "default" : "outline"}
+                    onClick={() => setPreviewMode("single")}
+                    disabled={!activeResultId}
+                    aria-pressed={previewMode === "single"}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    {t("results.singleMode")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={previewMode === "compare" ? "default" : "outline"}
+                    onClick={() => setPreviewMode("compare")}
+                    disabled={!activeResultId}
+                    aria-pressed={previewMode === "compare"}
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                    {t("results.compareMode")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDownloadSingle}
+                    disabled={!activeTask?.result?.blob}
+                  >
+                    <Download className="h-4 w-4" />
+                    {t("common.download")}
+                  </Button>
+                </div>
+
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  {activeTask
+                    ? isZh
+                      ? `当前选中：${activeTask.label}`
+                      : `Selected result: ${activeTask.label}`
+                    : isZh
+                      ? "当前显示目标画布。点击左侧缩略图可切换到某张生成结果。"
+                      : "The main canvas is showing the target canvas. Pick a thumbnail on the left to switch to a generated result."}
+                </p>
+              </div>
+            ) : null}
 
             {tasks.length > 0 ? (
               <TaskQueue />

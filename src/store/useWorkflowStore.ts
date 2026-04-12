@@ -1,7 +1,12 @@
 import { create } from "zustand";
 
+import { aspectRatios } from "@/data/aspectRatios";
+import { resolveDefaultCanvasFraming } from "@/services/canvas/framing";
 import type {
   AlignmentResult,
+  CanvasCropArea,
+  CanvasFraming,
+  CanvasViewport,
   ExportMapping,
   GenerationTask,
   LoadedImage,
@@ -18,12 +23,59 @@ const defaultExportMapping: ExportMapping = {
   night: [],
 };
 
+const defaultCanvasFraming: CanvasFraming = {
+  viewport: {
+    x: 0,
+    y: 0,
+    zoom: 1,
+  },
+};
+
+const resolveRatio = (ratioId: string, customRatio: { width: number; height: number }) => {
+  if (ratioId === "custom") {
+    return customRatio;
+  }
+
+  const preset = aspectRatios.find((item) => item.id === ratioId);
+  return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
+};
+
+const resolveCanvasFramingFor = ({
+  sourceImage,
+  ratioId,
+  customRatio,
+}: {
+  sourceImage?: LoadedImage;
+  ratioId: string;
+  customRatio: { width: number; height: number };
+}) => {
+  if (!sourceImage) {
+    return defaultCanvasFraming;
+  }
+
+  return resolveDefaultCanvasFraming({
+    source: { width: sourceImage.width, height: sourceImage.height },
+    ratio: resolveRatio(ratioId, customRatio),
+  });
+};
+
+const clearDerivedState = {
+  preparedImage: undefined,
+  sceneAnalysis: undefined,
+  promptPlan: undefined,
+  tasks: [],
+  alignmentResults: {},
+  exportMapping: defaultExportMapping,
+  activeResultId: undefined,
+  previewMode: "single" as const,
+};
+
 interface WorkflowState {
   sourceImage?: LoadedImage;
   preparedImage?: PreparedImage;
+  canvasFraming: CanvasFraming;
   ratioId: string;
   customRatio: { width: number; height: number };
-  prepareMode: "crop" | "pad";
   activeResultId?: string;
   previewMode: "single" | "compare";
   sceneAnalysis?: SceneAnalysis;
@@ -33,9 +85,11 @@ interface WorkflowState {
   exportMapping: ExportMapping;
   setSourceImage: (image: LoadedImage) => void;
   setPreparedImage: (image: PreparedImage) => void;
+  setCanvasViewport: (viewport: CanvasViewport) => void;
+  setCanvasCropArea: (cropAreaPixels?: CanvasCropArea) => void;
+  resetCanvasFraming: () => void;
   setRatioId: (ratioId: string) => void;
   setCustomRatio: (ratio: { width: number; height: number }) => void;
-  setPrepareMode: (mode: "crop" | "pad") => void;
   setActiveResultId: (taskId?: string) => void;
   setPreviewMode: (mode: "single" | "compare") => void;
   setSceneAnalysis: (analysis: SceneAnalysis) => void;
@@ -53,24 +107,22 @@ interface WorkflowState {
 }
 
 export const useWorkflowStore = create<WorkflowState>((set) => ({
+  canvasFraming: defaultCanvasFraming,
   ratioId: "16:9",
   customRatio: { width: 16, height: 9 },
-  prepareMode: "crop",
   previewMode: "single",
   tasks: [],
   alignmentResults: {},
   exportMapping: defaultExportMapping,
   setSourceImage: (sourceImage) =>
-    set(() => ({
+    set((state) => ({
       sourceImage,
-      preparedImage: undefined,
-      sceneAnalysis: undefined,
-      promptPlan: undefined,
-      tasks: [],
-      alignmentResults: {},
-      exportMapping: defaultExportMapping,
-      activeResultId: undefined,
-      previewMode: "single",
+      canvasFraming: resolveCanvasFramingFor({
+        sourceImage,
+        ratioId: state.ratioId,
+        customRatio: state.customRatio,
+      }),
+      ...clearDerivedState,
     })),
   setPreparedImage: (preparedImage) =>
     set(() => ({
@@ -83,9 +135,51 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       activeResultId: undefined,
       previewMode: "single",
     })),
-  setRatioId: (ratioId) => set({ ratioId }),
-  setCustomRatio: (customRatio) => set({ customRatio }),
-  setPrepareMode: (prepareMode) => set({ prepareMode }),
+  setCanvasViewport: (viewport) =>
+    set((state) => ({
+      ...clearDerivedState,
+      canvasFraming: {
+        ...state.canvasFraming,
+        viewport,
+      },
+    })),
+  setCanvasCropArea: (cropAreaPixels) =>
+    set((state) => ({
+      ...clearDerivedState,
+      canvasFraming: {
+        ...state.canvasFraming,
+        cropAreaPixels,
+      },
+    })),
+  resetCanvasFraming: () =>
+    set((state) => ({
+      ...clearDerivedState,
+      canvasFraming: resolveCanvasFramingFor({
+        sourceImage: state.sourceImage,
+        ratioId: state.ratioId,
+        customRatio: state.customRatio,
+      }),
+    })),
+  setRatioId: (ratioId) =>
+    set((state) => ({
+      ...clearDerivedState,
+      ratioId,
+      canvasFraming: resolveCanvasFramingFor({
+        sourceImage: state.sourceImage,
+        ratioId,
+        customRatio: state.customRatio,
+      }),
+    })),
+  setCustomRatio: (customRatio) =>
+    set((state) => ({
+      ...clearDerivedState,
+      customRatio,
+      canvasFraming: resolveCanvasFramingFor({
+        sourceImage: state.sourceImage,
+        ratioId: state.ratioId,
+        customRatio,
+      }),
+    })),
   setActiveResultId: (activeResultId) => set({ activeResultId }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   setSceneAnalysis: (sceneAnalysis) => set({ sceneAnalysis }),
@@ -134,13 +228,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   setExportMapping: (exportMapping) => set({ exportMapping }),
   resetRun: () =>
     set(() => ({
-      sceneAnalysis: undefined,
-      promptPlan: undefined,
-      tasks: [],
-      alignmentResults: {},
-      exportMapping: defaultExportMapping,
-      activeResultId: undefined,
-      previewMode: "single",
+      ...clearDerivedState,
     })),
 }));
 
