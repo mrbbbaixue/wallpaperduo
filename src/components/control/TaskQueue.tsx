@@ -14,6 +14,8 @@ const statusTone: Record<GenerationStatus, string> = {
     "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/80 dark:bg-emerald-950/40 dark:text-emerald-300",
   failed:
     "border-red-200 bg-red-50 text-red-700 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-300",
+  canceled:
+    "border-neutral-200 bg-neutral-50 text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-400",
 };
 
 export const TaskQueue = () => {

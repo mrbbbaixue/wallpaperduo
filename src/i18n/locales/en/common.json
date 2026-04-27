@@ -73,7 +73,8 @@
       "queued": "Queued",
       "running": "Running",
       "succeeded": "Succeeded",
-      "failed": "Failed"
+      "failed": "Failed",
+      "canceled": "Canceled"
     }
   },
   "export": {

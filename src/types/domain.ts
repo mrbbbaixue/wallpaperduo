@@ -91,7 +91,7 @@ export interface GenerationResult {
   createdAt: string;
 }
 
-export type GenerationStatus = "idle" | "queued" | "running" | "succeeded" | "failed";
+export type GenerationStatus = "idle" | "queued" | "running" | "succeeded" | "failed" | "canceled";
 
 export interface GenerationTask extends PromptVariant {
   status: GenerationStatus;
