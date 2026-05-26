@@ -2,7 +2,6 @@ import { ChevronDown, Download, Layers3, PackageOpen } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { SectionCard } from "@/components/common/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -202,21 +201,12 @@ export const ExportPanel = () => {
   };
 
   return (
-    <SectionCard
-      title={isZh ? "导出面板" : "Export Panel"}
-      subtitle={
-        isZh
-          ? "结果生成后可执行 ORB 对齐，再导出 PNG ZIP 或 WinDynamicDesktop 主题。"
-          : "Run ORB alignment before exporting PNG ZIP bundles or WinDynamicDesktop themes."
-      }
-      surface="flat"
-    >
-      <div className="space-y-0">
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="flex w-full items-center justify-between border-b border-border/70 bg-background/70 px-4 py-3 text-left transition-colors hover:bg-accent/60"
-        >
+    <div className="space-y-0">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="flex w-full items-center justify-between border-b border-border/70 bg-background/70 px-3.5 py-2.5 text-left transition-colors hover:bg-accent/60"
+      >
           <div>
             <p className="text-sm font-semibold">{isZh ? "导出配置" : "Export setup"}</p>
             <p className="text-xs text-muted-foreground">
@@ -291,7 +281,6 @@ export const ExportPanel = () => {
 
         {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
         {error ? <p className="text-sm text-destructive">{t(`errors.${error}`, error)}</p> : null}
-      </div>
-    </SectionCard>
+    </div>
   );
 };

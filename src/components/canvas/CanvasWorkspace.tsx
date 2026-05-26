@@ -180,9 +180,8 @@ export const CanvasWorkspace = () => {
       )}
       style={{
         backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), ${checkerboardBg}`,
-        aspectRatio: "3 / 1",
-        minHeight: isMobile ? 230 : undefined,
-        height: isMobile ? undefined : "100%",
+        minHeight: 200,
+        height: "100%",
       }}
     >
       {compareReady ? (
@@ -225,12 +224,9 @@ export const CanvasWorkspace = () => {
         />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-          <UploadCloud className="h-12 w-12 text-muted-foreground/70" />
-          <p className="max-w-md text-sm leading-6 text-muted-foreground">
-            {t("workspace.uploadHint")}
-          </p>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground/80">
-            {isZh ? "点击或拖拽上传" : "Click or drag to upload"}
+          <UploadCloud className="h-10 w-10 text-muted-foreground/60" />
+          <p className="max-w-xs text-sm text-muted-foreground">
+            {isZh ? "点击或拖拽上传参考图" : "Click or drag to upload a reference image"}
           </p>
         </div>
       )}

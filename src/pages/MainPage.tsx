@@ -56,7 +56,7 @@ export const MainPage = () => {
 
   return (
     <>
-      <div className="grid min-w-0 gap-4 px-4 py-4 md:h-[calc(100dvh-var(--app-header-height))] md:grid-cols-[minmax(0,1fr)_392px] md:items-stretch md:gap-0 md:px-0 md:py-0 md:overflow-hidden">
+      <div className="grid min-w-0 gap-4 px-4 py-4 md:h-[calc(100dvh-var(--app-header-height))] md:grid-cols-[minmax(0,1fr)_312px] md:items-stretch md:gap-0 md:px-0 md:py-0 md:overflow-hidden">
         <div className="min-w-0 md:min-h-0">
           <CanvasWorkspace />
         </div>
