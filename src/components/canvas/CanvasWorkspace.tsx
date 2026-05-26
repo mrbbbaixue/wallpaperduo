@@ -11,9 +11,9 @@ import { getImageSize, readFileAsBlob } from "@/utils/image";
 
 const checkerboardBg = `
   repeating-conic-gradient(
-    rgba(128,128,128,0.15) 0% 25%,
+    hsl(var(--muted-foreground) / 0.08) 0% 25%,
     transparent 0% 50%
-  ) 50% / 20px 20px
+  ) 50% / 16px 16px
 `;
 
 const mobileMediaQuery = "(max-width: 767px)";
@@ -174,12 +174,13 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden rounded-none bg-transparent",
+        "relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-transparent",
         emptyUploadState ? "cursor-pointer" : "",
         isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
+        "shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)]",
       )}
       style={{
-        backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), ${checkerboardBg}`,
+        backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.01)), ${checkerboardBg}`,
         minHeight: 200,
         height: "100%",
       }}
@@ -224,10 +225,19 @@ export const CanvasWorkspace = () => {
         />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-          <UploadCloud className="h-10 w-10 text-muted-foreground/60" />
-          <p className="max-w-xs text-sm text-muted-foreground">
-            {isZh ? "点击或拖拽上传参考图" : "Click or drag to upload a reference image"}
-          </p>
+          <div className="rounded-2xl border border-border/50 bg-background/60 p-4 shadow-sm">
+            <UploadCloud className="h-8 w-8 text-muted-foreground/50" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground/80">
+              {isZh ? "点击或拖拽上传参考图" : "Click or drag to upload a reference image"}
+            </p>
+            <p className="max-w-[260px] text-xs leading-5 text-muted-foreground">
+              {isZh
+                ? "支持 PNG / JPG / WebP 格式，上传后将自动进入构图编辑器"
+                : "Supports PNG / JPG / WebP. Opens the framing editor after upload."}
+            </p>
+          </div>
         </div>
       )}
     </div>

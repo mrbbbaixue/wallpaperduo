@@ -141,9 +141,9 @@ export const CanvasGalleryStrip = ({
                 aria-selected={selected}
                 onClick={() => setActiveResultId(task.id)}
                 className={cn(
-                  "w-44 flex-shrink-0 rounded-none border-b-0 border-l-0 border-t-0 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "w-44 flex-shrink-0 rounded-none border-b-0 border-l-0 border-t-0 p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
-                    ? "border-primary bg-accent/40"
+                    ? "border-primary bg-accent/40 shadow-[inset_0_1px_0_0_hsl(var(--primary)/0.2)]"
                     : "border-border/70 bg-background hover:bg-accent/40",
                 )}
               >
@@ -152,7 +152,7 @@ export const CanvasGalleryStrip = ({
                     src={task.result?.objectUrl}
                     alt={task.label}
                     loading="lazy"
-                    className="aspect-[4/3] w-full rounded-none border border-border/70 object-cover"
+                    className="aspect-[4/3] w-full rounded-md border border-border/50 object-cover transition-shadow duration-200 group-hover:shadow-md"
                   />
                   <p className="truncate text-sm font-semibold">{task.label}</p>
                 </div>

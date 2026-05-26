@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 import type { TimeVariant } from "@/types/domain";
 
 const timeSlots: { key: TimeVariant; labelZh: string; labelEn: string; color: string }[] = [
-  { key: "dawn", labelZh: "晨", labelEn: "Dawn", color: "#b46a21" },
-  { key: "day", labelZh: "昼", labelEn: "Day", color: "#2b68a3" },
-  { key: "dusk", labelZh: "昏", labelEn: "Dusk", color: "#8b4761" },
-  { key: "night", labelZh: "夜", labelEn: "Night", color: "#33458c" },
+  { key: "dawn", labelZh: "晨", labelEn: "Dawn", color: "#F59E0B" },
+  { key: "day", labelZh: "昼", labelEn: "Day", color: "#3B82F6" },
+  { key: "dusk", labelZh: "昏", labelEn: "Dusk", color: "#EC4899" },
+  { key: "night", labelZh: "夜", labelEn: "Night", color: "#6366F1" },
 ];
 
 interface TimeSlotSelectorProps {

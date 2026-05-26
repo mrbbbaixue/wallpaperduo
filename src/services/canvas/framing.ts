@@ -30,6 +30,9 @@ const MIN_EXPANSION_ZOOM = 0.35;
 const MAX_OUTPUT_EDGE = 2480;
 const EPSILON = 0.5;
 
+/** 编辑器中输出区域占画布的尺寸比例（居中放置） */
+export const EDITOR_OUTPUT_AREA_FRACTION = 0.7;
+
 export const getAspectRatio = (ratio: SizeLike) => ratio.width / ratio.height;
 
 export const fitFrameBoxWithinBounds = (bounds: SizeLike, ratio: SizeLike): SizeLike => {

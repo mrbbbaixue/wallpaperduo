@@ -18,10 +18,17 @@ interface WorkflowStepCardProps {
 }
 
 const toneStyle: Record<WorkflowStepTone, string> = {
-  current: "border-primary/45 bg-card/95",
+  current: "border-primary/30 bg-card/95 shadow-sm",
   complete: "border-border/70 bg-background/72",
-  pending: "border-border/60 bg-background/38",
+  pending: "border-border/50 bg-background/38",
   attention: "border-amber-300/60 bg-amber-50/70 dark:border-amber-800/70 dark:bg-amber-950/20",
+};
+
+const leftBar: Record<WorkflowStepTone, string> = {
+  current: "border-l-[3px] border-l-primary",
+  complete: "border-l-[3px] border-l-emerald-400/60",
+  pending: "",
+  attention: "border-l-[3px] border-l-amber-400",
 };
 
 const badgeStyle: Record<WorkflowStepTone, string> = {
@@ -56,8 +63,9 @@ export const WorkflowStepCard = ({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-b border-l-0 border-r-0 border-t-0 transition-colors",
+        "overflow-hidden rounded-lg border border-b border-l border-r border-t-0 transition-colors",
         toneStyle[tone],
+        leftBar[tone],
       )}
     >
       <button

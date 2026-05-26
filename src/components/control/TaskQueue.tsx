@@ -44,7 +44,7 @@ export const TaskQueue = () => {
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="space-y-2 rounded-lg border border-border/70 bg-background/70 p-3"
+            className="space-y-2 rounded-lg border border-border/70 bg-background/70 p-3 transition-all duration-300"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -55,7 +55,7 @@ export const TaskQueue = () => {
               </div>
               <span
                 className={cn(
-                  "rounded-md border px-2.5 py-1 text-[11px] font-medium",
+                  "rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors duration-300",
                   statusTone[task.status],
                 )}
               >
@@ -67,7 +67,10 @@ export const TaskQueue = () => {
               <div className="space-y-1">
                 <div className="h-2 overflow-hidden rounded-full bg-secondary">
                   <div
-                    className="h-full rounded-full bg-primary transition-all"
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      task.status === "running" ? "bg-primary" : "bg-muted-foreground/30",
+                    )}
                     style={{ width: `${Math.max(0, Math.min(100, task.progress))}%` }}
                   />
                 </div>
@@ -79,7 +82,11 @@ export const TaskQueue = () => {
               </div>
             ) : null}
 
-            {task.error ? <p className="text-xs text-destructive">{task.error}</p> : null}
+            {task.error ? (
+              <p className="rounded-md bg-destructive/5 px-2.5 py-1.5 text-xs text-destructive">
+                {task.error}
+              </p>
+            ) : null}
           </div>
         ))}
       </div>
