@@ -63,7 +63,7 @@ export const WorkflowStepCard = ({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-b border-l border-r border-t-0 transition-colors",
+        "overflow-hidden border border-b border-l border-r border-t-0 transition-colors",
         toneStyle[tone],
         leftBar[tone],
       )}
