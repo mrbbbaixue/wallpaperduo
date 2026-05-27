@@ -6,40 +6,34 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
-  clampEditorZoom,
-  EDITOR_OUTPUT_AREA_FRACTION,
-  fitFrameBoxWithinBounds,
-  getEditorMinZoom,
-  resolveEditorImageBox,
+  type BoxLike,
+  clampEditorScale,
+  getEditorMaxScale,
+  getEditorMinScale,
+  resolveDefaultViewport,
+  resolveImageBoxOnCanvas,
+  resolveOutputAreaBox,
   resolveViewportFromImageBox,
-  type EditorImageBox,
 } from "@/services/canvas/framing";
-import type {
-  CanvasCropArea,
-  CanvasFraming,
-  CanvasViewport,
-  LoadedImage,
-} from "@/types/domain";
+import type { CanvasViewport, LoadedImage } from "@/types/domain";
 
 interface CanvasFramingEditorProps {
   sourceImage: LoadedImage;
   ratio: { width: number; height: number };
-  framing: CanvasFraming;
+  viewport?: CanvasViewport;
   onViewportChange: (viewport: CanvasViewport) => void;
-  onCropAreaChange: (cropAreaPixels?: CanvasCropArea) => void;
+  onCanvasSizeChange: (size: { width: number; height: number }) => void;
   onRequestUpload: () => void;
 }
 
-const defaultCanvasSize = { width: 1, height: 1 };
-const maxEditorZoom = 4;
 const moveableHandleDirections = ["nw", "n", "ne", "w", "e", "sw", "s", "se"] as const;
 
 export const CanvasFramingEditor = ({
   sourceImage,
   ratio,
-  framing,
+  viewport,
   onViewportChange,
-  onCropAreaChange,
+  onCanvasSizeChange,
   onRequestUpload,
 }: CanvasFramingEditorProps) => {
   const { t, i18n } = useTranslation();
@@ -48,73 +42,50 @@ export const CanvasFramingEditor = ({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const imageTargetRef = useRef<HTMLDivElement | null>(null);
   const moveableRef = useRef<Moveable | null>(null);
-  const dragStartBoxRef = useRef<EditorImageBox | null>(null);
-  const resizeStartBoxRef = useRef<EditorImageBox | null>(null);
-  const [canvasSize, setCanvasSize] = useState(defaultCanvasSize);
+  const dragStartBoxRef = useRef<BoxLike | null>(null);
+  const resizeStartBoxRef = useRef<BoxLike | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [canvasElement, setCanvasElement] = useState<HTMLDivElement | null>(null);
-  const minZoom = getEditorMinZoom();
-  const zoom = clampEditorZoom(framing.viewport.zoom);
 
-  const outputAreaSize = useMemo(() => ({
-    width: Math.max(1, Math.round(canvasSize.width * EDITOR_OUTPUT_AREA_FRACTION)),
-    height: Math.max(1, Math.round(canvasSize.height * EDITOR_OUTPUT_AREA_FRACTION)),
-  }), [canvasSize.height, canvasSize.width]);
+  const minScale = getEditorMinScale();
+  const maxScale = getEditorMaxScale();
+  const canvasReady = canvasSize.width > 1 && canvasSize.height > 1;
 
-  const outputAreaOffset = useMemo(() => ({
-    x: (canvasSize.width - outputAreaSize.width) / 2,
-    y: (canvasSize.height - outputAreaSize.height) / 2,
-  }), [canvasSize.height, canvasSize.width, outputAreaSize.height, outputAreaSize.width]);
-
-  const imageBoxInOutput = useMemo(
-    () =>
-      resolveEditorImageBox({
-        source: { width: sourceImage.width, height: sourceImage.height },
-        frame: outputAreaSize,
-        framing,
-      }),
-    [outputAreaSize, framing, sourceImage.height, sourceImage.width],
+  const sourceSize = useMemo(
+    () => ({ width: sourceImage.width, height: sourceImage.height }),
+    [sourceImage.width, sourceImage.height],
   );
 
-  const imageBoxInCanvas = useMemo(
-    () => ({
-      x: outputAreaOffset.x + imageBoxInOutput.x,
-      y: outputAreaOffset.y + imageBoxInOutput.y,
-      width: imageBoxInOutput.width,
-      height: imageBoxInOutput.height,
-    }),
-    [imageBoxInOutput, outputAreaOffset],
+  const outputAreaBox = useMemo(
+    () => resolveOutputAreaBox({ canvas: canvasSize, ratio }),
+    [canvasSize, ratio],
+  );
+
+  const imageBox = useMemo(
+    () => resolveImageBoxOnCanvas({ canvas: canvasSize, source: sourceSize, viewport }),
+    [canvasSize, sourceSize, viewport],
   );
 
   const baseImageSize = useMemo(() => {
+    if (!canvasReady) return { width: 1, height: 1 };
     const baseScale = Math.min(
-      outputAreaSize.width / sourceImage.width,
-      outputAreaSize.height / sourceImage.height,
+      canvasSize.width / sourceSize.width,
+      canvasSize.height / sourceSize.height,
     );
     return {
-      width: Math.max(1, sourceImage.width * baseScale),
-      height: Math.max(1, sourceImage.height * baseScale),
+      width: Math.max(1, sourceSize.width * baseScale),
+      height: Math.max(1, sourceSize.height * baseScale),
     };
-  }, [outputAreaSize.height, outputAreaSize.width, sourceImage.height, sourceImage.width]);
-
-  const canvasReady = canvasSize.width > 1 && canvasSize.height > 1;
-
-  useEffect(() => {
-    if (zoom !== framing.viewport.zoom) {
-      onViewportChange({ ...framing.viewport, zoom });
-    }
-  }, [framing.viewport, onViewportChange, zoom]);
+  }, [canvasReady, canvasSize.height, canvasSize.width, sourceSize.height, sourceSize.width]);
 
   useEffect(() => {
     const node = viewportHostRef.current;
     if (!node) return;
 
     const syncSize = () => {
-      setCanvasSize(
-        fitFrameBoxWithinBounds(
-          { width: node.clientWidth, height: node.clientHeight },
-          ratio,
-        ),
-      );
+      const next = { width: node.clientWidth, height: node.clientHeight };
+      setCanvasSize(next);
+      onCanvasSizeChange(next);
     };
 
     syncSize();
@@ -124,40 +95,36 @@ export const CanvasFramingEditor = ({
     const observer = new ResizeObserver(() => syncSize());
     observer.observe(node);
     return () => observer.disconnect();
-  }, [ratio]);
+  }, [onCanvasSizeChange]);
+
+  // 首次有 canvas + source 但 viewport 未初始化时，写入默认 viewport（居中、contain 亮色框）
+  useEffect(() => {
+    if (!canvasReady) return;
+    if (viewport) return;
+    onViewportChange(resolveDefaultViewport({ canvas: canvasSize, source: sourceSize, ratio }));
+  }, [canvasReady, canvasSize, onViewportChange, ratio, sourceSize, viewport]);
+
+  // 校正越界 scale（例如旧数据或外部干预）
+  useEffect(() => {
+    if (!viewport) return;
+    const clamped = clampEditorScale(viewport.scale);
+    if (clamped !== viewport.scale) {
+      onViewportChange({ ...viewport, scale: clamped });
+    }
+  }, [onViewportChange, viewport]);
 
   useEffect(() => {
     moveableRef.current?.updateRect();
-  }, [canvasSize.height, canvasSize.width, imageBoxInCanvas.height, imageBoxInCanvas.width, imageBoxInCanvas.x, imageBoxInCanvas.y]);
+  }, [canvasSize.height, canvasSize.width, imageBox.height, imageBox.width, imageBox.x, imageBox.y]);
 
   const commitViewportFromBox = useCallback(
-    (boxInOutput: EditorImageBox) => {
+    (nextBox: BoxLike) => {
       if (!canvasReady) return;
       onViewportChange(
-        resolveViewportFromImageBox({
-          imageBox: boxInOutput,
-          source: { width: sourceImage.width, height: sourceImage.height },
-          frame: outputAreaSize,
-        }),
+        resolveViewportFromImageBox({ canvas: canvasSize, source: sourceSize, imageBox: nextBox }),
       );
     },
-    [canvasReady, outputAreaSize, onViewportChange, sourceImage.height, sourceImage.width],
-  );
-
-  const clearLegacyCropArea = useCallback(() => {
-    dragStartBoxRef.current = null;
-    resizeStartBoxRef.current = null;
-    onCropAreaChange(undefined);
-  }, [onCropAreaChange]);
-
-  const toOutputBox = useCallback(
-    (boxInCanvas: EditorImageBox): EditorImageBox => ({
-      x: boxInCanvas.x - outputAreaOffset.x,
-      y: boxInCanvas.y - outputAreaOffset.y,
-      width: boxInCanvas.width,
-      height: boxInCanvas.height,
-    }),
-    [outputAreaOffset],
+    [canvasReady, canvasSize, onViewportChange, sourceSize],
   );
 
   const handleCanvasRef = useCallback((node: HTMLDivElement | null) => {
@@ -167,57 +134,60 @@ export const CanvasFramingEditor = ({
 
   const handleDragStart = useCallback(
     (event: OnDragStart) => {
-      dragStartBoxRef.current = imageBoxInCanvas;
+      dragStartBoxRef.current = imageBox;
       event.set([0, 0]);
     },
-    [imageBoxInCanvas],
+    [imageBox],
   );
 
   const handleDrag = useCallback(
     (event: OnDrag) => {
-      const startBox = dragStartBoxRef.current ?? imageBoxInCanvas;
-      const boxInCanvas: EditorImageBox = {
+      const startBox = dragStartBoxRef.current ?? imageBox;
+      commitViewportFromBox({
         ...startBox,
         x: startBox.x + event.beforeTranslate[0],
         y: startBox.y + event.beforeTranslate[1],
-      };
-      commitViewportFromBox(toOutputBox(boxInCanvas));
+      });
     },
-    [commitViewportFromBox, imageBoxInCanvas, toOutputBox],
+    [commitViewportFromBox, imageBox],
   );
 
   const handleResizeStart = useCallback(
     (event: OnResizeStart) => {
-      resizeStartBoxRef.current = imageBoxInCanvas;
-      event.set([imageBoxInCanvas.width, imageBoxInCanvas.height]);
-      event.setRatio(sourceImage.width / sourceImage.height);
-      event.setMin([baseImageSize.width * minZoom, baseImageSize.height * minZoom]);
-      event.setMax([baseImageSize.width * maxEditorZoom, baseImageSize.height * maxEditorZoom]);
+      resizeStartBoxRef.current = imageBox;
+      event.set([imageBox.width, imageBox.height]);
+      event.setRatio(sourceSize.width / sourceSize.height);
+      event.setMin([baseImageSize.width * minScale, baseImageSize.height * minScale]);
+      event.setMax([baseImageSize.width * maxScale, baseImageSize.height * maxScale]);
       if (event.dragStart) {
         event.dragStart.set([0, 0]);
       }
     },
-    [baseImageSize, imageBoxInCanvas, minZoom, sourceImage.height, sourceImage.width],
+    [baseImageSize, imageBox, maxScale, minScale, sourceSize.height, sourceSize.width],
   );
 
   const handleResize = useCallback(
     (event: OnResize) => {
-      const startBox = resizeStartBoxRef.current ?? imageBoxInCanvas;
-      const boxInCanvas: EditorImageBox = {
+      const startBox = resizeStartBoxRef.current ?? imageBox;
+      commitViewportFromBox({
         x: startBox.x + event.drag.beforeTranslate[0],
         y: startBox.y + event.drag.beforeTranslate[1],
         width: event.boundingWidth,
         height: event.boundingHeight,
-      };
-      commitViewportFromBox(toOutputBox(boxInCanvas));
+      });
     },
-    [commitViewportFromBox, imageBoxInCanvas, toOutputBox],
+    [commitViewportFromBox, imageBox],
   );
+
+  const handleInteractionEnd = useCallback(() => {
+    dragStartBoxRef.current = null;
+    resizeStartBoxRef.current = null;
+  }, []);
 
   return (
     <div
       ref={viewportHostRef}
-      className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-background/50 px-4 py-4"
+      className="relative h-full w-full self-stretch overflow-hidden bg-background/50"
     >
       <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2">
         <Button
@@ -235,58 +205,48 @@ export const CanvasFramingEditor = ({
         </span>
       </div>
 
-      {/* 大画布 —— 暗色背景，容纳图片自由拖放 */}
+      {/* 画布 —— 始终占满左侧，作为图片可放置的整个区域 */}
       <div
         ref={handleCanvasRef}
-        className="relative"
-        style={{
-          width: canvasSize.width,
-          height: canvasSize.height,
-        }}
+        className="absolute inset-0"
       >
-        {/* 输出区 —— 亮色区域，位于画布中央 */}
-        <div
-          className="absolute border-2 border-white/90 bg-white/15 shadow-[0_0_80px_rgba(255,255,255,0.05)] dark:bg-white/8"
-          style={{
-            left: outputAreaOffset.x,
-            top: outputAreaOffset.y,
-            width: outputAreaSize.width,
-            height: outputAreaSize.height,
-          }}
-        />
+        {/* 图片层 —— 等默认 viewport 写入后再渲染，避免初始一帧占满画布的闪烁 */}
+        {canvasReady && viewport ? (
+          <div
+            ref={imageTargetRef}
+            className="absolute touch-none select-none cursor-move"
+            style={{
+              left: imageBox.x,
+              top: imageBox.y,
+              width: imageBox.width,
+              height: imageBox.height,
+            }}
+            aria-label={t("workspace.framingTitle")}
+          >
+            <img
+              src={sourceImage.objectUrl}
+              alt={sourceImage.name}
+              draggable={false}
+              className="pointer-events-none h-full w-full select-none object-fill drop-shadow-[0_12px_36px_rgba(15,23,42,0.45)]"
+            />
+          </div>
+        ) : null}
 
-        {/* 图片 —— 可拖拽/缩放，不受输出区裁剪 */}
-        <div
-          ref={imageTargetRef}
-          className="absolute touch-none select-none cursor-move"
-          style={{
-            left: imageBoxInCanvas.x,
-            top: imageBoxInCanvas.y,
-            width: imageBoxInCanvas.width,
-            height: imageBoxInCanvas.height,
-          }}
-          aria-label={t("workspace.framingTitle")}
-        >
-          <img
-            src={sourceImage.objectUrl}
-            alt={sourceImage.name}
-            draggable={false}
-            className="pointer-events-none h-full w-full select-none object-fill drop-shadow-[0_12px_36px_rgba(15,23,42,0.45)]"
-          />
-        </div>
-
-        {/* 输出区描边叠加层 —— 始终可见，标记裁剪边界 */}
-        <div
-          className="pointer-events-none absolute border-2 border-white/90"
-          style={{
-            left: outputAreaOffset.x,
-            top: outputAreaOffset.y,
-            width: outputAreaSize.width,
-            height: outputAreaSize.height,
-          }}
-        />
-
+        {/* 亮色取景框 —— 按 ratio 居中，比例切换时仅它会变 */}
         {canvasReady ? (
+          <div
+            className="pointer-events-none absolute border-2 border-white/90 shadow-[0_0_80px_rgba(255,255,255,0.05)] transition-[left,top,width,height] duration-200 ease-out"
+            style={{
+              left: outputAreaBox.x,
+              top: outputAreaBox.y,
+              width: outputAreaBox.width,
+              height: outputAreaBox.height,
+              boxShadow: "0 0 0 9999px rgba(0,0,0,0.32)",
+            }}
+          />
+        ) : null}
+
+        {canvasReady && viewport ? (
           <Moveable
             ref={moveableRef}
             target={imageTargetRef}
@@ -307,10 +267,10 @@ export const CanvasFramingEditor = ({
             className="framing-moveable"
             onDragStart={handleDragStart}
             onDrag={handleDrag}
-            onDragEnd={clearLegacyCropArea}
+            onDragEnd={handleInteractionEnd}
             onResizeStart={handleResizeStart}
             onResize={handleResize}
-            onResizeEnd={clearLegacyCropArea}
+            onResizeEnd={handleInteractionEnd}
           />
         ) : null}
       </div>
@@ -320,7 +280,9 @@ export const CanvasFramingEditor = ({
       </div>
 
       <div className="pointer-events-none absolute bottom-11 right-4 z-20 rounded-md border border-border/70 bg-background/76 px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur">
-        {isZh ? `缩放范围 ${minZoom.toFixed(2)}x - ${maxEditorZoom.toFixed(0)}x` : `Scale ${minZoom.toFixed(2)}x - ${maxEditorZoom.toFixed(0)}x`}
+        {isZh
+          ? `缩放范围 ${minScale.toFixed(2)}x - ${maxScale.toFixed(0)}x`
+          : `Scale ${minScale.toFixed(2)}x - ${maxScale.toFixed(0)}x`}
       </div>
     </div>
   );

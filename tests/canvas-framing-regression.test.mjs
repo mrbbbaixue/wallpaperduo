@@ -12,8 +12,13 @@ test("workflow store exposes canvas framing state", () => {
 
   assert.ok(source.includes("canvasFraming"), "store should keep canvas framing state");
   assert.ok(source.includes("setCanvasViewport"), "store should expose viewport updates");
-  assert.ok(source.includes("setCanvasCropArea"), "store should expose crop-area updates");
+  assert.ok(source.includes("setCanvasSize"), "store should expose canvas size updates");
   assert.ok(source.includes("resetCanvasFraming"), "store should expose framing reset");
+  assert.equal(
+    source.includes("setCanvasCropArea"),
+    false,
+    "store should no longer expose the legacy crop-area updater",
+  );
 });
 
 test("canvas workspace mounts framing editor for source images", () => {
@@ -22,6 +27,10 @@ test("canvas workspace mounts framing editor for source images", () => {
   assert.ok(
     workspace.includes("CanvasFramingEditor"),
     "workspace should render the framing editor when a source image exists",
+  );
+  assert.ok(
+    workspace.includes("onCanvasSizeChange={setCanvasSize}"),
+    "workspace should wire the editor's canvas-size measurements into the store",
   );
 });
 
@@ -43,6 +52,10 @@ test("analysis flow prepares the current framing on demand", () => {
     "analysis flow should pass the current framing into prepareCanvasImage",
   );
   assert.ok(
+    panel.includes("canvas: canvasSize"),
+    "analysis flow should pass the measured canvas size into prepareCanvasImage",
+  );
+  assert.ok(
     panel.includes("buildPreparedImage"),
     "analysis flow should persist the cropped frame before scene analysis",
   );
@@ -53,7 +66,7 @@ test("analysis flow prepares the current framing on demand", () => {
   );
 });
 
-test("control panel surfaces expansion-composition framing summary pills", () => {
+test("control panel surfaces canvas framing summary pills", () => {
   const panel = read("src/components/control/ControlPanel.tsx");
 
   assert.ok(
@@ -66,7 +79,7 @@ test("control panel surfaces expansion-composition framing summary pills", () =>
   );
   assert.ok(
     panel.includes('t("workspace.expansionCompose")'),
-    "control panel should describe the single expansion-composition workflow",
+    "control panel should describe the canvas-framing workflow",
   );
 });
 
@@ -99,27 +112,42 @@ test("workspace locale files define framing editor copy", () => {
   assert.ok(en.includes('"resetFraming"'), "English locale should include reset framing copy");
   assert.ok(
     zh.includes('"expansionCompose"'),
-    "Chinese locale should include single-mode expansion composition copy",
+    "Chinese locale should include canvas-framing copy",
   );
   assert.ok(
     en.includes('"expansionCompose"'),
-    "English locale should include single-mode expansion composition copy",
+    "English locale should include canvas-framing copy",
   );
 });
 
-test("framing editor fits the visible cropper viewport to the selected ratio", () => {
+test("framing editor uses a full-canvas placement layer separate from the ratio framing box", () => {
   const editor = read("src/components/canvas/CanvasFramingEditor.tsx");
   const framing = read("src/services/canvas/framing.ts");
   const controls = read("src/components/canvas/CanvasControls.tsx");
-  const store = read("src/store/useWorkflowStore.ts");
 
   assert.ok(
-    framing.includes("fitFrameBoxWithinBounds"),
-    "framing helpers should expose a fit-to-bounds ratio helper for the editor viewport",
+    framing.includes("resolveOutputAreaBox"),
+    "framing helpers should expose the output-area resolver for the bright framing box",
   );
   assert.ok(
-    editor.includes("width: frameViewportSize.width"),
-    "framing editor should render inside a measured ratio-constrained viewport",
+    framing.includes("resolveImageBoxOnCanvas"),
+    "framing helpers should expose the image-box-on-canvas resolver",
+  );
+  assert.ok(
+    framing.includes("resolveDefaultViewport"),
+    "framing helpers should expose a canvas-aware default viewport resolver",
+  );
+  assert.ok(
+    editor.includes('className="absolute inset-0"'),
+    "framing editor should render the canvas filling the host viewport",
+  );
+  assert.ok(
+    editor.includes("resolveOutputAreaBox"),
+    "framing editor should compute the bright framing box from the canvas+ratio",
+  );
+  assert.ok(
+    editor.includes("resolveImageBoxOnCanvas"),
+    "framing editor should resolve the image box on the canvas",
   );
   assert.equal(
     editor.includes('type="range"'),
@@ -128,7 +156,7 @@ test("framing editor fits the visible cropper viewport to the selected ratio", (
   );
   assert.ok(
     editor.includes('from "react-moveable"'),
-    "framing editor should use react-moveable for PPT-style direct manipulation",
+    "framing editor should use react-moveable for direct manipulation",
   );
   assert.ok(
     editor.includes("renderDirections"),
@@ -144,22 +172,13 @@ test("framing editor fits the visible cropper viewport to the selected ratio", (
     "framing editor should stop using react-easy-crop as the interaction layer",
   );
   assert.equal(
-    editor.includes("handleZoomHandlePointerDown"),
-    false,
-    "framing editor should remove the legacy single-corner zoom handle",
-  );
-  assert.equal(
     controls.includes("setPrepareMode"),
     false,
     "canvas controls should stop exposing a crop/pad mode toggle",
   );
-  assert.ok(
-    store.includes("resolveDefaultCanvasFraming"),
-    "workflow store should initialize framing from a ratio-aware cover-centered expansion default",
-  );
 });
 
-test("composition-changing store actions invalidate derived analysis state", () => {
+test("ratio changes invalidate derived analysis state without resetting the viewport", () => {
   const store = read("src/store/useWorkflowStore.ts");
 
   assert.ok(
@@ -173,5 +192,45 @@ test("composition-changing store actions invalidate derived analysis state", () 
   assert.ok(
     store.includes("sceneAnalysis: undefined"),
     "composition updates should invalidate previous scene analysis",
+  );
+
+  const setRatioBody = store.split("setRatioId:")[1]?.split("setCustomRatio:")[0] ?? "";
+  assert.ok(setRatioBody, "setRatioId block should be present");
+  assert.equal(
+    /\bcanvasFraming\s*:/.test(setRatioBody),
+    false,
+    "setRatioId should not overwrite canvasFraming so the image stays put on ratio changes",
+  );
+
+  const setCustomRatioBody =
+    store.split("setCustomRatio:")[1]?.split("setActiveResultId:")[0] ?? "";
+  assert.ok(setCustomRatioBody, "setCustomRatio block should be present");
+  assert.equal(
+    /\bcanvasFraming\s*:/.test(setCustomRatioBody),
+    false,
+    "setCustomRatio should not overwrite canvasFraming on ratio changes",
+  );
+});
+
+test("prepareCanvasImage outputs transparent-background PNG with the framing box pixel size", () => {
+  const prepare = read("src/services/canvas/prepareCanvas.ts");
+  const framing = read("src/services/canvas/framing.ts");
+
+  assert.ok(
+    prepare.includes("canvas: canvasSize"),
+    "prepareCanvasImage should accept the measured canvas size to interpret normalized viewport",
+  );
+  assert.ok(
+    prepare.includes("clearRect"),
+    "prepareCanvasImage should clear the output canvas to keep alpha transparent",
+  );
+  assert.equal(
+    /ctx\.filter\s*=\s*"blur/.test(prepare),
+    false,
+    "prepareCanvasImage should no longer paint a blur backdrop",
+  );
+  assert.ok(
+    framing.includes("resolveImageDrawBoxInOutput"),
+    "framing helpers should expose the image-draw-box resolver used by prepareCanvasImage",
   );
 });

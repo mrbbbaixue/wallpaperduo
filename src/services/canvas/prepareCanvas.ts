@@ -1,6 +1,6 @@
 import Pica from "pica";
 
-import { resolveFramingRender, scaleCanvasToMaxEdge } from "@/services/canvas/framing";
+import { resolveImageDrawBoxInOutput, scaleCanvasToMaxEdge } from "@/services/canvas/framing";
 import type { CanvasFraming } from "@/types/domain";
 import { canvasToBlob, loadImageFromBlob } from "@/utils/image";
 
@@ -9,6 +9,7 @@ const pica = new Pica();
 export interface PrepareCanvasInput {
   source: Blob;
   ratio: { width: number; height: number };
+  canvas: { width: number; height: number };
   framing?: CanvasFraming;
 }
 
@@ -34,6 +35,7 @@ const resizeIfNeeded = async (canvas: HTMLCanvasElement): Promise<HTMLCanvasElem
 export const prepareCanvasImage = async ({
   source,
   ratio,
+  canvas: canvasSize,
   framing,
 }: PrepareCanvasInput): Promise<PrepareCanvasOutput> => {
   const image = await loadImageFromBlob(source);
@@ -44,31 +46,18 @@ export const prepareCanvasImage = async ({
     throw new Error("CANVAS_CONTEXT_UNAVAILABLE");
   }
 
-  const render = resolveFramingRender({
-    source: {
-      width: image.width,
-      height: image.height,
-    },
+  const { outputSize, imageBox } = resolveImageDrawBoxInOutput({
+    canvas: canvasSize,
+    source: { width: image.width, height: image.height },
     ratio,
     framing,
   });
 
-  canvas.width = render.outputWidth;
-  canvas.height = render.outputHeight;
+  canvas.width = outputSize.width;
+  canvas.height = outputSize.height;
 
-  const scaleBg = Math.max(canvas.width / image.width, canvas.height / image.height);
-  const bgWidth = image.width * scaleBg;
-  const bgHeight = image.height * scaleBg;
-  const bgX = (canvas.width - bgWidth) / 2;
-  const bgY = (canvas.height - bgHeight) / 2;
-
-  ctx.filter = "blur(36px) brightness(0.82)";
-  ctx.drawImage(image, bgX, bgY, bgWidth, bgHeight);
-  ctx.filter = "none";
-  ctx.fillStyle = "rgba(12,16,20,0.28)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.drawImage(image, render.drawX, render.drawY, render.drawWidth, render.drawHeight);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, imageBox.x, imageBox.y, imageBox.width, imageBox.height);
 
   const resized = await resizeIfNeeded(canvas);
   const blob = await canvasToBlob(resized, "image/png");

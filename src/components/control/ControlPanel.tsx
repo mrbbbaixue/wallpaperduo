@@ -61,6 +61,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
+  const canvasSize = useWorkflowStore((s) => s.canvasSize);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
@@ -186,6 +187,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       const output = await prepareCanvasImage({
         source: sourceImage.blob,
         ratio,
+        canvas: canvasSize,
         framing: canvasFraming,
       });
       const prepared = buildPreparedImage({
@@ -250,7 +252,10 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
   const includesExpansionArea =
     !!sourceImage &&
+    canvasSize.width > 0 &&
+    canvasSize.height > 0 &&
     hasExpansionArea({
+      canvas: canvasSize,
       source: { width: sourceImage.width, height: sourceImage.height },
       ratio,
       framing: canvasFraming,

@@ -29,7 +29,7 @@ export const CanvasWorkspace = () => {
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const setSourceImage = useWorkflowStore((s) => s.setSourceImage);
   const setCanvasViewport = useWorkflowStore((s) => s.setCanvasViewport);
-  const setCanvasCropArea = useWorkflowStore((s) => s.setCanvasCropArea);
+  const setCanvasSize = useWorkflowStore((s) => s.setCanvasSize);
   const tasks = useWorkflowStore((s) => s.tasks);
   const activeResultId = useWorkflowStore((s) => s.activeResultId);
   const setActiveResultId = useWorkflowStore((s) => s.setActiveResultId);
@@ -218,9 +218,9 @@ export const CanvasWorkspace = () => {
         <CanvasFramingEditor
           sourceImage={sourceImage}
           ratio={ratio}
-          framing={canvasFraming}
+          viewport={canvasFraming.viewport}
           onViewportChange={setCanvasViewport}
-          onCropAreaChange={setCanvasCropArea}
+          onCanvasSizeChange={setCanvasSize}
           onRequestUpload={triggerUpload}
         />
       ) : (

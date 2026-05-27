@@ -21,22 +21,15 @@ export interface LoadedImage {
 }
 
 export interface CanvasViewport {
-  // x/y are normalized against the visible frame size so the composition survives responsive resizes.
-  x: number;
-  y: number;
-  zoom: number;
-}
-
-export interface CanvasCropArea {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  // 图片中心点相对画布尺寸的归一化坐标（允许超出 [0,1] 表示图片中心被拖到画布外）
+  cx: number;
+  cy: number;
+  // 相对「图片 contain 到画布」时的缩放倍数
+  scale: number;
 }
 
 export interface CanvasFraming {
-  viewport: CanvasViewport;
-  cropAreaPixels?: CanvasCropArea;
+  viewport?: CanvasViewport;
 }
 
 export interface PreparedImage {
