@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { PropsWithChildren } from "react";
 
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -50,10 +51,29 @@ export const AppProviders = ({ children }: PropsWithChildren) => {
     }
   }, [resolvedThemeMode]);
 
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    let el = document.getElementById("toast-portal");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "toast-portal";
+      document.body.appendChild(el);
+    }
+    // Portal 容器初始化必须在 effect 中完成，官方推荐模式
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPortalRoot(el);
+    return () => {
+      if (el && el.childNodes.length === 0) {
+        el.remove();
+      }
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster />
+      {portalRoot ? createPortal(<Toaster />, portalRoot) : null}
     </QueryClientProvider>
   );
 };

@@ -38,7 +38,7 @@ export function ProviderConfig() {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <div className="space-y-2">
-        <Label className={fieldLabelClassName}>{isZh ? "Provider 模板" : "Provider template"}</Label>
+        <Label className={fieldLabelClassName}>{t("settings.providerTemplate")}</Label>
         <Select value={provider.templateId} onValueChange={handleTemplateChange}>
           <SelectTrigger className={fieldClassName}>
             <SelectValue />
@@ -84,9 +84,7 @@ export function ProviderConfig() {
         />
         {provider.templateId === "openrouter" ? (
           <p className="text-xs leading-5 text-muted-foreground">
-            {isZh
-              ? "OpenRouter 请选择支持图像输出的模型，例如 google/gemini-2.5-flash-image-preview。"
-              : "For OpenRouter, use a model with image output support such as google/gemini-2.5-flash-image-preview."}
+            {t("settings.openrouterHint")}
           </p>
         ) : null}
       </div>
@@ -105,9 +103,7 @@ export function ProviderConfig() {
       provider.templateId === "ark" ||
       provider.templateId === "custom" ? (
         <div className="space-y-2 xl:col-span-2">
-          <Label className={fieldLabelClassName}>
-            {isZh ? "生成接口 URL（可选）" : "Generation endpoint (optional)"}
-          </Label>
+          <Label className={fieldLabelClassName}>{t("settings.generationEndpoint")}</Label>
           <Input
             className={fieldClassName}
             value={provider.generateUrl || ""}

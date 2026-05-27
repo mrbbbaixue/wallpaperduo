@@ -104,8 +104,8 @@ export const CanvasControls = () => {
           <p className="text-xs leading-5 text-muted-foreground">
             {sourceImage
               ? isZh
-                ? "图片会默认居中铺满目标画布；拖拽图片可移动，拖动四周手柄可继续缩放，留出扩充空间。"
-                : "The image starts centered and filling the target canvas. Drag it to reposition, then use any side or corner handle to scale and reserve expansion space."
+                ? "切换目标比例只会改变左侧亮色取景框，图片位置和大小不会跟着变；拖动或缩放图片可自由调整与取景框的关系。"
+                : "Switching the target ratio only resizes the framing box on the left—the image itself stays put. Drag or scale the image to rearrange its relationship with the box."
               : isZh
                 ? "先在左侧导入参考图，再设置目标比例。"
                 : "Import a reference image on the left, then choose a target ratio."}

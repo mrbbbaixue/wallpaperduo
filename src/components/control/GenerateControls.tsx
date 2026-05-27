@@ -1,5 +1,5 @@
-import { ScanSearch, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { ScanSearch, Sparkles, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -38,9 +38,11 @@ export const GenerateControls = ({
   const updateTask = useWorkflowStore((s) => s.updateTask);
   const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
+  const generationSettings = useSettingsStore((s) => s.generationSettings);
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const slotLabels: Record<TimeVariant, { zh: string; en: string }> = {
     dawn: { zh: "晨光", en: "Dawn" },
@@ -74,6 +76,9 @@ export const GenerateControls = ({
       };
     });
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       setGenerating(true);
       setError("");
@@ -91,9 +96,10 @@ export const GenerateControls = ({
         provider,
         prepared: preparedImage,
         tasks: newTasks,
-        concurrency: 2,
-        retries: 1,
+        concurrency: generationSettings.concurrency,
+        retries: generationSettings.retries,
         onTaskUpdate: (taskId, patch) => updateTask(taskId, patch),
+        signal: controller.signal,
       });
 
       const completedById = new Map(completed.map((task) => [task.id, task]));
@@ -101,12 +107,19 @@ export const GenerateControls = ({
       setTasks(latestTasks.map((task) => completedById.get(task.id) ?? task));
       const succeededCount = completed.filter((task) => task.status === "succeeded").length;
       const failedCount = completed.filter((task) => task.status === "failed").length;
+      const canceledCount = completed.filter((task) => task.status === "canceled").length;
+      const canceledText =
+        canceledCount > 0
+          ? i18n.language === "zh"
+            ? `，已取消 ${canceledCount} 个`
+            : `, ${canceledCount} canceled`
+          : "";
       toast({
         title: i18n.language === "zh" ? "生成完成" : "Generation finished",
         description:
           i18n.language === "zh"
-            ? `成功 ${succeededCount} 个，失败 ${failedCount} 个。`
-            : `${succeededCount} succeeded, ${failedCount} failed.`,
+            ? `成功 ${succeededCount} 个，失败 ${failedCount} 个${canceledText}。`
+            : `${succeededCount} succeeded, ${failedCount} failed${canceledText}.`,
         variant: failedCount > 0 ? "destructive" : "default",
       });
     } catch (exception) {
@@ -119,7 +132,19 @@ export const GenerateControls = ({
       });
     } finally {
       setGenerating(false);
+      abortRef.current = null;
     }
+  };
+
+  const onCancel = () => {
+    abortRef.current?.abort();
+    toast({
+      title: i18n.language === "zh" ? "已取消" : "Cancelled",
+      description:
+        i18n.language === "zh"
+          ? "正在停止未开始的任务，已在生成中的任务也会尽快中止。"
+          : "Stopping pending tasks; in-flight tasks will stop shortly.",
+    });
   };
 
   return (
@@ -173,16 +198,30 @@ export const GenerateControls = ({
 
       <Button
         type="button"
-        onClick={() => void onGenerate()}
-        disabled={!preparedImage || generating || selectedSlots.length === 0}
+        onClick={() => {
+          if (generating) {
+            onCancel();
+          } else {
+            void onGenerate();
+          }
+        }}
+        disabled={!preparedImage || selectedSlots.length === 0}
+        variant={generating ? "destructive" : "default"}
         className="h-11 w-full rounded-md"
       >
-        <Sparkles className="h-4 w-4" />
-        {generating
-          ? t("common.loading")
-          : i18n.language === "zh"
-            ? `生成 ${selectedSlots.length} 个版本`
-            : `Generate ${selectedSlots.length} variant${selectedSlots.length === 1 ? "" : "s"}`}
+        {generating ? (
+          <>
+            <X className="h-4 w-4" />
+            {i18n.language === "zh" ? "取消生成" : "Cancel"}
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-4 w-4" />
+            {i18n.language === "zh"
+              ? `生成 ${selectedSlots.length} 个版本`
+              : `Generate ${selectedSlots.length} variant${selectedSlots.length === 1 ? "" : "s"}`}
+          </>
+        )}
       </Button>
 
       {error ? <p className="text-sm text-destructive">{t(`errors.${error}`, error)}</p> : null}

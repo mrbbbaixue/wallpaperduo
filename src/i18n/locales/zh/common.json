@@ -26,26 +26,26 @@
   },
   "workspace": {
     "uploadTitle": "上传与构图画布",
-    "uploadHint": "支持 PNG/JPEG/WebP，导入后直接在左侧目标画布中构图。",
+    "uploadHint": "支持 PNG/JPEG/WebP，导入后图片会放置在左侧画布上，由亮色取景框定义最终输出。",
     "ratio": "目标比例",
     "customRatio": "自定义比例",
     "mode": "比例处理",
     "modeCrop": "裁剪",
     "modePad": "填充",
-    "framingTitle": "目标画布",
-    "framingHint": "画布内就是实际送给 AI 的最终构图。默认会居中铺满，拖拽图片可移动，拖动四周手柄可缩放做扩充构图。",
-    "expansionCompose": "扩充构图",
+    "framingTitle": "画布与取景",
+    "framingHint": "亮色框内即送给 AI 的最终画面；切换目标比例只会改变取景框，图片位置不变；可自由拖动、缩放图片。",
+    "expansionCompose": "画布取景",
     "modeCropHint": "拖拽并放大图片，让主体完整铺满这块 AI 画布。",
     "modePadHint": "可缩小图片，在固定 AI 画布中预留扩充区域。",
     "zoom": "缩放",
-    "resetFraming": "重置构图",
-    "framingLocked": "当前构图",
-    "expansionArea": "包含扩充留白",
+    "resetFraming": "重置取景",
+    "framingLocked": "当前取景",
+    "expansionArea": "含外扩透明区",
     "prepare": "分析当前构图",
     "prepared": "当前构图已分析",
     "singleDark": "单次生成深色版",
     "singleLight": "单次生成浅色版",
-    "needPrepared": "请先完成当前扩充构图并执行分析"
+    "needPrepared": "请先完成当前取景并执行分析"
   },
   "prompts": {
     "title": "Prompt 编辑器",
@@ -73,7 +73,8 @@
       "queued": "排队中",
       "running": "生成中",
       "succeeded": "已完成",
-      "failed": "失败"
+      "failed": "失败",
+      "canceled": "已取消"
     }
   },
   "export": {
@@ -91,8 +92,11 @@
     "providerSection": "模型路由与 Provider 配置",
     "routingHint": "分析与生成统一使用同一个 BYOK Provider，请求全部通过 Cloudflare Worker 代理。",
     "sections": {
-      "provider": "Provider 与模型",
-      "prompts": "Prompt 默认值"
+      "provider": "模型",
+      "prompts": "提示词",
+      "appearance": "外观",
+      "generation": "生成",
+      "export": "导出"
     },
     "autoSaveHint": "设置会自动保存到当前浏览器",
     "analysisProvider": "视觉分析 Provider",
@@ -118,7 +122,31 @@
     "generationPromptPrefix": "生成提示词前缀",
     "defaultNegativePrompt": "默认负面提示词",
     "heicExperimental": "ZIP 导出",
-    "localFallback": "Worker 代理"
+    "localFallback": "Worker 代理",
+    "providerTemplate": "Provider 模板",
+    "generationEndpoint": "生成接口 URL（可选）",
+    "openrouterHint": "OpenRouter 请选择支持图像输出的模型，例如 google/gemini-2.5-flash-image-preview。",
+    "appearanceSection": "界面外观",
+    "appearanceDesc": "语言和主题设置会即时生效。",
+    "language": "界面语言",
+    "languageZh": "中文",
+    "languageEn": "English",
+    "theme": "主题模式",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "generationSettingsTitle": "生成设置",
+    "generationSettingsDesc": "控制批量生成的速度和容错行为。",
+    "concurrencyLabel": "并发数量",
+    "concurrencyHint": "同时生成多少张图片。降低可避免 API 限流，提高可加速批量生成。",
+    "retriesLabel": "失败重试次数",
+    "retriesHint": "单张图片生成失败后的重试次数。",
+    "exportSettingsTitle": "导出设置",
+    "exportSettingsDesc": "设置导出的默认行为。",
+    "defaultFileStemLabel": "默认文件名前缀",
+    "defaultFileStemHint": "新建导出时的默认文件名。",
+    "autoAlignLabel": "导出前自动对齐",
+    "autoAlignHint": "勾选后导出 DDW 或 ZIP 前自动运行图像对齐。"
   },
   "errors": {
     "INVALID_IMAGE": "不支持的图片文件，请选择 PNG/JPEG/WebP。",

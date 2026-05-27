@@ -2,7 +2,6 @@ import { ChevronDown, Download, Layers3, PackageOpen } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { SectionCard } from "@/components/common/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -10,6 +9,7 @@ import { alignToReference } from "@/services/alignment/alignmentService";
 import { validateDdwThemeShape } from "@/services/export/ddwCompatibility";
 import { downloadDdw } from "@/services/export/ddwExporter";
 import { downloadPngZip } from "@/services/export/pngZipExporter";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 import { toUserError } from "@/utils/error";
 
@@ -31,12 +31,15 @@ export const ExportPanel = () => {
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const mapping = useWorkflowStore((s) => s.exportMapping);
   const setExportMapping = useWorkflowStore((s) => s.setExportMapping);
+  const exportSettings = useSettingsStore((s) => s.exportSettings);
+  const setExportSettings = useSettingsStore((s) => s.setExportSettings);
 
   const [expanded, setExpanded] = useState(false);
-  const [fileStem, setFileStem] = useState("wallpaper");
+  const [fileStem, setFileStem] = useState(exportSettings.defaultFileStem);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"align" | "zip" | "ddw" | "">("");
+  const [alignProgress, setAlignProgress] = useState<{ current: number; settled: number } | null>(null);
 
   const succeeded = useMemo(
     () => tasks.filter((task) => task.status === "succeeded" && task.result?.blob),
@@ -81,9 +84,13 @@ export const ExportPanel = () => {
       setBusy("align");
       setError("");
       setMessage("");
+      setAlignProgress({ current: 0, settled: 0 });
       let successCount = 0;
 
-      for (const task of succeeded) {
+      for (let i = 0; i < succeeded.length; i++) {
+        const task = succeeded[i];
+        setAlignProgress({ current: i + 1, settled: successCount });
+
         if (!task.result?.blob) {
           continue;
         }
@@ -108,6 +115,8 @@ export const ExportPanel = () => {
         }
       }
 
+      setAlignProgress({ current: succeeded.length, settled: successCount });
+
       setMessage(
         isZh
           ? `对齐完成：${successCount} / ${succeeded.length}`
@@ -130,7 +139,60 @@ export const ExportPanel = () => {
       });
     } finally {
       setBusy("");
+      setAlignProgress(null);
     }
+  };
+
+  const ensureAligned = async () => {
+    if (!exportSettings.autoAlign) return;
+    if (!preparedImage) return;
+
+    // 检查是否全部已对齐
+    const allAligned = succeeded.every(
+      (task) => alignmentResults[task.id]?.status === "succeeded",
+    );
+    if (allAligned) return;
+
+    // 触发对齐（复用 runAlignment 逻辑）
+    setBusy("align");
+    setError("");
+    setMessage("");
+    setAlignProgress({ current: 0, settled: 0 });
+    let successCount = 0;
+
+    for (let i = 0; i < succeeded.length; i++) {
+      const task = succeeded[i];
+      setAlignProgress({ current: i + 1, settled: successCount });
+
+      if (!task.result?.blob) continue;
+      if (alignmentResults[task.id]?.status === "succeeded") {
+        successCount += 1;
+        continue;
+      }
+
+      try {
+        const output = await alignToReference(preparedImage.blob, task.result.blob);
+        setAlignmentResult({
+          variantId: task.id,
+          score: output.score,
+          alignedBlob: output.blob,
+          alignedObjectUrl: URL.createObjectURL(output.blob),
+          status: "succeeded",
+        });
+        successCount += 1;
+      } catch (exception) {
+        setAlignmentResult({
+          variantId: task.id,
+          score: 0,
+          status: "failed",
+          error: toUserError(exception),
+        });
+      }
+    }
+
+    setAlignProgress({ current: succeeded.length, settled: successCount });
+    setBusy("");
+    setAlignProgress(null);
   };
 
   const runExportDdw = async () => {
@@ -138,6 +200,7 @@ export const ExportPanel = () => {
       setBusy("ddw");
       setError("");
       setMessage("");
+      await ensureAligned();
       const themeValidation = validateDdwThemeShape({
         imageFilename: `${fileStem}_*.png`,
         dayImageList: mapping.day,
@@ -176,6 +239,7 @@ export const ExportPanel = () => {
       setBusy("zip");
       setError("");
       setMessage("");
+      await ensureAligned();
       await downloadPngZip({
         tasks,
         alignmentResults,
@@ -202,21 +266,12 @@ export const ExportPanel = () => {
   };
 
   return (
-    <SectionCard
-      title={isZh ? "导出面板" : "Export Panel"}
-      subtitle={
-        isZh
-          ? "结果生成后可执行 ORB 对齐，再导出 PNG ZIP 或 WinDynamicDesktop 主题。"
-          : "Run ORB alignment before exporting PNG ZIP bundles or WinDynamicDesktop themes."
-      }
-      surface="flat"
-    >
-      <div className="space-y-0">
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="flex w-full items-center justify-between border-b border-border/70 bg-background/70 px-4 py-3 text-left transition-colors hover:bg-accent/60"
-        >
+    <div className="space-y-0">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="flex w-full items-center justify-between border-b border-border/70 bg-background/70 px-3.5 py-2.5 text-left transition-colors hover:bg-accent/60"
+      >
           <div>
             <p className="text-sm font-semibold">{isZh ? "导出配置" : "Export setup"}</p>
             <p className="text-xs text-muted-foreground">
@@ -235,12 +290,45 @@ export const ExportPanel = () => {
               <Input
                 id="export-file-stem"
                 value={fileStem}
-                onChange={(e) => setFileStem(e.target.value.replace(/\s+/g, "_"))}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\s+/g, "_");
+                  setFileStem(value);
+                  setExportSettings({ defaultFileStem: value });
+                }}
               />
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">{t("export.mapping")}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">{t("export.mapping")}</p>
+                <div className="flex gap-1.5">
+                  {(Object.keys(bucketLabels) as Bucket[]).map((bucket) => (
+                    <button
+                      key={bucket}
+                      type="button"
+                      onClick={() => {
+                        const allIds = succeeded.map((t) => t.id);
+                        const currentSet = new Set(mapping[bucket]);
+                        const allSelected = allIds.every((id) => currentSet.has(id));
+                        setExportMapping({
+                          ...mapping,
+                          [bucket]: allSelected ? [] : allIds,
+                        });
+                      }}
+                      className="rounded-md border border-border/70 px-2 py-0.5 text-[10px] hover:bg-accent/60 transition-colors"
+                    >
+                      {isZh ? bucketLabels[bucket].zh : bucketLabels[bucket].en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {alignProgress ? (
+                <p className="text-xs text-muted-foreground">
+                  {isZh
+                    ? `对齐中 ${alignProgress.current}/${succeeded.length}`
+                    : `Aligning ${alignProgress.current}/${succeeded.length}`}
+                </p>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-2">
                 {succeeded.map((task) => (
                   <div key={task.id} className="rounded-lg border border-border/70 bg-background p-4">
@@ -291,7 +379,6 @@ export const ExportPanel = () => {
 
         {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
         {error ? <p className="text-sm text-destructive">{t(`errors.${error}`, error)}</p> : null}
-      </div>
-    </SectionCard>
+    </div>
   );
 };

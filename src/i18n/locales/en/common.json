@@ -26,26 +26,26 @@
   },
   "workspace": {
     "uploadTitle": "Upload and Framing Canvas",
-    "uploadHint": "Upload PNG/JPEG/WebP and compose directly inside the left target canvas.",
+    "uploadHint": "Upload PNG/JPEG/WebP. The image is placed onto the left canvas; the framing box defines the final output.",
     "ratio": "Target Ratio",
     "customRatio": "Custom Ratio",
     "mode": "Mismatch Handling",
     "modeCrop": "Crop",
     "modePad": "Pad",
-    "framingTitle": "Target Canvas",
-    "framingHint": "Everything inside the canvas becomes the final composition sent to the AI. It starts centered and filled, then you can drag the image to reposition it and pull any side or corner handle to scale for expansion composition.",
-    "expansionCompose": "Expansion Composition",
+    "framingTitle": "Canvas & Framing",
+    "framingHint": "Whatever falls inside the bright framing box is sent to the AI. Switching the target ratio only resizes the framing box—the image stays put. Drag or scale the image freely.",
+    "expansionCompose": "Canvas Framing",
     "modeCropHint": "Drag and zoom until the subject fully covers the AI canvas.",
     "modePadHint": "Zoom out to reserve expansion space inside the fixed AI canvas.",
     "zoom": "Zoom",
     "resetFraming": "Reset Framing",
-    "framingLocked": "Current composition",
-    "expansionArea": "Includes expansion area",
+    "framingLocked": "Current framing",
+    "expansionArea": "Includes transparent outpaint",
     "prepare": "Analyze Current Frame",
     "prepared": "Current frame analyzed",
     "singleDark": "Generate Dark Once",
     "singleLight": "Generate Light Once",
-    "needPrepared": "Analyze the current composition first"
+    "needPrepared": "Finish framing and analyze first"
   },
   "prompts": {
     "title": "Prompt Editor",
@@ -73,7 +73,8 @@
       "queued": "Queued",
       "running": "Running",
       "succeeded": "Succeeded",
-      "failed": "Failed"
+      "failed": "Failed",
+      "canceled": "Canceled"
     }
   },
   "export": {
@@ -91,8 +92,11 @@
     "providerSection": "Model Routing and Provider Config",
     "routingHint": "Use one BYOK provider for both analysis and image generation, and route requests through the Cloudflare Worker.",
     "sections": {
-      "provider": "Provider & Models",
-      "prompts": "Prompt Defaults"
+      "provider": "Models",
+      "prompts": "Prompts",
+      "appearance": "Appearance",
+      "generation": "Generation",
+      "export": "Export"
     },
     "autoSaveHint": "Settings are saved automatically in this browser",
     "analysisProvider": "Analysis Provider",
@@ -118,7 +122,31 @@
     "generationPromptPrefix": "Generation Prompt Prefix",
     "defaultNegativePrompt": "Default Negative Prompt",
     "heicExperimental": "ZIP Export",
-    "localFallback": "Worker Proxy"
+    "localFallback": "Worker Proxy",
+    "providerTemplate": "Provider Template",
+    "generationEndpoint": "Generation Endpoint (optional)",
+    "openrouterHint": "For OpenRouter, use a model with image output support such as google/gemini-2.5-flash-image-preview.",
+    "appearanceSection": "Appearance",
+    "appearanceDesc": "Language and theme settings apply instantly.",
+    "language": "Interface Language",
+    "languageZh": "中文",
+    "languageEn": "English",
+    "theme": "Theme Mode",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "Follow System",
+    "generationSettingsTitle": "Generation Settings",
+    "generationSettingsDesc": "Control batch generation speed and fault tolerance.",
+    "concurrencyLabel": "Concurrency",
+    "concurrencyHint": "How many images to generate simultaneously. Lower to avoid rate limits, higher to speed up batches.",
+    "retriesLabel": "Retry Count",
+    "retriesHint": "Number of retry attempts when a single image generation fails.",
+    "exportSettingsTitle": "Export Settings",
+    "exportSettingsDesc": "Configure default export behavior.",
+    "defaultFileStemLabel": "Default File Name Stem",
+    "defaultFileStemHint": "The default file name prefix for new exports.",
+    "autoAlignLabel": "Auto-align Before Export",
+    "autoAlignHint": "When checked, image alignment runs automatically before DDW or ZIP export."
   },
   "errors": {
     "INVALID_IMAGE": "Unsupported image file. Please use PNG/JPEG/WebP.",

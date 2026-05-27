@@ -1,10 +1,9 @@
 import { saveAs } from "file-saver";
 import { ArrowLeftRight, Download, Image as ImageIcon, RotateCcw, ScanSearch } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasControls } from "@/components/canvas/CanvasControls";
-import { SectionCard } from "@/components/common/SectionCard";
 import { GenerateControls } from "@/components/control/GenerateControls";
 import { PromptEditor } from "@/components/control/PromptEditor";
 import { TaskQueue } from "@/components/control/TaskQueue";
@@ -62,6 +61,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const sourceImage = useWorkflowStore((s) => s.sourceImage);
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const canvasFraming = useWorkflowStore((s) => s.canvasFraming);
+  const canvasSize = useWorkflowStore((s) => s.canvasSize);
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
@@ -187,6 +187,7 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       const output = await prepareCanvasImage({
         source: sourceImage.blob,
         ratio,
+        canvas: canvasSize,
         framing: canvasFraming,
       });
       const prepared = buildPreparedImage({
@@ -251,7 +252,10 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
   const includesExpansionArea =
     !!sourceImage &&
+    canvasSize.width > 0 &&
+    canvasSize.height > 0 &&
     hasExpansionArea({
+      canvas: canvasSize,
       source: { width: sourceImage.width, height: sourceImage.height },
       ratio,
       framing: canvasFraming,
@@ -270,6 +274,15 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       : !promptsReady
         ? "prompts"
         : "generate";
+
+  const prevActiveStepRef = useRef<StepKey | null>(null);
+
+  useEffect(() => {
+    if (prevActiveStepRef.current !== activeStep) {
+      setExpandedStep(activeStep);
+      prevActiveStepRef.current = activeStep;
+    }
+  }, [activeStep]);
 
   const activeStepIndex = stepOrder.indexOf(activeStep);
   const completedResults = tasks.filter((task) => task.status === "succeeded").length;
@@ -373,344 +386,229 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
 
   return (
     <div className="min-w-0" data-scroll-managed={desktopScrollManaged ? "true" : "false"}>
-      <SectionCard
-        title={isZh ? "创作流程" : "Workflow"}
-        subtitle={
-          isZh
-            ? "紧凑工作台模式：完成当前步骤后，下一步会自动浮到前面。"
-            : "Compact workbench mode: complete the current step and the next one moves forward."
-        }
-        actions={
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
-              {provider.templateId}
-            </span>
-            <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-muted-foreground">
-              {isZh ? `当前 ${activeStepIndex + 1}/4` : `Step ${activeStepIndex + 1}/4`}
-            </span>
-          </div>
-        }
-        surface="flat"
-      >
-        <div className="overflow-hidden border-t border-border/70">
-          <WorkflowStepCard
-            stepLabel="01"
-            title={isZh ? "构图设置与 AI 分析" : "Framing & AI analysis"}
-            description={
-              isZh
-                ? "在左侧导入图片，拖拽移动并用四周手柄缩放，再在这里设置目标画布比例并分析当前扩充构图。"
-                : "Import the image on the left canvas, drag to reposition it, resize it with the surrounding handles, then set the target ratio and analyze the current expansion composition."
-            }
+      <div className="overflow-hidden">
+        <WorkflowStepCard
+          stepLabel="01"
+          title={isZh ? "构图设置与 AI 分析" : "Framing & AI analysis"}
+          description={
+            isZh ? "导入参考图，设置目标比例，AI分析构图与时段" : "Import reference, set target ratio, AI analysis"
+          }
             statusLabel={
-              !sourceImage
-                ? isZh
-                  ? "待左侧导入"
-                  : "Import on canvas"
-                : !sceneAnalysis
+                !sourceImage
                   ? isZh
-                    ? "待分析当前构图"
-                    : "Analyze current composition"
-                  : isZh
-                    ? "分析完成"
-                    : "Analysis ready"
-            }
-            tone={stepTone("baseline", Boolean(preprocessError))}
-            expanded={expandedStep === "baseline"}
-            summary={baselineSummary}
-            onToggle={() => handleStepToggle("baseline")}
-          >
-            <div className="space-y-3">
-              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold">
-                    {sourceImage
-                      ? sourceImage.name
-                      : isZh
-                        ? "请在左侧画布中导入参考图"
-                        : "Import a reference image on the left canvas"}
-                  </p>
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    {sourceImage
-                      ? `${sourceImage.width} × ${sourceImage.height}`
-                      : isZh
-                        ? "上传、拖拽移动、四周手柄缩放和目标画布预览都在左侧完成。"
-                        : "Upload, reposition, resize with surrounding handles, and compose on the left target canvas."}
-                  </p>
-                </div>
-              </div>
-
-              <CanvasControls />
-
-              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      {isZh
-                        ? "会按当前目标画布输出扩充构图，再识别主体、光照与参考时段。"
-                        : "This renders the current target canvas composition, then analyzes subjects, lighting, and time of day."}
-                    </p>
-                  </div>
-                  <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
-                    {isZh ? "主动作" : "Primary action"}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex flex-col gap-3">
-                  <Button
-                    type="button"
-                    onClick={() => void onPreprocess()}
-                    disabled={!sourceImage || preprocessLoading}
-                    className="h-11 rounded-md sm:w-fit"
-                  >
-                    <ScanSearch className="h-4 w-4" />
-                    {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
-                  </Button>
-
-                  {sceneAnalysis ? (
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p className="font-medium text-foreground">{sceneAnalysis.summary}</p>
-                      <p>
-                        {isZh ? "主体" : "Subjects"}:{" "}
-                        {sceneAnalysis.subjects.join(", ") || (isZh ? "未识别" : "N/A")}
-                      </p>
-                      <p>
-                        {isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {isZh
-                        ? "先在左侧调整构图，再执行分析。构图变动后需要重新分析。"
-                        : "Adjust the framing on the left before analysis. Re-run analysis after any composition change."}
-                    </p>
-                  )}
-
-                  {preprocessError ? (
-                    <p className="text-sm text-destructive">
-                      {t(`errors.${preprocessError}`, preprocessError)}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </WorkflowStepCard>
-
-          <WorkflowStepCard
-            stepLabel="02"
-            title={isZh ? "选择时段" : "Choose time variants"}
-            description={
-              isZh
-                ? "确认参考图所处时段，再勾选想生成的目标版本。"
-                : "Confirm the source time, then choose the target variants."
-            }
-            statusLabel={
-              !sceneAnalysis
-                ? isZh
-                  ? "等待步骤 1"
-                  : "Waiting for step 1"
-                : currentTimeOfDay && selectedSlots.length > 0
-                  ? isZh
-                    ? `已选 ${selectedSlots.length} 个版本`
-                    : `${selectedSlots.length} selected`
-                  : isZh
-                    ? "选择时段"
-                    : "Pick variants"
-            }
-            tone={stepTone("times")}
-            expanded={expandedStep === "times"}
-            summary={timeSummary}
-            onToggle={() => handleStepToggle("times")}
-          >
-            <TimeSlotSelector
-              currentTimeOfDay={currentTimeOfDay}
-              detectedTimeOfDay={detectedTimeOfDay}
-              selectedSlots={selectedSlots}
-              onCurrentTimeChange={setCurrentTimeOfDay}
-              onSelectedSlotsChange={setSelectedSlots}
-              locked={!sceneAnalysis}
-            />
-          </WorkflowStepCard>
-
-          <WorkflowStepCard
-            stepLabel="03"
-            title={isZh ? "提示词编辑" : "Prompt editing"}
-            description={
-              isZh
-                ? "系统会先生成建议稿，你可以逐个版本微调。"
-                : "The app drafts prompt suggestions first, then you can refine them per variant."
-            }
-            statusLabel={
-              selectedSlots.length === 0
-                ? isZh
-                  ? "等待步骤 2"
-                  : "Waiting for step 2"
-                : promptsReady
-                  ? isZh
-                    ? `已就绪 ${selectedSlots.length} 组`
-                    : `${selectedSlots.length} ready`
-                  : isZh
-                    ? "补全提示词"
-                    : "Finish the prompts"
-            }
-            tone={stepTone("prompts")}
-            expanded={expandedStep === "prompts"}
-            summary={promptSummary}
-            onToggle={() => handleStepToggle("prompts")}
-          >
-            <PromptEditor
-              selectedSlots={selectedSlots}
-              prompts={prompts}
-              onPromptChange={handlePromptChange}
-            />
-          </WorkflowStepCard>
-
-          <WorkflowStepCard
-            stepLabel="04"
-            title={isZh ? "批量生成" : "Batch generation"}
-            description={
-              isZh
-                ? "当前步骤会保留在最前面，方便你盯住任务状态。"
-                : "This step stays in focus so you can keep an eye on the queue."
-            }
-            statusLabel={
-              !promptsReady
-                ? isZh
-                  ? "等待步骤 3"
-                  : "Waiting for step 3"
-                : tasks.length === 0
-                  ? isZh
-                    ? "准备生成"
-                    : "Ready to generate"
-                  : tasksRunning
+                    ? "待导入"
+                    : "Import"
+                  : !sceneAnalysis
                     ? isZh
-                      ? "生成中"
-                      : "Generating"
+                      ? "待分析"
+                      : "Analyze"
                     : isZh
-                      ? "队列完成"
-                      : "Queue finished"
-            }
-            tone={stepTone("generate")}
-            expanded={expandedStep === "generate"}
-            summary={generationSummary}
-            onToggle={() => handleStepToggle("generate")}
-          >
-            <GenerateControls
-              selectedSlots={selectedSlots}
-              prompts={prompts}
-              onPreprocess={onPreprocess}
-              preprocessLoading={preprocessLoading}
-              showAnalyze={false}
-            />
-          </WorkflowStepCard>
-
-          <div className="space-y-3 border-b border-border/70 bg-background/55 p-4">
-            <div className="flex items-center justify-between gap-2">
+                      ? "已就绪"
+                      : "Ready"
+              }
+          tone={stepTone("baseline", Boolean(preprocessError))}
+          expanded={expandedStep === "baseline"}
+          summary={baselineSummary}
+          onToggle={() => handleStepToggle("baseline")}
+        >
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">
-                  {isZh ? "任务与结果状态" : "Queue & results"}
+                  {sourceImage ? sourceImage.name : isZh ? "导入参考图" : "Import reference image"}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {isZh
-                    ? "任务队列与导出区都留在流程底部，避免抢当前步骤的注意力。"
-                    : "The queue and export stay below the workflow so they do not compete with the active step."}
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {sourceImage ? `${sourceImage.width} × ${sourceImage.height}` : ""}
                 </p>
               </div>
-              <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
-                {tasks.length}
-              </span>
             </div>
 
-            {succeededTasks.length > 0 ? (
-              <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">
-                      {isZh ? "主画布预览模式" : "Main canvas preview"}
-                    </p>
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      {isZh
-                        ? "左侧缩略图只负责切换结果；这里控制目标画布、单图查看、前后对比与单张下载。"
-                        : "The left thumbnails only switch results. Use these controls for the target canvas, single-result preview, before/after compare, and single-image download."}
-                    </p>
-                  </div>
-                  <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
-                    {isZh ? `${succeededTasks.length} 张结果` : `${succeededTasks.length} results`}
-                  </span>
-                </div>
+            <CanvasControls />
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={!activeResultId ? "default" : "outline"}
-                    onClick={() => {
-                      setPreviewMode("single");
-                      setActiveResultId(undefined);
-                    }}
-                    aria-pressed={!activeResultId}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t("results.baseSelect")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={previewMode === "single" ? "default" : "outline"}
-                    onClick={() => setPreviewMode("single")}
-                    disabled={!activeResultId}
-                    aria-pressed={previewMode === "single"}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    {t("results.singleMode")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={previewMode === "compare" ? "default" : "outline"}
-                    onClick={() => setPreviewMode("compare")}
-                    disabled={!activeResultId}
-                    aria-pressed={previewMode === "compare"}
-                  >
-                    <ArrowLeftRight className="h-4 w-4" />
-                    {t("results.compareMode")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleDownloadSingle}
-                    disabled={!activeTask?.result?.blob}
-                  >
-                    <Download className="h-4 w-4" />
-                    {t("common.download")}
-                  </Button>
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">{t("prompts.analyze")}</p>
                 </div>
-
-                <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                  {activeTask
-                    ? isZh
-                      ? `当前选中：${activeTask.label}`
-                      : `Selected result: ${activeTask.label}`
-                    : isZh
-                      ? "当前显示目标画布。点击左侧缩略图可切换到某张生成结果。"
-                      : "The main canvas is showing the target canvas. Pick a thumbnail on the left to switch to a generated result."}
-                </p>
               </div>
-            ) : null}
 
-            {tasks.length > 0 ? (
-              <TaskQueue />
-            ) : (
-              <p className="text-sm leading-6 text-muted-foreground">
-                {isZh
-                  ? "开始批量生成后，这里会显示排队、进度和失败信息。"
-                  : "Start a batch to see queue progress, completion, and failures here."}
-              </p>
-            )}
+              <div className="mt-3 flex flex-col gap-3">
+                <Button
+                  type="button"
+                  onClick={() => void onPreprocess()}
+                  disabled={!sourceImage || preprocessLoading}
+                  className="h-11 rounded-md sm:w-fit"
+                >
+                  <ScanSearch className="h-4 w-4" />
+                  {preprocessLoading ? t("common.loading") : t("prompts.analyze")}
+                </Button>
+
+                {sceneAnalysis ? (
+                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">{sceneAnalysis.summary}</p>
+                    <div className="flex flex-wrap gap-x-4 text-xs">
+                      <span>{isZh ? "主体" : "Subjects"}: {sceneAnalysis.subjects.join(", ") || (isZh ? "未识别" : "N/A")}</span>
+                      <span>{isZh ? "光照" : "Lighting"}: {sceneAnalysis.lighting}</span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {preprocessError ? (
+                  <p className="text-sm text-destructive">
+                    {t(`errors.${preprocessError}`, preprocessError)}
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </div>
-        </div>
-      </SectionCard>
+        </WorkflowStepCard>
+
+        <WorkflowStepCard
+          stepLabel="02"
+          title={isZh ? "选择时段" : "Choose time variants"}
+          description={
+            isZh ? "确认参考时段，选择目标变体版本" : "Confirm source time, pick target variants"
+          }
+            statusLabel={
+                !sceneAnalysis
+                  ? isZh ? "等待步骤 1" : "Waiting"
+                  : currentTimeOfDay && selectedSlots.length > 0
+                    ? isZh ? `${selectedSlots.length} 个版本` : `${selectedSlots.length} variants`
+                    : isZh ? "选择时段" : "Pick variants"
+              }
+          tone={stepTone("times")}
+          expanded={expandedStep === "times"}
+          summary={timeSummary}
+          onToggle={() => handleStepToggle("times")}
+        >
+          <TimeSlotSelector
+            currentTimeOfDay={currentTimeOfDay}
+            detectedTimeOfDay={detectedTimeOfDay}
+            selectedSlots={selectedSlots}
+            onCurrentTimeChange={setCurrentTimeOfDay}
+            onSelectedSlotsChange={setSelectedSlots}
+            locked={!sceneAnalysis}
+          />
+        </WorkflowStepCard>
+
+        <WorkflowStepCard
+          stepLabel="03"
+          title={isZh ? "提示词编辑" : "Prompt editing"}
+          description={
+            isZh ? "系统生成建议稿，可逐个版本微调" : "AI drafts suggestions, refine per variant"
+          }
+            statusLabel={
+                selectedSlots.length === 0
+                  ? isZh ? "等待步骤 2" : "Waiting"
+                  : promptsReady
+                    ? isZh ? `${selectedSlots.length} 组就绪` : `${selectedSlots.length} ready`
+                    : isZh ? "补全提示词" : "Finish prompts"
+              }
+          tone={stepTone("prompts")}
+          expanded={expandedStep === "prompts"}
+          summary={promptSummary}
+          onToggle={() => handleStepToggle("prompts")}
+        >
+          <PromptEditor
+            selectedSlots={selectedSlots}
+            prompts={prompts}
+            onPromptChange={handlePromptChange}
+          />
+        </WorkflowStepCard>
+
+        <WorkflowStepCard
+          stepLabel="04"
+          title={isZh ? "批量生成" : "Batch generation"}
+          description={
+            isZh ? "批量生成所有变体，实时跟踪任务进度" : "Batch generate all variants, track progress"
+          }
+            statusLabel={
+                !promptsReady
+                  ? isZh ? "等待步骤 3" : "Waiting"
+                  : tasks.length === 0
+                    ? isZh ? "就绪" : "Ready"
+                    : tasksRunning ? isZh ? "生成中" : "Running"
+                    : isZh ? "已完成" : "Done"
+              }
+          tone={stepTone("generate")}
+          expanded={expandedStep === "generate"}
+          summary={generationSummary}
+          onToggle={() => handleStepToggle("generate")}
+        >
+          <GenerateControls
+            selectedSlots={selectedSlots}
+            prompts={prompts}
+            onPreprocess={onPreprocess}
+            preprocessLoading={preprocessLoading}
+            showAnalyze={false}
+          />
+        </WorkflowStepCard>
+
+        {succeededTasks.length > 0 ? (
+          <div className="border-t border-border/70 bg-background/55 p-3.5">
+            <p className="mb-2 text-xs font-semibold">
+              {isZh ? "预览模式" : "Preview mode"}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={!activeResultId ? "default" : "outline"}
+                onClick={() => {
+                  setPreviewMode("single");
+                  setActiveResultId(undefined);
+                }}
+                aria-pressed={!activeResultId}
+                className="h-8 text-xs"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                {t("results.baseSelect")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={previewMode === "single" ? "default" : "outline"}
+                onClick={() => setPreviewMode("single")}
+                disabled={!activeResultId}
+                aria-pressed={previewMode === "single"}
+                className="h-8 text-xs"
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                {t("results.singleMode")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={previewMode === "compare" ? "default" : "outline"}
+                onClick={() => setPreviewMode("compare")}
+                disabled={!activeResultId}
+                aria-pressed={previewMode === "compare"}
+                className="h-8 text-xs"
+              >
+                <ArrowLeftRight className="h-3.5 w-3.5" />
+                {t("results.compareMode")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadSingle}
+                disabled={!activeTask?.result?.blob}
+                className="h-8 text-xs"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {t("common.download")}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {tasks.length > 0 ? (
+          <div className="border-t border-border/70 bg-background/55 p-3.5">
+            <TaskQueue />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

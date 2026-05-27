@@ -1,10 +1,7 @@
 import { create } from "zustand";
 
-import { aspectRatios } from "@/data/aspectRatios";
-import { resolveDefaultCanvasFraming } from "@/services/canvas/framing";
 import type {
   AlignmentResult,
-  CanvasCropArea,
   CanvasFraming,
   CanvasViewport,
   ExportMapping,
@@ -23,46 +20,18 @@ const defaultExportMapping: ExportMapping = {
   night: [],
 };
 
-const defaultCanvasFraming: CanvasFraming = {
-  viewport: {
-    x: 0,
-    y: 0,
-    zoom: 1,
-  },
-};
+const emptyCanvasFraming: CanvasFraming = { viewport: undefined };
 
-const resolveRatio = (ratioId: string, customRatio: { width: number; height: number }) => {
-  if (ratioId === "custom") {
-    return customRatio;
-  }
-
-  const preset = aspectRatios.find((item) => item.id === ratioId);
-  return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
-};
-
-const resolveCanvasFramingFor = ({
-  sourceImage,
-  ratioId,
-  customRatio,
-}: {
-  sourceImage?: LoadedImage;
-  ratioId: string;
-  customRatio: { width: number; height: number };
-}) => {
-  if (!sourceImage) {
-    return defaultCanvasFraming;
-  }
-
-  return resolveDefaultCanvasFraming({
-    source: { width: sourceImage.width, height: sourceImage.height },
-    ratio: resolveRatio(ratioId, customRatio),
-  });
-};
-
-const clearDerivedState = {
+// 仅清"由构图派生的分析链"，保留已生成的 tasks/results 作为历史
+const clearDerivedAnalysis = {
   preparedImage: undefined,
   sceneAnalysis: undefined,
   promptPlan: undefined,
+};
+
+// 完全清除：换源图、切比例、resetRun 等导致输出形状变化的场景使用
+const clearDerivedState = {
+  ...clearDerivedAnalysis,
   tasks: [],
   alignmentResults: {},
   exportMapping: defaultExportMapping,
@@ -74,6 +43,7 @@ interface WorkflowState {
   sourceImage?: LoadedImage;
   preparedImage?: PreparedImage;
   canvasFraming: CanvasFraming;
+  canvasSize: { width: number; height: number };
   ratioId: string;
   customRatio: { width: number; height: number };
   activeResultId?: string;
@@ -86,7 +56,7 @@ interface WorkflowState {
   setSourceImage: (image: LoadedImage) => void;
   setPreparedImage: (image: PreparedImage) => void;
   setCanvasViewport: (viewport: CanvasViewport) => void;
-  setCanvasCropArea: (cropAreaPixels?: CanvasCropArea) => void;
+  setCanvasSize: (size: { width: number; height: number }) => void;
   resetCanvasFraming: () => void;
   setRatioId: (ratioId: string) => void;
   setCustomRatio: (ratio: { width: number; height: number }) => void;
@@ -107,7 +77,8 @@ interface WorkflowState {
 }
 
 export const useWorkflowStore = create<WorkflowState>((set) => ({
-  canvasFraming: defaultCanvasFraming,
+  canvasFraming: emptyCanvasFraming,
+  canvasSize: { width: 0, height: 0 },
   ratioId: "16:9",
   customRatio: { width: 16, height: 9 },
   previewMode: "single",
@@ -115,13 +86,9 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   alignmentResults: {},
   exportMapping: defaultExportMapping,
   setSourceImage: (sourceImage) =>
-    set((state) => ({
+    set(() => ({
       sourceImage,
-      canvasFraming: resolveCanvasFramingFor({
-        sourceImage,
-        ratioId: state.ratioId,
-        customRatio: state.customRatio,
-      }),
+      canvasFraming: emptyCanvasFraming,
       ...clearDerivedState,
     })),
   setPreparedImage: (preparedImage) =>
@@ -137,48 +104,27 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
     })),
   setCanvasViewport: (viewport) =>
     set((state) => ({
-      ...clearDerivedState,
+      ...clearDerivedAnalysis,
       canvasFraming: {
         ...state.canvasFraming,
         viewport,
       },
     })),
-  setCanvasCropArea: (cropAreaPixels) =>
-    set((state) => ({
-      ...clearDerivedState,
-      canvasFraming: {
-        ...state.canvasFraming,
-        cropAreaPixels,
-      },
-    })),
+  setCanvasSize: (canvasSize) => set({ canvasSize }),
   resetCanvasFraming: () =>
-    set((state) => ({
-      ...clearDerivedState,
-      canvasFraming: resolveCanvasFramingFor({
-        sourceImage: state.sourceImage,
-        ratioId: state.ratioId,
-        customRatio: state.customRatio,
-      }),
+    set(() => ({
+      ...clearDerivedAnalysis,
+      canvasFraming: emptyCanvasFraming,
     })),
   setRatioId: (ratioId) =>
-    set((state) => ({
+    set(() => ({
       ...clearDerivedState,
       ratioId,
-      canvasFraming: resolveCanvasFramingFor({
-        sourceImage: state.sourceImage,
-        ratioId,
-        customRatio: state.customRatio,
-      }),
     })),
   setCustomRatio: (customRatio) =>
-    set((state) => ({
+    set(() => ({
       ...clearDerivedState,
       customRatio,
-      canvasFraming: resolveCanvasFramingFor({
-        sourceImage: state.sourceImage,
-        ratioId: state.ratioId,
-        customRatio,
-      }),
     })),
   setActiveResultId: (activeResultId) => set({ activeResultId }),
   setPreviewMode: (previewMode) => set({ previewMode }),

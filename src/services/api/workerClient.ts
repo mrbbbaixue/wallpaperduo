@@ -56,6 +56,7 @@ export const generateImageWithWorker = async (input: {
   provider: ProviderConfig;
   prompt: string;
   negativePrompt?: string;
+  signal?: AbortSignal;
 }): Promise<Blob> => {
   const image = await toDataUrl(input.prepared.blob);
   const response = await withTimeout(
@@ -72,6 +73,7 @@ export const generateImageWithWorker = async (input: {
         height: input.prepared.height,
         provider: input.provider,
       }),
+      signal: input.signal,
     }),
     API_TIMEOUT_MS,
   );

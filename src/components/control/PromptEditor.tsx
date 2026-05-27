@@ -78,9 +78,6 @@ export const PromptEditor = ({ selectedSlots, prompts, onPromptChange }: PromptE
             <div className="space-y-3 rounded-lg border border-border/70 bg-background/70 p-3">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold">{label}</h4>
-                <span className="text-xs text-muted-foreground">
-                  {isZh ? "建议先微调主体与光照描述" : "Tweak subjects and lighting first"}
-                </span>
               </div>
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">

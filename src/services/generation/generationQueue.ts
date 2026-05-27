@@ -12,6 +12,7 @@ interface GenerationQueueInput {
   concurrency: number;
   retries: number;
   onTaskUpdate?: (taskId: string, patch: Partial<GenerationTask>) => void;
+  signal?: AbortSignal;
 }
 
 const updateTask = (
@@ -23,6 +24,8 @@ const updateTask = (
     onTaskUpdate(taskId, patch);
   }
 };
+
+const isAborted = (signal?: AbortSignal) => signal?.aborted ?? false;
 
 const runTaskWithRetry = async (
   input: GenerationQueueInput,
@@ -37,6 +40,11 @@ const runTaskWithRetry = async (
   updateTask(input.onTaskUpdate, task.id, { status: "running", progress: 8, error: undefined });
 
   for (let attempt = 0; attempt <= input.retries; attempt += 1) {
+    if (isAborted(input.signal)) {
+      updateTask(input.onTaskUpdate, task.id, { status: "canceled", progress: 0 });
+      return { ...task, status: "canceled", progress: 0 };
+    }
+
     try {
       logInfo("Generation attempt", {
         provider: input.provider.templateId,
@@ -49,6 +57,7 @@ const runTaskWithRetry = async (
         provider: input.provider,
         prompt: task.prompt,
         negativePrompt: task.negativePrompt,
+        signal: input.signal,
       });
       const size = await getImageSize(blob);
       const result = {
@@ -72,6 +81,11 @@ const runTaskWithRetry = async (
       });
       return { ...task, status: "succeeded", progress: 100, result };
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        updateTask(input.onTaskUpdate, task.id, { status: "canceled", progress: 0 });
+        return { ...task, status: "canceled", progress: 0 };
+      }
+
       logWarn("Generation attempt failed", {
         provider: input.provider.templateId,
         taskId: task.id,
@@ -114,6 +128,9 @@ export const runGenerationQueue = async (
   await Promise.all(
     Array.from({ length: workers }).map(async () => {
       while (queue.length) {
+        if (isAborted(input.signal)) {
+          return;
+        }
         const task = queue.shift();
         if (!task) {
           return;
@@ -128,11 +145,20 @@ export const runGenerationQueue = async (
     }),
   );
 
+  for (const leftover of queue) {
+    const index = results.findIndex((item) => item.id === leftover.id);
+    if (index >= 0) {
+      results[index] = { ...leftover, status: "canceled", progress: 0 };
+    }
+    updateTask(input.onTaskUpdate, leftover.id, { status: "canceled", progress: 0 });
+  }
+
   logInfo("Generation queue finished", {
     provider: input.provider.templateId,
     totalTasks: results.length,
     succeeded: results.filter((task) => task.status === "succeeded").length,
     failed: results.filter((task) => task.status === "failed").length,
+    canceled: results.filter((task) => task.status === "canceled").length,
   });
 
   return results;
