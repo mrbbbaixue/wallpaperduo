@@ -22,7 +22,25 @@ export const AppShell = ({ children }: PropsWithChildren) => {
     const succeeded = tasks.filter((t) => t.status === "succeeded").length;
     const failed = tasks.filter((t) => t.status === "failed").length;
     const running = tasks.some((t) => t.status === "queued" || t.status === "running");
-    return { total: tasks.length, succeeded, failed, running };
+
+    // 全局进度百分比：已完成(100%) + 进行中(单任务progress) / 总数
+    let overallPct = 0;
+    if (tasks.length > 0) {
+      const sum = tasks.reduce((acc, t) => {
+        if (t.status === "succeeded" || t.status === "failed" || t.status === "canceled") return acc + 100;
+        if (t.status === "running" || t.status === "queued") return acc + Math.max(0, Math.min(100, t.progress));
+        return acc;
+      }, 0);
+      overallPct = Math.round(sum / tasks.length);
+    }
+
+    const barColor = running
+      ? "bg-sky-500"
+      : failed > 0 && succeeded === 0
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+
+    return { total: tasks.length, succeeded, failed, running, overallPct, barColor };
   }, [tasks]);
 
   useEffect(() => {
@@ -148,6 +166,16 @@ export const AppShell = ({ children }: PropsWithChildren) => {
           </div>
         </div>
       </header>
+
+      {/* 全局进度条 */}
+      {progress.total > 0 ? (
+        <div className="sticky top-14 z-10 h-0.5 w-full bg-border/40">
+          <div
+            className={`h-full transition-all duration-500 ease-out ${progress.barColor}`}
+            style={{ width: `${progress.overallPct}%` }}
+          />
+        </div>
+      ) : null}
 
       {/* Main content */}
       <main className="relative z-[1] min-h-0">{children}</main>
