@@ -92,8 +92,8 @@
     "providerSection": "模型路由与 Provider 配置",
     "routingHint": "分析与生成统一使用同一个 BYOK Provider，请求全部通过 Cloudflare Worker 代理。",
     "sections": {
-      "provider": "Provider 与模型",
-      "prompts": "Prompt 默认值",
+      "provider": "模型",
+      "prompts": "提示词",
       "appearance": "外观",
       "generation": "生成",
       "export": "导出"

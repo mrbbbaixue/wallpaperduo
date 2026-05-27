@@ -92,8 +92,8 @@
     "providerSection": "Model Routing and Provider Config",
     "routingHint": "Use one BYOK provider for both analysis and image generation, and route requests through the Cloudflare Worker.",
     "sections": {
-      "provider": "Provider & Models",
-      "prompts": "Prompt Defaults",
+      "provider": "Models",
+      "prompts": "Prompts",
       "appearance": "Appearance",
       "generation": "Generation",
       "export": "Export"
