@@ -80,6 +80,20 @@ export default {
           "monospace",
         ],
       },
+      keyframes: {
+        "breathe": {
+          "0%, 100%": { transform: "scale(1)", opacity: "0.8" },
+          "50%": { transform: "scale(1.04)", opacity: "1" },
+        },
+        "bounce-subtle": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+      },
+      animation: {
+        breathe: "breathe 2.4s ease-in-out infinite",
+        "bounce-subtle": "bounce-subtle 1.6s ease-in-out infinite",
+      },
     },
   },
   plugins: [tailwindcssAnimate],

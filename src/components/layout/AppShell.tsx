@@ -1,10 +1,11 @@
-import { Settings, Globe, Sun, Moon, Monitor } from "lucide-react";
-import { useEffect, useState, type CSSProperties, type PropsWithChildren } from "react";
+import { CheckCircle2, Globe, Loader2, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { useEffect, useMemo, useState, type CSSProperties, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useWorkflowStore } from "@/store/useWorkflowStore";
 
 export const AppShell = ({ children }: PropsWithChildren) => {
   const { t, i18n } = useTranslation();
@@ -14,7 +15,15 @@ export const AppShell = ({ children }: PropsWithChildren) => {
   const themeMode = useSettingsStore((state) => state.themeMode);
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
 
+  const tasks = useWorkflowStore((s) => s.tasks);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const progress = useMemo(() => {
+    const succeeded = tasks.filter((t) => t.status === "succeeded").length;
+    const failed = tasks.filter((t) => t.status === "failed").length;
+    const running = tasks.some((t) => t.status === "queued" || t.status === "running");
+    return { total: tasks.length, succeeded, failed, running };
+  }, [tasks]);
 
   useEffect(() => {
     document.title = t("appName");
@@ -71,6 +80,26 @@ export const AppShell = ({ children }: PropsWithChildren) => {
             <h1 className="truncate text-lg font-semibold leading-tight md:text-[1.15rem]">
               {t("appName")}
             </h1>
+            {progress.total > 0 ? (
+              <span className={`hidden md:inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+                progress.running
+                  ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/80 dark:bg-sky-950/40 dark:text-sky-300"
+                  : progress.failed > 0
+                    ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/80 dark:bg-amber-950/40 dark:text-amber-300"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/80 dark:bg-emerald-950/40 dark:text-emerald-300"
+              }`}>
+                {progress.running ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : progress.failed > 0 ? null : (
+                  <CheckCircle2 className="h-3 w-3" />
+                )}
+                {progress.running
+                  ? isZh ? `生成中 ${progress.succeeded}/${progress.total}` : `${progress.succeeded}/${progress.total}`
+                  : progress.failed > 0
+                    ? isZh ? `${progress.succeeded} 完成, ${progress.failed} 失败` : `${progress.succeeded} done, ${progress.failed} failed`
+                    : isZh ? `${progress.succeeded} 张完成` : `${progress.succeeded} done`}
+              </span>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2">

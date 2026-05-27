@@ -36,6 +36,7 @@ export const ExportPanel = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"align" | "zip" | "ddw" | "">("");
+  const [alignProgress, setAlignProgress] = useState<{ current: number; settled: number } | null>(null);
 
   const succeeded = useMemo(
     () => tasks.filter((task) => task.status === "succeeded" && task.result?.blob),
@@ -80,9 +81,13 @@ export const ExportPanel = () => {
       setBusy("align");
       setError("");
       setMessage("");
+      setAlignProgress({ current: 0, settled: 0 });
       let successCount = 0;
 
-      for (const task of succeeded) {
+      for (let i = 0; i < succeeded.length; i++) {
+        const task = succeeded[i];
+        setAlignProgress({ current: i + 1, settled: successCount });
+
         if (!task.result?.blob) {
           continue;
         }
@@ -107,6 +112,8 @@ export const ExportPanel = () => {
         }
       }
 
+      setAlignProgress({ current: succeeded.length, settled: successCount });
+
       setMessage(
         isZh
           ? `对齐完成：${successCount} / ${succeeded.length}`
@@ -129,6 +136,7 @@ export const ExportPanel = () => {
       });
     } finally {
       setBusy("");
+      setAlignProgress(null);
     }
   };
 
@@ -230,7 +238,36 @@ export const ExportPanel = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">{t("export.mapping")}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">{t("export.mapping")}</p>
+                <div className="flex gap-1.5">
+                  {(Object.keys(bucketLabels) as Bucket[]).map((bucket) => (
+                    <button
+                      key={bucket}
+                      type="button"
+                      onClick={() => {
+                        const allIds = succeeded.map((t) => t.id);
+                        const currentSet = new Set(mapping[bucket]);
+                        const allSelected = allIds.every((id) => currentSet.has(id));
+                        setExportMapping({
+                          ...mapping,
+                          [bucket]: allSelected ? [] : allIds,
+                        });
+                      }}
+                      className="rounded-md border border-border/70 px-2 py-0.5 text-[10px] hover:bg-accent/60 transition-colors"
+                    >
+                      {isZh ? bucketLabels[bucket].zh : bucketLabels[bucket].en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {alignProgress ? (
+                <p className="text-xs text-muted-foreground">
+                  {isZh
+                    ? `对齐中 ${alignProgress.current}/${succeeded.length}`
+                    : `Aligning ${alignProgress.current}/${succeeded.length}`}
+                </p>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-2">
                 {succeeded.map((task) => (
                   <div key={task.id} className="rounded-lg border border-border/70 bg-background p-4">

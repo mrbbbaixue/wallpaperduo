@@ -1,6 +1,6 @@
 import { saveAs } from "file-saver";
 import { ArrowLeftRight, Download, Image as ImageIcon, RotateCcw, ScanSearch } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasControls } from "@/components/canvas/CanvasControls";
@@ -274,6 +274,15 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
       : !promptsReady
         ? "prompts"
         : "generate";
+
+  const prevActiveStepRef = useRef<StepKey | null>(null);
+
+  useEffect(() => {
+    if (prevActiveStepRef.current !== activeStep) {
+      setExpandedStep(activeStep);
+      prevActiveStepRef.current = activeStep;
+    }
+  }, [activeStep]);
 
   const activeStepIndex = stepOrder.indexOf(activeStep);
   const completedResults = tasks.filter((task) => task.status === "succeeded").length;

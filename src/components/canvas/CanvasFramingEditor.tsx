@@ -1,6 +1,5 @@
 import { Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 import Moveable, { type OnDrag, type OnDragStart, type OnResize, type OnResizeStart } from "react-moveable";
 import { useTranslation } from "react-i18next";
 
@@ -44,6 +43,7 @@ export const CanvasFramingEditor = ({
   const moveableRef = useRef<Moveable | null>(null);
   const dragStartBoxRef = useRef<BoxLike | null>(null);
   const resizeStartBoxRef = useRef<BoxLike | null>(null);
+  const liveBoxRef = useRef<BoxLike | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [canvasElement, setCanvasElement] = useState<HTMLDivElement | null>(null);
 
@@ -113,6 +113,31 @@ export const CanvasFramingEditor = ({
     }
   }, [onViewportChange, viewport]);
 
+  // 为 Moveable 手柄添加 aria-label
+  useEffect(() => {
+    if (!canvasReady || !viewport) return;
+    const handleLabels: Record<string, string> = {
+      nw: "左上角缩放",
+      n: "上边缩放",
+      ne: "右上角缩放",
+      w: "左边缩放",
+      e: "右边缩放",
+      sw: "左下角缩放",
+      s: "下边缩放",
+      se: "右下角缩放",
+    };
+    const timer = window.setTimeout(() => {
+      moveableHandleDirections.forEach((dir) => {
+        const handle = document.querySelector(`.moveable-control.moveable-${dir}`);
+        if (handle) {
+          handle.setAttribute("aria-label", handleLabels[dir] ?? `${dir} resize handle`);
+          handle.setAttribute("role", "slider");
+        }
+      });
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [canvasReady, viewport]);
+
   useEffect(() => {
     moveableRef.current?.updateRect();
   }, [canvasSize.height, canvasSize.width, imageBox.height, imageBox.width, imageBox.x, imageBox.y]);
@@ -127,6 +152,21 @@ export const CanvasFramingEditor = ({
     [canvasReady, canvasSize, onViewportChange, sourceSize],
   );
 
+  // 用 ref 持有最新 commit，避免拖拽回调闭包过期
+  const commitViewportFromBoxRef = useRef(commitViewportFromBox);
+  useEffect(() => {
+    commitViewportFromBoxRef.current = commitViewportFromBox;
+  });
+
+  const applyBoxToTarget = (box: BoxLike) => {
+    const el = imageTargetRef.current;
+    if (!el) return;
+    el.style.left = `${box.x}px`;
+    el.style.top = `${box.y}px`;
+    el.style.width = `${box.width}px`;
+    el.style.height = `${box.height}px`;
+  };
+
   const handleCanvasRef = useCallback((node: HTMLDivElement | null) => {
     canvasRef.current = node;
     setCanvasElement(node);
@@ -134,27 +174,31 @@ export const CanvasFramingEditor = ({
 
   const handleDragStart = useCallback(
     (event: OnDragStart) => {
-      dragStartBoxRef.current = imageBox;
+      const startBox = { ...imageBox };
+      dragStartBoxRef.current = startBox;
+      liveBoxRef.current = startBox;
       event.set([0, 0]);
     },
     [imageBox],
   );
 
-  const handleDrag = useCallback(
-    (event: OnDrag) => {
-      const startBox = dragStartBoxRef.current ?? imageBox;
-      commitViewportFromBox({
-        ...startBox,
-        x: startBox.x + event.beforeTranslate[0],
-        y: startBox.y + event.beforeTranslate[1],
-      });
-    },
-    [commitViewportFromBox, imageBox],
-  );
+  const handleDrag = useCallback((event: OnDrag) => {
+    const startBox = dragStartBoxRef.current;
+    if (!startBox) return;
+    const newBox: BoxLike = {
+      ...startBox,
+      x: startBox.x + event.beforeTranslate[0],
+      y: startBox.y + event.beforeTranslate[1],
+    };
+    liveBoxRef.current = newBox;
+    applyBoxToTarget(newBox);
+  }, []);
 
   const handleResizeStart = useCallback(
     (event: OnResizeStart) => {
-      resizeStartBoxRef.current = imageBox;
+      const startBox = { ...imageBox };
+      resizeStartBoxRef.current = startBox;
+      liveBoxRef.current = startBox;
       event.set([imageBox.width, imageBox.height]);
       event.setRatio(sourceSize.width / sourceSize.height);
       event.setMin([baseImageSize.width * minScale, baseImageSize.height * minScale]);
@@ -166,22 +210,32 @@ export const CanvasFramingEditor = ({
     [baseImageSize, imageBox, maxScale, minScale, sourceSize.height, sourceSize.width],
   );
 
-  const handleResize = useCallback(
-    (event: OnResize) => {
-      const startBox = resizeStartBoxRef.current ?? imageBox;
-      commitViewportFromBox({
-        x: startBox.x + event.drag.beforeTranslate[0],
-        y: startBox.y + event.drag.beforeTranslate[1],
-        width: event.boundingWidth,
-        height: event.boundingHeight,
-      });
-    },
-    [commitViewportFromBox, imageBox],
-  );
+  const handleResize = useCallback((event: OnResize) => {
+    const startBox = resizeStartBoxRef.current;
+    if (!startBox) return;
+    const newBox: BoxLike = {
+      x: startBox.x + event.drag.beforeTranslate[0],
+      y: startBox.y + event.drag.beforeTranslate[1],
+      width: event.boundingWidth,
+      height: event.boundingHeight,
+    };
+    liveBoxRef.current = newBox;
+    applyBoxToTarget(newBox);
+  }, []);
 
   const handleInteractionEnd = useCallback(() => {
+    const finalBox = liveBoxRef.current;
     dragStartBoxRef.current = null;
     resizeStartBoxRef.current = null;
+    liveBoxRef.current = null;
+
+    if (finalBox) {
+      commitViewportFromBoxRef.current(finalBox);
+      // 下一帧 Moveable 重读目标位置，此时 React 已更新 left/top
+      requestAnimationFrame(() => {
+        moveableRef.current?.updateTarget();
+      });
+    }
   }, []);
 
   return (
@@ -253,7 +307,6 @@ export const CanvasFramingEditor = ({
             container={canvasElement}
             rootContainer={canvasElement}
             viewContainer={canvasElement}
-            flushSync={flushSync}
             draggable
             resizable
             keepRatio
@@ -274,6 +327,12 @@ export const CanvasFramingEditor = ({
           />
         ) : null}
       </div>
+
+      <span className="sr-only">
+        {isZh
+          ? "拖动图片调整位置，拖拽四角或四边手柄缩放。缩放范围 0.35 到 4 倍。"
+          : "Drag to reposition the image. Drag corner or edge handles to resize. Scale range 0.35x to 4x."}
+      </span>
 
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full border border-border/70 bg-background/76 px-3 py-1 text-[11px] text-muted-foreground backdrop-blur">
         {t("workspace.framingHint")}

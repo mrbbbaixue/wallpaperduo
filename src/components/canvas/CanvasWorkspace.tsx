@@ -39,6 +39,9 @@ export const CanvasWorkspace = () => {
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
+  const [comparePos, setComparePos] = useState(50);
+  const compareContainerRef = useRef<HTMLDivElement | null>(null);
+  const compareDraggingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia(mobileMediaQuery).matches : false,
@@ -143,6 +146,33 @@ export const CanvasWorkspace = () => {
     setIsDragging(false);
   }, []);
 
+  const updateCompareFromClientX = useCallback((clientX: number) => {
+    const rect = compareContainerRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
+    setComparePos(Math.max(2, Math.min(98, ((clientX - rect.left) / rect.width) * 100)));
+  }, []);
+
+  const handleComparePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      compareDraggingRef.current = true;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [],
+  );
+
+  const handleComparePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!compareDraggingRef.current) return;
+      updateCompareFromClientX(e.clientX);
+    },
+    [updateCompareFromClientX],
+  );
+
+  const handleComparePointerUp = useCallback(() => {
+    compareDraggingRef.current = false;
+  }, []);
+
   const basePreviewUrl = preparedImage?.objectUrl ?? sourceImage?.objectUrl ?? null;
   const resultPreviewUrl = activeTask?.result?.objectUrl ?? null;
   const compareReady = previewMode === "compare" && !!basePreviewUrl && !!resultPreviewUrl;
@@ -174,9 +204,11 @@ export const CanvasWorkspace = () => {
       tabIndex={emptyUploadState ? 0 : undefined}
       aria-label={emptyUploadState ? (isZh ? "上传参考图" : "Upload reference image") : undefined}
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-transparent",
+        "relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-transparent transition-all duration-200",
         emptyUploadState ? "cursor-pointer" : "",
-        isDragging ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : "",
+        isDragging
+          ? "scale-[1.015] brightness-110 ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
+          : "",
         "shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)]",
       )}
       style={{
@@ -186,27 +218,46 @@ export const CanvasWorkspace = () => {
       }}
     >
       {compareReady ? (
-        <div className="grid h-full w-full grid-cols-2">
-          <div className="flex min-h-0 flex-col gap-2 border-r border-border/70 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("results.baseSelect")}
-            </p>
-            <img
-              src={basePreviewUrl ?? ""}
-              alt="base preview"
-              className="h-full w-full object-contain"
-            />
+        <div
+          ref={compareContainerRef}
+          className="relative h-full w-full select-none overflow-hidden"
+          onPointerMove={handleComparePointerMove}
+          onPointerUp={handleComparePointerUp}
+        >
+          {/* 底图（参考图） */}
+          <img
+            src={basePreviewUrl ?? ""}
+            alt="base preview"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          {/* 上层结果图，右侧裁剪 */}
+          <img
+            src={resultPreviewUrl ?? ""}
+            alt={activeTask?.label ?? "result preview"}
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-contain"
+            style={{ clipPath: `inset(0 ${100 - comparePos}% 0 0)` }}
+          />
+          {/* 分割线 */}
+          <div
+            className="absolute inset-y-0 w-1 -translate-x-1/2 cursor-ew-resize bg-white/90 shadow-[0_0_12px_rgba(0,0,0,0.3)]"
+            style={{ left: `${comparePos}%` }}
+            onPointerDown={handleComparePointerDown}
+          >
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-foreground/70">
+                <path d="M5 3L2 8l3 5M11 3l3 5-3 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
           </div>
-          <div className="flex min-h-0 flex-col gap-2 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {isZh ? "当前结果" : "Current result"}
-            </p>
-            <img
-              src={resultPreviewUrl ?? ""}
-              alt={activeTask?.label ?? "result preview"}
-              className="h-full w-full object-contain"
-            />
-          </div>
+          {/* 标签 */}
+          <span className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+            {t("results.baseSelect")}
+          </span>
+          <span className="pointer-events-none absolute right-3 top-3 rounded-md bg-background/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+            {isZh ? "当前结果" : "Current result"}
+          </span>
         </div>
       ) : showResultPreview ? (
         <img
@@ -224,13 +275,16 @@ export const CanvasWorkspace = () => {
           onRequestUpload={triggerUpload}
         />
       ) : (
-        <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-          <div className="rounded-2xl border border-border/50 bg-background/60 p-4 shadow-sm">
-            <UploadCloud className="h-8 w-8 text-muted-foreground/50" />
+        <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
+          <div className="animate-breathe rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 shadow-[0_0_32px_rgba(147,112,219,0.08)]">
+            <UploadCloud className="h-10 w-10 text-primary/60" />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-foreground/80">
-              {isZh ? "点击或拖拽上传参考图" : "Click or drag to upload a reference image"}
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground/85">
+              {isZh ? "拖拽图片到此处" : "Drop an image here"}
+            </p>
+            <p className="text-sm font-medium text-primary/70 animate-bounce-subtle">
+              {isZh ? "或点击此区域上传参考图 ↑" : "or click to upload a reference image ↑"}
             </p>
             <p className="max-w-[260px] text-xs leading-5 text-muted-foreground">
               {isZh
