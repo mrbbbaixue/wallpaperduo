@@ -13,6 +13,16 @@ interface PromptSettings {
   defaultNegativePrompt: string;
 }
 
+interface GenerationSettings {
+  concurrency: number;
+  retries: number;
+}
+
+interface ExportSettings {
+  defaultFileStem: string;
+  autoAlign: boolean;
+}
+
 interface SettingsState {
   // UI 设置
   language: UiLanguage;
@@ -24,16 +34,24 @@ interface SettingsState {
   // 提示词设置
   promptSettings: PromptSettings;
 
+  // 生成设置
+  generationSettings: GenerationSettings;
+
+  // 导出设置
+  exportSettings: ExportSettings;
+
   // Actions
   setLanguage: (language: UiLanguage) => void;
   setThemeMode: (themeMode: UiThemeMode) => void;
   setProvider: (provider: Partial<ProviderConfig>) => void;
   setPromptSettings: (patch: Partial<PromptSettings>) => void;
+  setGenerationSettings: (patch: Partial<GenerationSettings>) => void;
+  setExportSettings: (patch: Partial<ExportSettings>) => void;
 }
 
 type PersistedSettingsState = Pick<
   SettingsState,
-  "language" | "themeMode" | "provider" | "promptSettings"
+  "language" | "themeMode" | "provider" | "promptSettings" | "generationSettings" | "exportSettings"
 >;
 
 const legacyPromptSettingsV1: PromptSettings = {
@@ -84,6 +102,16 @@ const defaultProvider: ProviderConfig = {
   generateUrl: defaultTemplate.generateUrl,
 };
 
+const defaultGenerationSettings: GenerationSettings = {
+  concurrency: 2,
+  retries: 1,
+};
+
+const defaultExportSettings: ExportSettings = {
+  defaultFileStem: "wallpaper",
+  autoAlign: false,
+};
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
@@ -91,6 +119,8 @@ export const useSettingsStore = create<SettingsState>()(
       themeMode: "system",
       provider: defaultProvider,
       promptSettings: defaultPromptSettings,
+      generationSettings: defaultGenerationSettings,
+      exportSettings: defaultExportSettings,
 
       setLanguage: (language) => set({ language }),
       setThemeMode: (themeMode) => set({ themeMode }),
@@ -102,10 +132,18 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({
           promptSettings: { ...state.promptSettings, ...patch },
         })),
+      setGenerationSettings: (patch) =>
+        set((state) => ({
+          generationSettings: { ...state.generationSettings, ...patch },
+        })),
+      setExportSettings: (patch) =>
+        set((state) => ({
+          exportSettings: { ...state.exportSettings, ...patch },
+        })),
     }),
     {
       name: "wallpaperduo.settings.v2",
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
         const currentState =
           persistedState && typeof persistedState === "object"
@@ -119,6 +157,8 @@ export const useSettingsStore = create<SettingsState>()(
             themeMode: currentState?.themeMode ?? "system",
             provider: defaultProvider,
             promptSettings: migratePromptSettings(currentState?.promptSettings),
+            generationSettings: defaultGenerationSettings,
+            exportSettings: defaultExportSettings,
           };
         }
         if (version < 2) {
@@ -127,6 +167,8 @@ export const useSettingsStore = create<SettingsState>()(
             themeMode: currentState?.themeMode ?? "system",
             provider: currentState?.provider ?? defaultProvider,
             promptSettings: migratePromptSettings(currentState?.promptSettings),
+            generationSettings: defaultGenerationSettings,
+            exportSettings: defaultExportSettings,
           };
         }
         return {
@@ -137,6 +179,14 @@ export const useSettingsStore = create<SettingsState>()(
             ...defaultPromptSettings,
             ...currentState?.promptSettings,
           },
+          generationSettings: {
+            ...defaultGenerationSettings,
+            ...currentState?.generationSettings,
+          },
+          exportSettings: {
+            ...defaultExportSettings,
+            ...currentState?.exportSettings,
+          },
         };
       },
       partialize: (state) => ({
@@ -144,6 +194,8 @@ export const useSettingsStore = create<SettingsState>()(
         themeMode: state.themeMode,
         provider: state.provider,
         promptSettings: state.promptSettings,
+        generationSettings: state.generationSettings,
+        exportSettings: state.exportSettings,
       }),
     }
   )

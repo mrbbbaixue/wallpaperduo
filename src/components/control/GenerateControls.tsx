@@ -38,6 +38,7 @@ export const GenerateControls = ({
   const updateTask = useWorkflowStore((s) => s.updateTask);
   const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
+  const generationSettings = useSettingsStore((s) => s.generationSettings);
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -95,8 +96,8 @@ export const GenerateControls = ({
         provider,
         prepared: preparedImage,
         tasks: newTasks,
-        concurrency: 2,
-        retries: 1,
+        concurrency: generationSettings.concurrency,
+        retries: generationSettings.retries,
         onTaskUpdate: (taskId, patch) => updateTask(taskId, patch),
         signal: controller.signal,
       });

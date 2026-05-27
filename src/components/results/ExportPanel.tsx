@@ -9,6 +9,7 @@ import { alignToReference } from "@/services/alignment/alignmentService";
 import { validateDdwThemeShape } from "@/services/export/ddwCompatibility";
 import { downloadDdw } from "@/services/export/ddwExporter";
 import { downloadPngZip } from "@/services/export/pngZipExporter";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useWorkflowStore } from "@/store/useWorkflowStore";
 import { toUserError } from "@/utils/error";
 
@@ -30,9 +31,11 @@ export const ExportPanel = () => {
   const preparedImage = useWorkflowStore((s) => s.preparedImage);
   const mapping = useWorkflowStore((s) => s.exportMapping);
   const setExportMapping = useWorkflowStore((s) => s.setExportMapping);
+  const exportSettings = useSettingsStore((s) => s.exportSettings);
+  const setExportSettings = useSettingsStore((s) => s.setExportSettings);
 
   const [expanded, setExpanded] = useState(false);
-  const [fileStem, setFileStem] = useState("wallpaper");
+  const [fileStem, setFileStem] = useState(exportSettings.defaultFileStem);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"align" | "zip" | "ddw" | "">("");
@@ -140,11 +143,64 @@ export const ExportPanel = () => {
     }
   };
 
+  const ensureAligned = async () => {
+    if (!exportSettings.autoAlign) return;
+    if (!preparedImage) return;
+
+    // 检查是否全部已对齐
+    const allAligned = succeeded.every(
+      (task) => alignmentResults[task.id]?.status === "succeeded",
+    );
+    if (allAligned) return;
+
+    // 触发对齐（复用 runAlignment 逻辑）
+    setBusy("align");
+    setError("");
+    setMessage("");
+    setAlignProgress({ current: 0, settled: 0 });
+    let successCount = 0;
+
+    for (let i = 0; i < succeeded.length; i++) {
+      const task = succeeded[i];
+      setAlignProgress({ current: i + 1, settled: successCount });
+
+      if (!task.result?.blob) continue;
+      if (alignmentResults[task.id]?.status === "succeeded") {
+        successCount += 1;
+        continue;
+      }
+
+      try {
+        const output = await alignToReference(preparedImage.blob, task.result.blob);
+        setAlignmentResult({
+          variantId: task.id,
+          score: output.score,
+          alignedBlob: output.blob,
+          alignedObjectUrl: URL.createObjectURL(output.blob),
+          status: "succeeded",
+        });
+        successCount += 1;
+      } catch (exception) {
+        setAlignmentResult({
+          variantId: task.id,
+          score: 0,
+          status: "failed",
+          error: toUserError(exception),
+        });
+      }
+    }
+
+    setAlignProgress({ current: succeeded.length, settled: successCount });
+    setBusy("");
+    setAlignProgress(null);
+  };
+
   const runExportDdw = async () => {
     try {
       setBusy("ddw");
       setError("");
       setMessage("");
+      await ensureAligned();
       const themeValidation = validateDdwThemeShape({
         imageFilename: `${fileStem}_*.png`,
         dayImageList: mapping.day,
@@ -183,6 +239,7 @@ export const ExportPanel = () => {
       setBusy("zip");
       setError("");
       setMessage("");
+      await ensureAligned();
       await downloadPngZip({
         tasks,
         alignmentResults,
@@ -233,7 +290,11 @@ export const ExportPanel = () => {
               <Input
                 id="export-file-stem"
                 value={fileStem}
-                onChange={(e) => setFileStem(e.target.value.replace(/\s+/g, "_"))}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\s+/g, "_");
+                  setFileStem(value);
+                  setExportSettings({ defaultFileStem: value });
+                }}
               />
             </div>
 

@@ -93,7 +93,10 @@
     "routingHint": "Use one BYOK provider for both analysis and image generation, and route requests through the Cloudflare Worker.",
     "sections": {
       "provider": "Provider & Models",
-      "prompts": "Prompt Defaults"
+      "prompts": "Prompt Defaults",
+      "appearance": "Appearance",
+      "generation": "Generation",
+      "export": "Export"
     },
     "autoSaveHint": "Settings are saved automatically in this browser",
     "analysisProvider": "Analysis Provider",
@@ -119,7 +122,28 @@
     "generationPromptPrefix": "Generation Prompt Prefix",
     "defaultNegativePrompt": "Default Negative Prompt",
     "heicExperimental": "ZIP Export",
-    "localFallback": "Worker Proxy"
+    "localFallback": "Worker Proxy",
+    "appearanceSection": "Appearance",
+    "appearanceDesc": "Language and theme settings apply instantly.",
+    "language": "Interface Language",
+    "languageZh": "中文",
+    "languageEn": "English",
+    "theme": "Theme Mode",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "Follow System",
+    "generationSettingsTitle": "Generation Settings",
+    "generationSettingsDesc": "Control batch generation speed and fault tolerance.",
+    "concurrencyLabel": "Concurrency",
+    "concurrencyHint": "How many images to generate simultaneously. Lower to avoid rate limits, higher to speed up batches.",
+    "retriesLabel": "Retry Count",
+    "retriesHint": "Number of retry attempts when a single image generation fails.",
+    "exportSettingsTitle": "Export Settings",
+    "exportSettingsDesc": "Configure default export behavior.",
+    "defaultFileStemLabel": "Default File Name Stem",
+    "defaultFileStemHint": "The default file name prefix for new exports.",
+    "autoAlignLabel": "Auto-align Before Export",
+    "autoAlignHint": "When checked, image alignment runs automatically before DDW or ZIP export."
   },
   "errors": {
     "INVALID_IMAGE": "Unsupported image file. Please use PNG/JPEG/WebP.",

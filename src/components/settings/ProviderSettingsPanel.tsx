@@ -2,14 +2,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ProviderConfig } from "@/components/settings/ProviderConfig";
 import { testConnectionWithWorker } from "@/services/api/workerClient";
 import { toast } from "@/hooks/use-toast";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { toUserError } from "@/utils/error";
 
-type SettingsSectionKey = "provider" | "prompts";
+type SettingsSectionKey = "provider" | "prompts" | "appearance" | "generation" | "export";
 
 interface ProviderSettingsPanelProps {
   onClose: () => void;
@@ -21,6 +23,14 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
   const provider = useSettingsStore((state) => state.provider);
   const promptSettings = useSettingsStore((state) => state.promptSettings);
   const setPromptSettings = useSettingsStore((state) => state.setPromptSettings);
+  const language = useSettingsStore((state) => state.language);
+  const setLanguage = useSettingsStore((state) => state.setLanguage);
+  const themeMode = useSettingsStore((state) => state.themeMode);
+  const setThemeMode = useSettingsStore((state) => state.setThemeMode);
+  const generationSettings = useSettingsStore((state) => state.generationSettings);
+  const setGenerationSettings = useSettingsStore((state) => state.setGenerationSettings);
+  const exportSettings = useSettingsStore((state) => state.exportSettings);
+  const setExportSettings = useSettingsStore((state) => state.setExportSettings);
   const [activeSection, setActiveSection] = useState<SettingsSectionKey>("provider");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -42,6 +52,24 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
       label: t("settings.sections.prompts"),
       title: t("settings.promptSettingsTitle"),
       description: t("settings.promptSettingsDesc"),
+    },
+    {
+      key: "appearance",
+      label: t("settings.sections.appearance"),
+      title: t("settings.appearanceSection"),
+      description: t("settings.appearanceDesc"),
+    },
+    {
+      key: "generation",
+      label: t("settings.sections.generation"),
+      title: t("settings.generationSettingsTitle"),
+      description: t("settings.generationSettingsDesc"),
+    },
+    {
+      key: "export",
+      label: t("settings.sections.export"),
+      title: t("settings.exportSettingsTitle"),
+      description: t("settings.exportSettingsDesc"),
     },
   ];
 
@@ -98,39 +126,183 @@ export const ProviderSettingsPanel = ({ onClose }: ProviderSettingsPanelProps) =
       );
     }
 
+    if (activeSection === "prompts") {
+      return (
+        <div className={panelBlockClassName}>
+          <div className="space-y-2">
+            <Label className={fieldLabelClassName} htmlFor="analysis-prompt">
+              {t("settings.analysisPrompt")}
+            </Label>
+            <textarea
+              id="analysis-prompt"
+              className={textAreaClassName}
+              value={promptSettings.analysisUserPrompt}
+              onChange={(event) => setPromptSettings({ analysisUserPrompt: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={fieldLabelClassName} htmlFor="generation-prefix">
+              {t("settings.generationPromptPrefix")}
+            </Label>
+            <textarea
+              id="generation-prefix"
+              className={textAreaClassName}
+              value={promptSettings.generationPrefix}
+              onChange={(event) => setPromptSettings({ generationPrefix: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={fieldLabelClassName} htmlFor="negative-prompt">
+              {t("settings.defaultNegativePrompt")}
+            </Label>
+            <textarea
+              id="negative-prompt"
+              className={textAreaClassName}
+              value={promptSettings.defaultNegativePrompt}
+              onChange={(event) => setPromptSettings({ defaultNegativePrompt: event.target.value })}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    if (activeSection === "appearance") {
+      return (
+        <div className={panelBlockClassName}>
+          <div className="space-y-3">
+            <Label className={fieldLabelClassName}>{t("settings.language")}</Label>
+            <div className="flex gap-2">
+              {([
+                { value: "zh", label: t("settings.languageZh") },
+                { value: "en", label: t("settings.languageEn") },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setLanguage(opt.value);
+                    void i18n.changeLanguage(opt.value);
+                  }}
+                  className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
+                    language === opt.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            <Label className={fieldLabelClassName}>{t("settings.theme")}</Label>
+            <div className="flex gap-2">
+              {([
+                { value: "light", label: t("settings.themeLight") },
+                { value: "dark", label: t("settings.themeDark") },
+                { value: "system", label: t("settings.themeSystem") },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setThemeMode(opt.value)}
+                  className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
+                    themeMode === opt.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/70 bg-background/65 text-foreground hover:bg-accent/70"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeSection === "generation") {
+      return (
+        <div className={panelBlockClassName}>
+          <div className="space-y-3">
+            <div>
+              <Label className={fieldLabelClassName}>{t("settings.concurrencyLabel")}</Label>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {t("settings.concurrencyHint")}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={1}
+                max={4}
+                step={1}
+                value={generationSettings.concurrency}
+                onChange={(e) =>
+                  setGenerationSettings({ concurrency: Number(e.target.value) })
+                }
+                className="h-2 w-36 cursor-pointer appearance-none rounded-full bg-border accent-primary"
+              />
+              <span className="rounded-md border border-border/70 bg-background px-3 py-1 text-sm font-semibold tabular-nums">
+                {generationSettings.concurrency}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <Label className={fieldLabelClassName} htmlFor="retries-input">
+                {t("settings.retriesLabel")}
+              </Label>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {t("settings.retriesHint")}
+              </p>
+            </div>
+            <Input
+              id="retries-input"
+              type="number"
+              min={0}
+              max={5}
+              value={generationSettings.retries}
+              onChange={(e) =>
+                setGenerationSettings({
+                  retries: Math.max(0, Math.min(5, Number(e.target.value) || 0)),
+                })
+              }
+              className="h-10 w-24 rounded-md bg-background/65"
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={panelBlockClassName}>
-        <div className="space-y-2">
-          <Label className={fieldLabelClassName} htmlFor="analysis-prompt">
-            {t("settings.analysisPrompt")}
+        <div className="space-y-3">
+          <Label className={fieldLabelClassName} htmlFor="default-file-stem">
+            {t("settings.defaultFileStemLabel")}
           </Label>
-          <textarea
-            id="analysis-prompt"
-            className={textAreaClassName}
-            value={promptSettings.analysisUserPrompt}
-            onChange={(event) => setPromptSettings({ analysisUserPrompt: event.target.value })}
+          <p className="text-xs leading-5 text-muted-foreground">
+            {t("settings.defaultFileStemHint")}
+          </p>
+          <Input
+            id="default-file-stem"
+            value={exportSettings.defaultFileStem}
+            onChange={(e) =>
+              setExportSettings({ defaultFileStem: e.target.value.replace(/\s+/g, "_") })
+            }
+            className="h-10 rounded-md bg-background/65"
           />
         </div>
-        <div className="space-y-2">
-          <Label className={fieldLabelClassName} htmlFor="generation-prefix">
-            {t("settings.generationPromptPrefix")}
-          </Label>
-          <textarea
-            id="generation-prefix"
-            className={textAreaClassName}
-            value={promptSettings.generationPrefix}
-            onChange={(event) => setPromptSettings({ generationPrefix: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className={fieldLabelClassName} htmlFor="negative-prompt">
-            {t("settings.defaultNegativePrompt")}
-          </Label>
-          <textarea
-            id="negative-prompt"
-            className={textAreaClassName}
-            value={promptSettings.defaultNegativePrompt}
-            onChange={(event) => setPromptSettings({ defaultNegativePrompt: event.target.value })}
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-background/70 p-4">
+          <div>
+            <Label className="text-sm font-medium">{t("settings.autoAlignLabel")}</Label>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+              {t("settings.autoAlignHint")}
+            </p>
+          </div>
+          <Switch
+            checked={exportSettings.autoAlign}
+            onCheckedChange={(checked) => setExportSettings({ autoAlign: checked })}
           />
         </div>
       </div>
