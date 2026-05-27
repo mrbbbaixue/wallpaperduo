@@ -36,8 +36,8 @@ export const PROVIDER_TEMPLATES: ProviderTemplate[] = [
     baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     generateUrl:
       "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
-    defaultModel: "wanx2.1-t2i-turbo",
-    defaultVisionModel: "qwen-vl-max",
+    defaultModel: "qwen-image-2.0-pro",
+    defaultVisionModel: "qwen3.6-flash",
   },
   {
     id: "openrouter",
