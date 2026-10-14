@@ -11,6 +11,12 @@ WallpaperDuo 是一个 BYOK（自带模型/API）的壁纸工作流工具。
 
 > 本章节预留，后续可补充：核心功能说明、界面截图、典型工作流与使用示例。
 
+## 工程决策笔记
+
+重要决定的「为什么这么改、放弃了什么、怎么验证」记在 `.agents/notes/`：`implemented/<class>/yyyy-mm-dd-主题.md`，按 lifecycle（proposed / implemented / rejected / archived）与 class（feature / bug-fix / simplification / architecture / process / testing）两层归档，没有中心索引，按目录或关键词搜索。
+
+改动前建议先查：`rg --hidden --glob '!.agents/notes/archived/**' "<机制名>" .agents/notes/`。
+
 ## 部署方式
 
 ### 1. 本地开发

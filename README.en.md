@@ -11,6 +11,12 @@ Starting from one source image, it helps you generate light/dark and time-of-day
 
 > This section is reserved for future updates: feature details, UI screenshots, common workflows, and usage examples.
 
+## Engineering decision notes
+
+The "why", the rejected alternatives, and how to verify them live in `.agents/notes/`: `implemented/<class>/yyyy-mm-dd-topic.md`, filed by lifecycle (proposed / implemented / rejected / archived) and class (feature / bug-fix / simplification / architecture / process / testing). There is no central index — browse the tree or search.
+
+Before changing an area, search first: `rg --hidden --glob '!.agents/notes/archived/**' "<mechanism>" .agents/notes/`.
+
 ## Deployment
 
 ### 1. Local development
