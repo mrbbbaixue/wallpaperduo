@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { CanvasFramingEditor } from "@/components/canvas/CanvasFramingEditor";
 import { CanvasGalleryStrip } from "@/components/canvas/CanvasGalleryStrip";
+import { CanvasToolbar } from "@/components/canvas/CanvasToolbar";
 import { aspectRatios } from "@/data/aspectRatios";
 import { cn } from "@/lib/utils";
 import { buildLoadedImage, useWorkflowStore } from "@/store/useWorkflowStore";
@@ -73,9 +74,9 @@ export const CanvasWorkspace = () => {
     normalizedRatioId === "custom"
       ? customRatio
       : (() => {
-          const preset = aspectRatios.find((item) => item.id === normalizedRatioId);
-          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
-        })();
+        const preset = aspectRatios.find((item) => item.id === normalizedRatioId);
+        return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
+      })();
 
   useEffect(() => {
     if (succeededTasks.length === 0) {
@@ -179,6 +180,7 @@ export const CanvasWorkspace = () => {
   const showResultPreview = !compareReady && !!resultPreviewUrl;
   const showFramingEditor = !compareReady && !showResultPreview && !!sourceImage;
   const emptyUploadState = !showFramingEditor && !compareReady && !showResultPreview;
+  const showToolbar = !!sourceImage;
 
   const triggerUpload = () => {
     inputRef.current?.click();
@@ -193,11 +195,11 @@ export const CanvasWorkspace = () => {
       onKeyDown={
         emptyUploadState
           ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                triggerUpload();
-              }
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              triggerUpload();
             }
+          }
           : undefined
       }
       role={emptyUploadState ? "button" : undefined}
@@ -247,7 +249,7 @@ export const CanvasWorkspace = () => {
           >
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-foreground/70">
-                <path d="M5 3L2 8l3 5M11 3l3 5-3 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M5 3L2 8l3 5M11 3l3 5-3 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
           </div>
@@ -276,7 +278,7 @@ export const CanvasWorkspace = () => {
         />
       ) : (
         <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
-          <div className="animate-breathe rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 shadow-[0_0_32px_rgba(147,112,219,0.08)]">
+          <div className="animate-breathe rounded-lg border border-primary/20 bg-primary/[0.04] p-5 shadow-[0_0_32px_rgba(147,112,219,0.08)]">
             <UploadCloud className="h-10 w-10 text-primary/60" />
           </div>
           <div className="space-y-2">
@@ -308,12 +310,20 @@ export const CanvasWorkspace = () => {
       />
       <div className="space-y-4 md:flex md:h-full md:min-h-0 md:flex-col md:space-y-0">
         {isMobile ? (
-          stage
+          <div className="space-y-3">
+            {showToolbar ? <CanvasToolbar /> : null}
+            {stage}
+          </div>
         ) : (
           <div
             className="grid h-full min-h-0 overflow-hidden"
-            style={{ gridTemplateRows: hasResults ? "minmax(0, 1fr) auto" : "minmax(0, 1fr)" }}
+            style={{
+              gridTemplateRows: [showToolbar ? "auto" : null, "minmax(0, 1fr)", hasResults ? "auto" : null]
+                .filter(Boolean)
+                .join(" "),
+            }}
           >
+            {showToolbar ? <CanvasToolbar /> : null}
             {stage}
             {hasResults ? (
               <CanvasGalleryStrip

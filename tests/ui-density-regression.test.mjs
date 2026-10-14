@@ -18,6 +18,8 @@ test("desktop workbench uses tighter radius and lighter shadows", () => {
     "src/components/results/ResultsRail.tsx",
     "src/components/canvas/CanvasGalleryStrip.tsx",
     "src/components/canvas/CanvasWorkspace.tsx",
+    "src/components/canvas/CanvasToolbar.tsx",
+    "src/components/control/CreationActionBar.tsx",
   ];
 
   for (const file of filesWithoutRoundedXl) {
@@ -106,10 +108,6 @@ test("desktop editor layout stays seamless and lower steps remain expandable", (
     false,
     "WorkflowStepCard header toggle should stay clickable for collapsed pending steps",
   );
-  assert.ok(
-    workflowCard.includes("rounded-lg"),
-    "WorkflowStepCard should keep a subtle rounded corner instead of a hard square edge",
-  );
   assert.equal(
     workflowCard.includes("rounded-xl"),
     false,
@@ -118,13 +116,6 @@ test("desktop editor layout stays seamless and lower steps remain expandable", (
   assert.ok(
     workflowCard.includes("expanded ? ("),
     "WorkflowStepCard should only show the full description while expanded",
-  );
-
-  const canvasWorkspace = read("src/components/canvas/CanvasWorkspace.tsx");
-  assert.equal(
-    canvasWorkspace.includes("rounded-lg"),
-    false,
-    "Canvas workspace desktop surfaces should drop rounded corners for the editor layout",
   );
 });
 

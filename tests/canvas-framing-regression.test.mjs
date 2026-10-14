@@ -83,17 +83,23 @@ test("control panel surfaces canvas framing summary pills", () => {
   );
 });
 
-test("desktop workflow keeps left gallery presentation-only and moves result actions to the right", () => {
+test("desktop workflow keeps left gallery presentation-only and pins result actions to the canvas toolbar", () => {
   const panel = read("src/components/control/ControlPanel.tsx");
   const gallery = read("src/components/canvas/CanvasGalleryStrip.tsx");
+  const toolbar = read("src/components/canvas/CanvasToolbar.tsx");
 
   assert.ok(
-    panel.includes("setPreviewMode"),
-    "control panel should provide preview mode controls on the right side",
+    toolbar.includes("setPreviewMode"),
+    "canvas toolbar should own the preview mode controls next to the canvas",
   );
   assert.ok(
+    toolbar.includes('t("common.download")'),
+    "canvas toolbar should own the single-result download action",
+  );
+  assert.equal(
     panel.includes('t("common.download")'),
-    "control panel should provide the single-result download action on the right side",
+    false,
+    "control panel should defer canvas actions to the canvas toolbar",
   );
   assert.equal(
     gallery.includes('t("common.download")'),

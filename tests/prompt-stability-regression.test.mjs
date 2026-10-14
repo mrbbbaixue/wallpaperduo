@@ -35,7 +35,7 @@ test("default prompt settings emphasize reference-preserving time variants", () 
     "Settings migration should recognize old prompt defaults",
   );
   assert.ok(
-    source.includes("version: 2"),
+    source.includes("version: 3"),
     "Settings persistence version should bump so legacy defaults can migrate",
   );
 });

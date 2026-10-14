@@ -1,10 +1,9 @@
-import { saveAs } from "file-saver";
-import { ArrowLeftRight, Download, Image as ImageIcon, RotateCcw, ScanSearch } from "lucide-react";
+import { ScanSearch } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CanvasControls } from "@/components/canvas/CanvasControls";
-import { GenerateControls } from "@/components/control/GenerateControls";
+import { CreationActionBar } from "@/components/control/CreationActionBar";
 import { PromptEditor } from "@/components/control/PromptEditor";
 import { TaskQueue } from "@/components/control/TaskQueue";
 import { TimeSlotSelector } from "@/components/control/TimeSlotSelector";
@@ -12,6 +11,7 @@ import { WorkflowStepCard } from "@/components/control/WorkflowStepCard";
 import { Button } from "@/components/ui/button";
 import { aspectRatios } from "@/data/aspectRatios";
 import { toast } from "@/hooks/use-toast";
+import { useGenerationRunner, type PromptEntry } from "@/hooks/useGenerationRunner";
 import { hasExpansionArea } from "@/services/canvas/framing";
 import { prepareCanvasImage } from "@/services/canvas/prepareCanvas";
 import { runSceneAnalysis } from "@/services/prompt/sceneAnalyzer";
@@ -19,12 +19,6 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { buildPreparedImage, useWorkflowStore } from "@/store/useWorkflowStore";
 import type { TimeVariant } from "@/types/domain";
 import { toUserError } from "@/utils/error";
-
-interface PromptEntry {
-  timeOfDay: TimeVariant;
-  prompt: string;
-  negativePrompt: string;
-}
 
 interface ControlPanelProps {
   desktopScrollManaged?: boolean;
@@ -65,13 +59,9 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const ratioId = useWorkflowStore((s) => s.ratioId);
   const customRatio = useWorkflowStore((s) => s.customRatio);
   const setPreparedImage = useWorkflowStore((s) => s.setPreparedImage);
-  const activeResultId = useWorkflowStore((s) => s.activeResultId);
-  const previewMode = useWorkflowStore((s) => s.previewMode);
   const sceneAnalysis = useWorkflowStore((s) => s.sceneAnalysis);
   const setSceneAnalysis = useWorkflowStore((s) => s.setSceneAnalysis);
   const tasks = useWorkflowStore((s) => s.tasks);
-  const setActiveResultId = useWorkflowStore((s) => s.setActiveResultId);
-  const setPreviewMode = useWorkflowStore((s) => s.setPreviewMode);
   const provider = useSettingsStore((s) => s.provider);
   const promptSettings = useSettingsStore((s) => s.promptSettings);
 
@@ -82,6 +72,14 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const [preprocessLoading, setPreprocessLoading] = useState(false);
   const [preprocessError, setPreprocessError] = useState("");
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
+
+  const {
+    generating,
+    error: generationError,
+    run: runGeneration,
+    cancel: cancelGeneration,
+    canRun: canRunGeneration,
+  } = useGenerationRunner({ selectedSlots, prompts });
 
   useEffect(() => {
     setCurrentTimeOfDay(null);
@@ -246,9 +244,9 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
     ratioId === "custom"
       ? customRatio
       : (() => {
-          const preset = aspectRatios.find((item) => item.id === ratioId);
-          return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
-        })();
+        const preset = aspectRatios.find((item) => item.id === ratioId);
+        return preset ? { width: preset.width, height: preset.height } : { width: 16, height: 9 };
+      })();
   const ratioLabel = ratioId === "custom" ? `${customRatio.width}:${customRatio.height}` : ratioId;
   const includesExpansionArea =
     !!sourceImage &&
@@ -288,20 +286,9 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const completedResults = tasks.filter((task) => task.status === "succeeded").length;
   const failedResults = tasks.filter((task) => task.status === "failed").length;
   const tasksRunning = tasks.some((task) => task.status === "queued" || task.status === "running");
-  const succeededTasks = tasks.filter((task) => task.status === "succeeded" && task.result?.blob);
-  const activeTask = activeResultId
-    ? succeededTasks.find((task) => task.id === activeResultId)
-    : undefined;
 
   const handleStepToggle = (step: StepKey) => {
     setExpandedStep((current) => (current === step ? null : step));
-  };
-
-  const handleDownloadSingle = () => {
-    if (!activeTask?.result?.blob) return;
-    const safeLabel = activeTask.label.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
-    const filename = safeLabel ? `${safeLabel}.png` : `result_${activeTask.id}.png`;
-    saveAs(activeTask.result.blob, filename);
   };
 
   const baselineSummary = sceneAnalysis ? (
@@ -331,51 +318,51 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
   const timeSummary = renderSummaryPills(
     currentTimeOfDay
       ? [
-          isZh
-            ? `参考：${getTimeLabel(currentTimeOfDay)}`
-            : `Source: ${getTimeLabel(currentTimeOfDay)}`,
-          isZh
-            ? `生成：${selectedSlots.map((slot) => getTimeLabel(slot)).join(" / ")}`
-            : `Generate: ${selectedSlots.map((slot) => getTimeLabel(slot)).join(" / ")}`,
-        ]
+        isZh
+          ? `参考：${getTimeLabel(currentTimeOfDay)}`
+          : `Source: ${getTimeLabel(currentTimeOfDay)}`,
+        isZh
+          ? `生成：${selectedSlots.map((slot) => getTimeLabel(slot)).join(" / ")}`
+          : `Generate: ${selectedSlots.map((slot) => getTimeLabel(slot)).join(" / ")}`,
+      ]
       : [isZh ? "等待画面理解" : "Waiting for scene analysis"],
   );
 
   const promptSummary = renderSummaryPills(
     promptsReady
       ? [
-          isZh
-            ? `已就绪 ${selectedSlots.length} 组提示词`
-            : `${selectedSlots.length} prompt sets ready`,
-          ...selectedSlots.map((slot) => getTimeLabel(slot)),
-        ]
+        isZh
+          ? `已就绪 ${selectedSlots.length} 组提示词`
+          : `${selectedSlots.length} prompt sets ready`,
+        ...selectedSlots.map((slot) => getTimeLabel(slot)),
+      ]
       : [isZh ? "等待选择时段" : "Waiting for variant selection"],
   );
 
   const generationSummary = renderSummaryPills(
     tasks.length === 0
       ? [
-          isZh
-            ? `准备生成 ${selectedSlots.length} 个版本`
-            : `${selectedSlots.length} variants ready`,
-          provider.templateId,
-        ]
+        isZh
+          ? `准备生成 ${selectedSlots.length} 个版本`
+          : `${selectedSlots.length} variants ready`,
+        provider.templateId,
+      ]
       : [
-          isZh
-            ? `完成 ${completedResults}/${tasks.length}`
-            : `${completedResults}/${tasks.length} done`,
-          failedResults > 0
+        isZh
+          ? `完成 ${completedResults}/${tasks.length}`
+          : `${completedResults}/${tasks.length} done`,
+        failedResults > 0
+          ? isZh
+            ? `失败 ${failedResults}`
+            : `${failedResults} failed`
+          : tasksRunning
             ? isZh
-              ? `失败 ${failedResults}`
-              : `${failedResults} failed`
-            : tasksRunning
-              ? isZh
-                ? "生成中"
-                : "Running"
-              : isZh
-                ? "队列完成"
-                : "Queue finished",
-        ],
+              ? "生成中"
+              : "Running"
+            : isZh
+              ? "队列完成"
+              : "Queue finished",
+      ],
   );
 
   const stepTone = (step: StepKey, hasError = false) => {
@@ -393,19 +380,19 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
           description={
             isZh ? "导入参考图，设置目标比例，AI分析构图与时段" : "Import reference, set target ratio, AI analysis"
           }
-            statusLabel={
-                !sourceImage
-                  ? isZh
-                    ? "待导入"
-                    : "Import"
-                  : !sceneAnalysis
-                    ? isZh
-                      ? "待分析"
-                      : "Analyze"
-                    : isZh
-                      ? "已就绪"
-                      : "Ready"
-              }
+          statusLabel={
+            !sourceImage
+              ? isZh
+                ? "待导入"
+                : "Import"
+              : !sceneAnalysis
+                ? isZh
+                  ? "待分析"
+                  : "Analyze"
+                : isZh
+                  ? "已就绪"
+                  : "Ready"
+          }
           tone={stepTone("baseline", Boolean(preprocessError))}
           expanded={expandedStep === "baseline"}
           summary={baselineSummary}
@@ -469,13 +456,13 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
           description={
             isZh ? "确认参考时段，选择目标变体版本" : "Confirm source time, pick target variants"
           }
-            statusLabel={
-                !sceneAnalysis
-                  ? isZh ? "等待步骤 1" : "Waiting"
-                  : currentTimeOfDay && selectedSlots.length > 0
-                    ? isZh ? `${selectedSlots.length} 个版本` : `${selectedSlots.length} variants`
-                    : isZh ? "选择时段" : "Pick variants"
-              }
+          statusLabel={
+            !sceneAnalysis
+              ? isZh ? "等待步骤 1" : "Waiting"
+              : currentTimeOfDay && selectedSlots.length > 0
+                ? isZh ? `${selectedSlots.length} 个版本` : `${selectedSlots.length} variants`
+                : isZh ? "选择时段" : "Pick variants"
+          }
           tone={stepTone("times")}
           expanded={expandedStep === "times"}
           summary={timeSummary}
@@ -497,13 +484,13 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
           description={
             isZh ? "系统生成建议稿，可逐个版本微调" : "AI drafts suggestions, refine per variant"
           }
-            statusLabel={
-                selectedSlots.length === 0
-                  ? isZh ? "等待步骤 2" : "Waiting"
-                  : promptsReady
-                    ? isZh ? `${selectedSlots.length} 组就绪` : `${selectedSlots.length} ready`
-                    : isZh ? "补全提示词" : "Finish prompts"
-              }
+          statusLabel={
+            selectedSlots.length === 0
+              ? isZh ? "等待步骤 2" : "Waiting"
+              : promptsReady
+                ? isZh ? `${selectedSlots.length} 组就绪` : `${selectedSlots.length} ready`
+                : isZh ? "补全提示词" : "Finish prompts"
+          }
           tone={stepTone("prompts")}
           expanded={expandedStep === "prompts"}
           summary={promptSummary}
@@ -522,93 +509,72 @@ export const ControlPanel = ({ desktopScrollManaged = false }: ControlPanelProps
           description={
             isZh ? "批量生成所有变体，实时跟踪任务进度" : "Batch generate all variants, track progress"
           }
-            statusLabel={
-                !promptsReady
-                  ? isZh ? "等待步骤 3" : "Waiting"
-                  : tasks.length === 0
-                    ? isZh ? "就绪" : "Ready"
-                    : tasksRunning ? isZh ? "生成中" : "Running"
-                    : isZh ? "已完成" : "Done"
-              }
+          statusLabel={
+            !promptsReady
+              ? isZh ? "等待步骤 3" : "Waiting"
+              : tasks.length === 0
+                ? isZh ? "就绪" : "Ready"
+                : tasksRunning ? isZh ? "生成中" : "Running"
+                  : isZh ? "已完成" : "Done"
+          }
           tone={stepTone("generate")}
           expanded={expandedStep === "generate"}
           summary={generationSummary}
           onToggle={() => handleStepToggle("generate")}
         >
-          <GenerateControls
-            selectedSlots={selectedSlots}
-            prompts={prompts}
-            onPreprocess={onPreprocess}
-            preprocessLoading={preprocessLoading}
-            showAnalyze={false}
-          />
-        </WorkflowStepCard>
-
-        {succeededTasks.length > 0 ? (
-          <div className="border-t border-border/70 bg-background/55 p-3.5">
-            <p className="mb-2 text-xs font-semibold">
-              {isZh ? "预览模式" : "Preview mode"}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              <Button
-                type="button"
-                size="sm"
-                variant={!activeResultId ? "default" : "outline"}
-                onClick={() => {
-                  setPreviewMode("single");
-                  setActiveResultId(undefined);
-                }}
-                aria-pressed={!activeResultId}
-                className="h-8 text-xs"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                {t("results.baseSelect")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={previewMode === "single" ? "default" : "outline"}
-                onClick={() => setPreviewMode("single")}
-                disabled={!activeResultId}
-                aria-pressed={previewMode === "single"}
-                className="h-8 text-xs"
-              >
-                <ImageIcon className="h-3.5 w-3.5" />
-                {t("results.singleMode")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={previewMode === "compare" ? "default" : "outline"}
-                onClick={() => setPreviewMode("compare")}
-                disabled={!activeResultId}
-                aria-pressed={previewMode === "compare"}
-                className="h-8 text-xs"
-              >
-                <ArrowLeftRight className="h-3.5 w-3.5" />
-                {t("results.compareMode")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadSingle}
-                disabled={!activeTask?.result?.blob}
-                className="h-8 text-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                {t("common.download")}
-              </Button>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">
+                    {isZh ? "本次批量生成" : "This batch"}
+                  </p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {isZh
+                      ? "确认时段与提示词后，用右栏底部按钮启动生成队列。"
+                      : "Review the variants and prompts, then start the queue from the pinned action bar."}
+                  </p>
+                </div>
+                <span className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground">
+                  {provider.templateId}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedSlots.length > 0 ? (
+                  selectedSlots.map((slot) => (
+                    <span
+                      key={slot}
+                      className="rounded-md border border-border/70 bg-background/65 px-2.5 py-1 text-[11px] text-muted-foreground"
+                    >
+                      {getTimeLabel(slot)}
+                    </span>
+                  ))
+                ) : (
+                  <span className="rounded-md border border-dashed border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+                    {isZh ? "还未选择时段版本" : "No variants selected yet"}
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
+                {isZh
+                  ? `并发 ${provider.templateId} · 队列并发与重试次数可在设置中调整`
+                  : `Queued with ${provider.templateId} · concurrency and retries are configurable in settings`}
+              </p>
             </div>
-          </div>
-        ) : null}
 
-        {tasks.length > 0 ? (
-          <div className="border-t border-border/70 bg-background/55 p-3.5">
-            <TaskQueue />
+            {tasks.length > 0 ? <TaskQueue /> : null}
           </div>
-        ) : null}
+        </WorkflowStepCard>
       </div>
+
+      <CreationActionBar
+        generating={generating}
+        canRun={canRunGeneration}
+        selectedCount={selectedSlots.length}
+        error={generationError}
+        onRun={() => void runGeneration()}
+        onCancel={cancelGeneration}
+      />
     </div>
   );
 };
